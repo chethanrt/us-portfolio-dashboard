@@ -1,0 +1,29 @@
+AI-Portfolio-Dashboard/
+│
+├── CLAUDE.md ⭐
+├── START_HERE.md ⭐
+├── README.md
+│
+├── docs/
+│   ├── 01_REQUIREMENTS.md
+│   ├── 02_DATABASE.md
+│   ├── 03_UI_WIREFRAMES.md
+│   ├── 04_BUILD_INSTRUCTIONS.md
+│   ├── 05_ROLE_BASED_DASHBOARDS.md
+│   └── 06_SAMPLE_DATA.md
+│
+├── src/
+│   ├── components/
+│   ├── pages/
+│   ├── layouts/
+│   ├── hooks/
+│   ├── services/
+│   ├── context/
+│   ├── data/
+│   ├── types/
+│   ├── utils/
+│   └── assets/
+│
+├── package.json
+├── vite.config.ts
+└── tsconfig.json

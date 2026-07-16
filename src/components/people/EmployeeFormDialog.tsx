@@ -1,0 +1,214 @@
+import { useEffect, useMemo, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { FormInputField, FormSelectField, Modal } from "@/components/common";
+import { Button } from "@/components/ui/button";
+import { Form } from "@/components/ui/form";
+import { ALL_ROLES } from "@/context/AuthContext";
+import type { Employee, Project } from "@/types";
+
+const REQUIRED = "This field is required.";
+
+const TEAMS = ["Magento", "PHP", "CMS", "Marketing", "Frontend", "Leadership"];
+
+function buildEmployeeSchema(takenEmails: Set<string>) {
+  return z.object({
+    name: z
+      .string()
+      .trim()
+      .min(3, "Name must be at least 3 characters.")
+      .max(80, "Name must be at most 80 characters."),
+    email: z
+      .string()
+      .trim()
+      .min(1, REQUIRED)
+      .email("Please enter a valid email address.")
+      .refine((value) => !takenEmails.has(value.toLowerCase()), {
+        message: "This email already exists.",
+      }),
+    role: z.string().min(1, REQUIRED),
+    experience: z
+      .string()
+      .min(1, REQUIRED)
+      .refine((value) => !Number.isNaN(Number(value)), { message: "Please enter a valid number." })
+      .refine((value) => Number(value) >= 0 && Number(value) <= 40, {
+        message: "Experience must be between 0 and 40.",
+      }),
+    team: z.string().min(1, REQUIRED),
+    primarySkill: z.string().trim().min(1, REQUIRED),
+    secondarySkill: z.string().trim(),
+    currentProject: z.string().min(1, REQUIRED),
+    status: z.string().min(1, REQUIRED),
+  });
+}
+
+type EmployeeFormValues = z.infer<ReturnType<typeof buildEmployeeSchema>>;
+
+const EMPTY_VALUES: EmployeeFormValues = {
+  name: "",
+  email: "",
+  role: "",
+  experience: "",
+  team: "",
+  primarySkill: "",
+  secondarySkill: "",
+  currentProject: "US Portfolio",
+  status: "Active",
+};
+
+interface EmployeeFormDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** When set, the dialog is in Edit mode. */
+  employee: Employee | null;
+  employees: Employee[];
+  projects: Project[];
+  onSave: (values: Omit<Employee, "id">) => Promise<void>;
+}
+
+export function EmployeeFormDialog({
+  open,
+  onOpenChange,
+  employee,
+  employees,
+  projects,
+  onSave,
+}: EmployeeFormDialogProps) {
+  const [isSaving, setIsSaving] = useState(false);
+  const isEdit = Boolean(employee);
+
+  // Duplicate email check excludes the employee being edited (docs/08).
+  const schema = useMemo(() => {
+    const takenEmails = new Set(
+      employees.filter((e) => e.id !== employee?.id).map((e) => e.email.toLowerCase())
+    );
+    return buildEmployeeSchema(takenEmails);
+  }, [employees, employee]);
+
+  const form = useForm<EmployeeFormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: EMPTY_VALUES,
+  });
+
+  useEffect(() => {
+    if (open) {
+      form.reset(
+        employee
+          ? {
+              name: employee.name,
+              email: employee.email,
+              role: employee.role,
+              experience: String(employee.experience),
+              team: employee.team,
+              primarySkill: employee.primarySkill,
+              secondarySkill: employee.secondarySkill,
+              currentProject: employee.currentProject,
+              status: employee.status,
+            }
+          : EMPTY_VALUES
+      );
+    }
+  }, [open, employee, form]);
+
+  const handleSubmit = form.handleSubmit(async (values) => {
+    setIsSaving(true);
+    try {
+      await onSave({
+        name: values.name.trim(),
+        email: values.email.trim().toLowerCase(),
+        role: values.role as Employee["role"],
+        experience: Number(values.experience),
+        team: values.team,
+        primarySkill: values.primarySkill.trim(),
+        secondarySkill: values.secondarySkill.trim(),
+        currentProject: values.currentProject,
+        profileImage: employee?.profileImage ?? "",
+        status: values.status as Employee["status"],
+      });
+      onOpenChange(false);
+    } catch {
+      // save failed — the caller shows the error toast; keep the dialog open
+    } finally {
+      setIsSaving(false);
+    }
+  });
+
+  const projectOptions = ["US Portfolio", ...projects.map((p) => p.name)];
+
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(next) => !isSaving && onOpenChange(next)}
+      title={isEdit ? "Edit Employee" : "Add Employee"}
+      description={
+        isEdit
+          ? `Employee ID: ${employee?.id}`
+          : "Employee ID is generated automatically."
+      }
+    >
+      <Form {...form}>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
+          <FormInputField control={form.control} name="name" label="Name" placeholder="Full name" required />
+          <FormInputField
+            control={form.control}
+            name="email"
+            label="Email"
+            type="email"
+            placeholder="name@company.com"
+            required
+          />
+          <FormSelectField control={form.control} name="role" label="Role" options={ALL_ROLES} required />
+          <FormInputField
+            control={form.control}
+            name="experience"
+            label="Experience (years)"
+            type="number"
+            min="0"
+            max="40"
+            required
+          />
+          <FormSelectField control={form.control} name="team" label="Team" options={TEAMS} required />
+          <FormSelectField
+            control={form.control}
+            name="status"
+            label="Status"
+            options={["Active", "Inactive"]}
+            required
+          />
+          <FormInputField
+            control={form.control}
+            name="primarySkill"
+            label="Primary Skill"
+            placeholder="e.g. Magento"
+            required
+          />
+          <FormInputField
+            control={form.control}
+            name="secondarySkill"
+            label="Secondary Skill"
+            placeholder="e.g. React"
+          />
+          <FormSelectField
+            control={form.control}
+            name="currentProject"
+            label="Current Project"
+            options={projectOptions}
+            required
+          />
+
+          <div className="flex justify-end gap-2 sm:col-span-2">
+            <Button type="button" variant="secondary" disabled={isSaving} onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSaving}>
+              {isSaving && <Loader2 className="animate-spin" />}
+              Save
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </Modal>
+  );
+}

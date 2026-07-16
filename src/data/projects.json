@@ -1,0 +1,195 @@
+[
+  {
+    "id": "P001",
+    "name": "Phoenix Commerce",
+    "client": "ABC Retail",
+    "program": "US Portfolio – Commerce",
+    "manager": "Rajesh Kumar",
+    "techLead": "John Abraham",
+    "technology": "Magento",
+    "stage": "Development",
+    "status": "Active",
+    "aiAdoption": 78,
+    "members": [
+      "EMP010",
+      "EMP015",
+      "EMP026"
+    ],
+    "startDate": "2025-11-03",
+    "endDate": "2026-10-30"
+  },
+  {
+    "id": "P002",
+    "name": "Atlas CMS",
+    "client": "EduPress Publishing",
+    "program": "US Portfolio – CMS",
+    "manager": "Sarah Mitchell",
+    "techLead": "Emily Watson",
+    "technology": "CMS",
+    "stage": "Testing",
+    "status": "Active",
+    "aiAdoption": 64,
+    "members": [
+      "EMP011",
+      "EMP021",
+      "EMP008"
+    ],
+    "startDate": "2026-01-12",
+    "endDate": "2026-09-25"
+  },
+  {
+    "id": "P003",
+    "name": "Mercury Retail",
+    "client": "TechMart",
+    "program": "US Portfolio – Commerce",
+    "manager": "Rajesh Kumar",
+    "techLead": "Kevin O'Brien",
+    "technology": "Adobe Commerce",
+    "stage": "Development",
+    "status": "Active",
+    "aiAdoption": 82,
+    "members": [
+      "EMP009",
+      "EMP023",
+      "EMP022"
+    ],
+    "startDate": "2025-09-15",
+    "endDate": "2026-08-28"
+  },
+  {
+    "id": "P004",
+    "name": "Nova Marketing",
+    "client": "Luxe Beauty",
+    "program": "US Portfolio – Marketing",
+    "manager": "Anand Krishnan",
+    "techLead": "Maria Garcia",
+    "technology": "Marketing Automation",
+    "stage": "Deployment",
+    "status": "Active",
+    "aiAdoption": 57,
+    "members": [
+      "EMP013",
+      "EMP017",
+      "EMP019"
+    ],
+    "startDate": "2026-02-02",
+    "endDate": "2026-07-31"
+  },
+  {
+    "id": "P005",
+    "name": "Orion Marketplace",
+    "client": "GreenGrocer",
+    "program": "US Portfolio – Commerce",
+    "manager": "Rajesh Kumar",
+    "techLead": "James Rodriguez",
+    "technology": "Magento",
+    "stage": "Requirement Gathering",
+    "status": "Active",
+    "aiAdoption": 41,
+    "members": [
+      "EMP007",
+      "EMP028",
+      "EMP020",
+      "EMP014"
+    ],
+    "startDate": "2026-05-04",
+    "endDate": "2027-02-26"
+  },
+  {
+    "id": "P006",
+    "name": "Horizon Commerce",
+    "client": "HomeStyle Living",
+    "program": "US Portfolio – Commerce",
+    "manager": "Rajesh Kumar",
+    "techLead": "John Abraham",
+    "technology": "Adobe Commerce",
+    "stage": "Support",
+    "status": "Active",
+    "aiAdoption": 69,
+    "members": [
+      "EMP010",
+      "EMP030",
+      "EMP020"
+    ],
+    "startDate": "2025-03-10",
+    "endDate": "2026-12-18"
+  },
+  {
+    "id": "P007",
+    "name": "Velocity Storefront",
+    "client": "FitGear Sports",
+    "program": "US Portfolio – Commerce",
+    "manager": "Sarah Mitchell",
+    "techLead": "Deepa Nair",
+    "technology": "React",
+    "stage": "Development",
+    "status": "Active",
+    "aiAdoption": 88,
+    "members": [
+      "EMP008",
+      "EMP019",
+      "EMP024"
+    ],
+    "startDate": "2026-01-19",
+    "endDate": "2026-11-27"
+  },
+  {
+    "id": "P008",
+    "name": "Apollo B2B",
+    "client": "AutoParts Direct",
+    "program": "US Portfolio – Commerce",
+    "manager": "Rajesh Kumar",
+    "techLead": "Suresh Reddy",
+    "technology": "PHP",
+    "stage": "Estimation",
+    "status": "Planning",
+    "aiAdoption": 38,
+    "members": [
+      "EMP012",
+      "EMP018",
+      "EMP022",
+      "EMP027",
+      "EMP016"
+    ],
+    "startDate": "2026-06-01",
+    "endDate": "2027-03-31"
+  },
+  {
+    "id": "P009",
+    "name": "Titan CMS",
+    "client": "MedLine Health",
+    "program": "US Portfolio – CMS",
+    "manager": "Sarah Mitchell",
+    "techLead": "Emily Watson",
+    "technology": "CMS",
+    "stage": "Documentation",
+    "status": "On Hold",
+    "aiAdoption": 46,
+    "members": [
+      "EMP011",
+      "EMP029",
+      "EMP017"
+    ],
+    "startDate": "2025-10-06",
+    "endDate": "2026-09-11"
+  },
+  {
+    "id": "P010",
+    "name": "Eclipse Loyalty",
+    "client": "Global Fashion Co",
+    "program": "US Portfolio – Marketing",
+    "manager": "Anand Krishnan",
+    "techLead": "Maria Garcia",
+    "technology": "JavaScript",
+    "stage": "Discovery",
+    "status": "Active",
+    "aiAdoption": 35,
+    "members": [
+      "EMP013",
+      "EMP025",
+      "EMP024"
+    ],
+    "startDate": "2026-06-15",
+    "endDate": "2027-01-29"
+  }
+]

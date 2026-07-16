@@ -1,0 +1,90 @@
+import { Pencil, Trash2 } from "lucide-react";
+import { StatusBadge } from "@/components/common";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import type { EmployeeWithStats } from "@/hooks/useEmployees";
+import { getInitials } from "@/utils/format";
+
+interface EmployeeCardProps {
+  employee: EmployeeWithStats;
+  /** Whether the active role can edit/delete employees (docs/05: EM only). */
+  canManage: boolean;
+  onViewProfile: (employee: EmployeeWithStats) => void;
+  onEdit: (employee: EmployeeWithStats) => void;
+  onDelete: (employee: EmployeeWithStats) => void;
+}
+
+export function EmployeeCard({ employee, canManage, onViewProfile, onEdit, onDelete }: EmployeeCardProps) {
+  return (
+    <Card className="flex flex-col shadow-sm transition-shadow hover:shadow-md">
+      <CardHeader className="flex flex-row items-start gap-3 space-y-0">
+        <Avatar className="size-11">
+          <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
+            {getInitials(employee.name)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate font-semibold">{employee.name}</h3>
+          <p className="truncate text-sm text-muted-foreground">
+            {employee.role} · {employee.experience} yr{employee.experience === 1 ? "" : "s"}
+          </p>
+        </div>
+        {employee.status !== "Active" && <StatusBadge status={employee.status} />}
+      </CardHeader>
+
+      <CardContent className="flex-1 space-y-3">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge variant="secondary">{employee.primarySkill}</Badge>
+          {employee.secondarySkill && <Badge variant="outline">{employee.secondarySkill}</Badge>}
+        </div>
+        <p className="truncate text-sm text-muted-foreground" title={employee.currentProject}>
+          Project: <span className="text-foreground">{employee.currentProject}</span>
+        </p>
+
+        <dl className="grid grid-cols-3 gap-2 rounded-lg bg-muted p-2 text-center">
+          <div>
+            <dd className="text-sm font-semibold">{employee.stats.activities}</dd>
+            <dt className="text-xs text-muted-foreground">Activities</dt>
+          </div>
+          <div>
+            <dd className="text-sm font-semibold">{employee.stats.learningProgress}%</dd>
+            <dt className="text-xs text-muted-foreground">Learning</dt>
+          </div>
+          <div>
+            <dd className="text-sm font-semibold">{employee.stats.pocs}</dd>
+            <dt className="text-xs text-muted-foreground">POCs</dt>
+          </div>
+        </dl>
+      </CardContent>
+
+      <CardFooter className="flex items-center justify-between">
+        <Button variant="outline" size="sm" onClick={() => onViewProfile(employee)}>
+          View Profile
+        </Button>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={`Edit ${employee.name}`}
+            disabled={!canManage}
+            onClick={() => onEdit(employee)}
+          >
+            <Pencil className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={`Delete ${employee.name}`}
+            disabled={!canManage}
+            className="text-destructive hover:text-destructive"
+            onClick={() => onDelete(employee)}
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        </div>
+      </CardFooter>
+    </Card>
+  );
+}

@@ -1,0 +1,109 @@
+{
+  "roles": [
+    "Director",
+    "Delivery Manager",
+    "Engineering Manager",
+    "Senior Tech Lead",
+    "Tech Lead",
+    "Senior Developer",
+    "Developer",
+    "Intern"
+  ],
+  "technicalSkills": [
+    "Magento",
+    "PHP",
+    "React",
+    "JavaScript",
+    "GraphQL",
+    "MySQL",
+    "Docker",
+    "Git"
+  ],
+  "aiSkills": [
+    "Claude",
+    "ChatGPT",
+    "GitHub Copilot",
+    "Cursor",
+    "Prompt Engineering"
+  ],
+  "skillLevels": [
+    "Beginner",
+    "Intermediate",
+    "Advanced",
+    "Expert"
+  ],
+  "projectStages": [
+    "Discovery",
+    "Requirement Gathering",
+    "Estimation",
+    "Development",
+    "Testing",
+    "Documentation",
+    "Deployment",
+    "Support"
+  ],
+  "aiTools": [
+    "Claude",
+    "ChatGPT",
+    "GitHub Copilot",
+    "Gemini",
+    "Cursor",
+    "Perplexity",
+    "Other"
+  ],
+  "learningPlatforms": [
+    "Udemy AI Lab",
+    "Internal Training",
+    "Other"
+  ],
+  "activityTypes": [
+    "Development",
+    "Documentation",
+    "Estimation",
+    "Code Review",
+    "Testing",
+    "CMS Research",
+    "Marketing",
+    "POC",
+    "Innovation",
+    "Learning",
+    "Other"
+  ],
+  "pocCategories": [
+    "Automation",
+    "Documentation",
+    "CMS",
+    "Marketing",
+    "Testing",
+    "Development",
+    "Estimation"
+  ],
+  "impactLevels": [
+    "Low",
+    "Medium",
+    "High"
+  ],
+  "statusValues": {
+    "project": [
+      "Active",
+      "On Hold",
+      "Completed",
+      "Planning"
+    ],
+    "employee": [
+      "Active",
+      "Inactive"
+    ],
+    "learning": [
+      "Not Started",
+      "In Progress",
+      "Completed"
+    ],
+    "poc": [
+      "Idea",
+      "In Progress",
+      "Completed",
+      "On Hold"
+    ]
+  }
+}
