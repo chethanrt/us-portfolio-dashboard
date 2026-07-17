@@ -18,27 +18,29 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { usePOCs } from "@/hooks/usePOCs";
 import type { POCRow } from "@/hooks/usePOCs";
+import { usePermission } from "@/security";
 import type { POC } from "@/types";
-import { canCreatePOC, canEditPOC, isOwnDataRole } from "@/utils/permissions";
 
 const STATUSES = ["Idea", "In Progress", "Completed", "On Hold"];
 const CATEGORIES = ["Automation", "Documentation", "CMS", "Marketing", "Testing", "Development", "Estimation"];
 
 export default function POCs() {
   const { rows, pocs, employees, projects, isLoading, error, addPOC, updatePOC, deletePOC } = usePOCs();
-  const { currentUser, role } = useAuth();
-  const ownDataOnly = isOwnDataRole(role);
+  const { currentUser } = useAuth();
+  const { canCreate, canEditRow, canDeleteRow, getEditScope, isOwnDataScope } = usePermission();
+  const ownDataOnly = isOwnDataScope("pocs");
 
-  // Own-data roles (below Tech Lead) see only their own POCs.
+  // Own-data view scope: see only their own POCs.
   const visibleRows = useMemo(
     () => (ownDataOnly ? rows.filter((row) => row.ownerId === currentUser?.id) : rows),
     [rows, ownDataOnly, currentUser]
   );
 
-  // Individual contributor roles create POCs under their own name.
-  const formEmployees = ["Tech Lead", "Senior Developer", "Developer"].includes(role)
-    ? employees.filter((e) => e.id === currentUser?.id)
-    : employees;
+  // Own-edit scope: POCs are created under the user's own name.
+  const formEmployees =
+    getEditScope("pocs") === "own" && currentUser
+      ? employees.filter((e) => e.id === currentUser.id)
+      : employees;
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState(ALL_FILTER);
@@ -127,16 +129,16 @@ export default function POCs() {
             : `${visibleRows.length} POCs · ${visibleRows.reduce((sum, r) => sum + r.hoursSaved, 0)} hours saved`
         }
         actions={
-          <Button
-            disabled={!canCreatePOC(role)}
-            title={!canCreatePOC(role) ? `The ${role} role is view-only for POCs` : undefined}
-            onClick={() => {
-              setEditing(null);
-              setFormOpen(true);
-            }}
-          >
-            <Plus /> Add POC
-          </Button>
+          canCreate("pocs") ? (
+            <Button
+              onClick={() => {
+                setEditing(null);
+                setFormOpen(true);
+              }}
+            >
+              <Plus /> Add POC
+            </Button>
+          ) : undefined
         }
       />
 
@@ -163,7 +165,8 @@ export default function POCs() {
             <POCCard
               key={poc.id}
               poc={poc}
-              canEdit={canEditPOC(role, poc.ownerId, currentUser?.id)}
+              canEdit={canEditRow("pocs", poc.ownerId)}
+              canDelete={canDeleteRow("pocs", poc.ownerId)}
               onViewDetails={setViewing}
               onEdit={(p) => {
                 setEditing(p);

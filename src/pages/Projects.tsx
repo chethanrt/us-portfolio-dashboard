@@ -17,14 +17,21 @@ import { ProjectFormDialog } from "@/components/projects/ProjectFormDialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useProjects } from "@/hooks/useProjects";
+import { usePermission } from "@/security";
 import { settingsService } from "@/services";
 import type { Project } from "@/types";
-import { canEditProject, canManageProjects } from "@/utils/permissions";
 
 export default function Projects() {
   const { projects, employees, employeesById, isLoading, error, addProject, updateProject, deleteProject } =
     useProjects();
-  const { currentUser, role } = useAuth();
+  const { currentUser } = useAuth();
+  const { canCreate, canEdit, canDelete, getEditScope } = usePermission();
+
+  // Projects have no employee owner — "own" edit scope means "I manage it".
+  const canEditProject = (project: Project) =>
+    canEdit("projects") && (getEditScope("projects") !== "own" || project.manager === currentUser?.name);
+  const canDeleteProject = (project: Project) =>
+    canDelete("projects") && (getEditScope("projects") !== "own" || project.manager === currentUser?.name);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState(ALL_FILTER);
@@ -123,16 +130,16 @@ export default function Projects() {
         title="Projects"
         description={`${projects.length} portfolio projects`}
         actions={
-          <Button
-            disabled={!canManageProjects(role)}
-            title={!canManageProjects(role) ? "Only Delivery/Engineering Managers can manage projects" : undefined}
-            onClick={() => {
-              setEditing(null);
-              setFormOpen(true);
-            }}
-          >
-            <Plus /> Add Project
-          </Button>
+          canCreate("projects") ? (
+            <Button
+              onClick={() => {
+                setEditing(null);
+                setFormOpen(true);
+              }}
+            >
+              <Plus /> Add Project
+            </Button>
+          ) : undefined
         }
       />
 
@@ -163,7 +170,8 @@ export default function Projects() {
               key={project.id}
               project={project}
               employeesById={employeesById}
-              canEdit={canEditProject(role, project.manager, currentUser?.name)}
+              canEdit={canEditProject(project)}
+              canDelete={canDeleteProject(project)}
               onViewDetails={setSelectedProject}
               onEdit={(p) => {
                 setEditing(p);

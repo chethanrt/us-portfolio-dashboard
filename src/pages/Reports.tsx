@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useReportsData } from "@/hooks/useReportsData";
-import { isOwnDataRole } from "@/utils/permissions";
+import { usePermission } from "@/security";
 import {
   computeReport,
   REPORT_TYPES,
@@ -29,8 +29,9 @@ const METRIC_ICONS = [BarChart3, Clock, Users, Zap];
 
 export default function Reports() {
   const { sources, isLoading, error } = useReportsData();
-  const { currentUser, role } = useAuth();
-  const ownDataOnly = isOwnDataRole(role);
+  const { currentUser } = useAuth();
+  const { canExport, isOwnDataScope } = usePermission();
+  const ownDataOnly = isOwnDataScope("reports");
 
   const [reportType, setReportType] = useState<string>("Weekly Summary");
   const [dateFilter, setDateFilter] = useState(ALL_FILTER);
@@ -52,7 +53,7 @@ export default function Reports() {
     if (!sources) return;
     const rangeDays = dateFilter === ALL_FILTER ? 0 : Number(dateFilter.match(/\d+/)?.[0] ?? 0);
     const type = reportType as ReportType;
-    // Own-data roles (below Tech Lead) report only on their own records.
+    // Own-data view scope: report only on the user's own records.
     const scopedSources =
       ownDataOnly && currentUser ? scopeSourcesToEmployee(sources, currentUser.id) : sources;
     setResult({ type, data: computeReport(type, scopedSources, { rangeDays, projectId: projectFilter }) });
@@ -152,17 +153,19 @@ export default function Reports() {
             <h2 className="text-lg font-semibold">
               {result.type} <span className="text-sm font-normal text-muted-foreground">({result.data.rows.length} rows)</span>
             </h2>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={exportCSV}>
-                <Download /> CSV
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => toast.info("Excel export is planned for a future release.")}>
-                <FileSpreadsheet /> Excel
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => toast.info("PDF export is planned for a future release.")}>
-                <FileText /> PDF
-              </Button>
-            </div>
+            {canExport("reports") && (
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={exportCSV}>
+                  <Download /> CSV
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => toast.info("Excel export is planned for a future release.")}>
+                  <FileSpreadsheet /> Excel
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => toast.info("PDF export is planned for a future release.")}>
+                  <FileText /> PDF
+                </Button>
+              </div>
+            )}
           </div>
 
           {result.data.rows.length === 0 ? (

@@ -16,23 +16,24 @@ import { buildSkillMatrixColumns } from "@/components/skills/skillMatrixColumns"
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useSkillMatrix } from "@/hooks/useSkillMatrix";
+import { usePermission } from "@/security";
 import type { SkillLevel } from "@/types";
-import { isOwnDataRole } from "@/utils/permissions";
 import { SKILL_COLUMNS } from "@/utils/skills";
 
 const LEVELS: SkillLevel[] = ["Beginner", "Intermediate", "Advanced", "Expert"];
 
 export default function SkillMatrix() {
   const { rows, isLoading, error } = useSkillMatrix();
-  const { currentUser, role } = useAuth();
-  const ownDataOnly = isOwnDataRole(role);
+  const { currentUser } = useAuth();
+  const { canExport, isOwnDataScope } = usePermission();
+  const ownDataOnly = isOwnDataScope("skills");
   const [search, setSearch] = useState("");
   const [skillFilter, setSkillFilter] = useState(ALL_FILTER);
   const [levelFilter, setLevelFilter] = useState(ALL_FILTER);
 
   const columns = useMemo(() => buildSkillMatrixColumns(), []);
 
-  // Own-data roles (below Tech Lead) see only their own skill row.
+  // Own-data view scope: see only their own skill row.
   const visibleRows = useMemo(
     () => (ownDataOnly ? rows.filter((row) => row.employee.id === currentUser?.id) : rows),
     [rows, ownDataOnly, currentUser]
@@ -93,9 +94,11 @@ export default function SkillMatrix() {
             : `${visibleRows.length} team members · ${SKILL_COLUMNS.length} tracked skills`
         }
         actions={
-          <Button variant="outline" onClick={() => toast.info("Export arrives with the Reports phase.")}>
-            <Download /> Export
-          </Button>
+          canExport("skills") ? (
+            <Button variant="outline" onClick={() => toast.info("Export arrives with the Reports phase.")}>
+              <Download /> Export
+            </Button>
+          ) : undefined
         }
       />
 

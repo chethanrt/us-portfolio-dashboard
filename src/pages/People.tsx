@@ -19,17 +19,17 @@ import { ALL_ROLES } from "@/context/AuthContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useEmployees } from "@/hooks/useEmployees";
 import type { EmployeeWithStats } from "@/hooks/useEmployees";
+import { usePermission } from "@/security";
 import type { Employee } from "@/types";
-import { canManagePeople, isOwnDataRole } from "@/utils/permissions";
 
 export default function People() {
   const { employees, projects, isLoading, error, addEmployee, updateEmployee, deleteEmployee } =
     useEmployees();
-  const { currentUser, role } = useAuth();
-  const canManage = canManagePeople(role);
-  const ownDataOnly = isOwnDataRole(role);
+  const { currentUser } = useAuth();
+  const { canCreate, canEditRow, canDeleteRow, isOwnDataScope } = usePermission();
+  const ownDataOnly = isOwnDataScope("people");
 
-  // Own-data roles (below Tech Lead) see only their own profile.
+  // Own-data view scope: see only their own profile.
   const visibleEmployees = useMemo(
     () => (ownDataOnly ? employees.filter((e) => e.id === currentUser?.id) : employees),
     [employees, ownDataOnly, currentUser]
@@ -126,16 +126,16 @@ export default function People() {
           ownDataOnly ? "Your profile and statistics" : `${visibleEmployees.length} team members across the portfolio`
         }
         actions={
-          <Button
-            disabled={!canManage}
-            title={!canManage ? "Only Engineering Managers can manage employees" : undefined}
-            onClick={() => {
-              setEditing(null);
-              setFormOpen(true);
-            }}
-          >
-            <Plus /> Add Employee
-          </Button>
+          canCreate("people") ? (
+            <Button
+              onClick={() => {
+                setEditing(null);
+                setFormOpen(true);
+              }}
+            >
+              <Plus /> Add Employee
+            </Button>
+          ) : undefined
         }
       />
 
@@ -174,7 +174,8 @@ export default function People() {
             <EmployeeCard
               key={employee.id}
               employee={employee}
-              canManage={canManage}
+              canEdit={canEditRow("people", employee.id)}
+              canDelete={canDeleteRow("people", employee.id)}
               onViewProfile={setViewing}
               onEdit={(e) => {
                 setEditing(e);

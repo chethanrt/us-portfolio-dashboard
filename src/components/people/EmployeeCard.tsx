@@ -9,14 +9,16 @@ import { getInitials } from "@/utils/format";
 
 interface EmployeeCardProps {
   employee: EmployeeWithStats;
-  /** Whether the active role can edit/delete employees (docs/05: EM only). */
-  canManage: boolean;
+  /** Whether the signed-in user can edit this employee. */
+  canEdit: boolean;
+  /** Whether the signed-in user can delete this employee. */
+  canDelete: boolean;
   onViewProfile: (employee: EmployeeWithStats) => void;
   onEdit: (employee: EmployeeWithStats) => void;
   onDelete: (employee: EmployeeWithStats) => void;
 }
 
-export function EmployeeCard({ employee, canManage, onViewProfile, onEdit, onDelete }: EmployeeCardProps) {
+export function EmployeeCard({ employee, canEdit, canDelete, onViewProfile, onEdit, onDelete }: EmployeeCardProps) {
   return (
     <Card className="flex flex-col shadow-sm transition-shadow hover:shadow-md">
       <CardHeader className="flex flex-row items-start gap-3 space-y-0">
@@ -64,25 +66,27 @@ export function EmployeeCard({ employee, canManage, onViewProfile, onEdit, onDel
           View Profile
         </Button>
         <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={`Edit ${employee.name}`}
-            disabled={!canManage}
-            onClick={() => onEdit(employee)}
-          >
-            <Pencil className="size-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={`Delete ${employee.name}`}
-            disabled={!canManage}
-            className="text-destructive hover:text-destructive"
-            onClick={() => onDelete(employee)}
-          >
-            <Trash2 className="size-4" />
-          </Button>
+          {canEdit && (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={`Edit ${employee.name}`}
+              onClick={() => onEdit(employee)}
+            >
+              <Pencil className="size-4" />
+            </Button>
+          )}
+          {canDelete && (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={`Delete ${employee.name}`}
+              className="text-destructive hover:text-destructive"
+              onClick={() => onDelete(employee)}
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          )}
         </div>
       </CardFooter>
     </Card>

@@ -19,18 +19,19 @@ import { Button } from "@/components/ui/button";
 import { useActivities } from "@/hooks/useActivities";
 import type { ActivityRow } from "@/hooks/useActivities";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermission } from "@/security";
 import type { Activity } from "@/types";
-import { canAddOwnRecords, canEditRecord, isOwnDataRole } from "@/utils/permissions";
 
 const DATE_RANGES = ["Last 7 days", "Last 30 days", "Last 90 days"];
 
 export default function Activities() {
   const { rows, employees, projects, settings, isLoading, error, addActivity, updateActivity, deleteActivity } =
     useActivities();
-  const { currentUser, role } = useAuth();
-  const ownDataOnly = isOwnDataRole(role);
+  const { currentUser } = useAuth();
+  const { canCreate, canEditRow, canDeleteRow, canViewField, isOwnDataScope } = usePermission();
+  const ownDataOnly = isOwnDataScope("activities");
 
-  // Own-data roles (docs/05): see and log only their own activities.
+  // Own-data view scope: see and log only their own activities.
   const visibleRows = useMemo(
     () => (ownDataOnly ? rows.filter((row) => row.employeeId === currentUser?.id) : rows),
     [rows, ownDataOnly, currentUser]
@@ -78,9 +79,11 @@ export default function Activities() {
           setFormOpen(true);
         },
         (row) => setDeleting(row),
-        (row) => canEditRecord(role, row.employeeId, currentUser?.id)
+        (row) => canEditRow("activities", row.employeeId),
+        (row) => canDeleteRow("activities", row.employeeId),
+        (field) => canViewField("activities", field)
       ),
-    [role, currentUser]
+    [canEditRow, canDeleteRow, canViewField]
   );
 
   const handleSave = async (values: Omit<Activity, "id">) => {
@@ -147,16 +150,16 @@ export default function Activities() {
             : `${visibleRows.length} activities logged across the portfolio`
         }
         actions={
-          <Button
-            disabled={!canAddOwnRecords(role)}
-            title={!canAddOwnRecords(role) ? `The ${role} role is view-only for activities` : undefined}
-            onClick={() => {
-              setEditing(null);
-              setFormOpen(true);
-            }}
-          >
-            <Plus /> Add Activity
-          </Button>
+          canCreate("activities") ? (
+            <Button
+              onClick={() => {
+                setEditing(null);
+                setFormOpen(true);
+              }}
+            >
+              <Plus /> Add Activity
+            </Button>
+          ) : undefined
         }
       />
 

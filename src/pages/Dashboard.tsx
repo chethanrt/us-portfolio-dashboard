@@ -11,26 +11,26 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import type { DashboardData } from "@/hooks/useDashboardData";
-import { canAddOwnRecords, canCreatePOC, canManageProjects } from "@/utils/permissions";
+import { usePermission } from "@/security";
 
-/** Role-aware quick actions (docs/05): disabled actions are hidden here. */
+/** Permission-aware quick actions: hidden without Create permission. */
 function QuickActions() {
-  const { role } = useAuth();
+  const { canCreate } = usePermission();
   const navigate = useNavigate();
 
   return (
     <>
-      {canAddOwnRecords(role) && (
+      {canCreate("activities") && (
         <Button variant="outline" size="sm" onClick={() => navigate("/activities")}>
           <Plus /> Activity
         </Button>
       )}
-      {canManageProjects(role) && (
+      {canCreate("projects") && (
         <Button variant="outline" size="sm" onClick={() => navigate("/projects")}>
           <Plus /> Project
         </Button>
       )}
-      {canCreatePOC(role) && (
+      {canCreate("pocs") && (
         <Button variant="outline" size="sm" onClick={() => navigate("/pocs")}>
           <Plus /> POC
         </Button>
@@ -76,7 +76,8 @@ function KPIRow({ data }: { data: DashboardData }) {
 }
 
 export default function Dashboard() {
-  const { currentUser, role } = useAuth();
+  const { currentUser } = useAuth();
+  const { role, canView } = usePermission();
   const { data, isLoading, error } = useDashboardData();
   const firstName = currentUser?.name.split(" ")[0] ?? "there";
 
@@ -100,36 +101,39 @@ export default function Dashboard() {
     <div className="space-y-6">
       <PageHeader
         title="Dashboard"
-        description={`Welcome back, ${firstName} — ${scopeLabel} (${role})`}
+        description={`Welcome back, ${firstName} — ${scopeLabel}${role ? ` (${role.name})` : ""}`}
         actions={<QuickActions />}
       />
 
       <KPIRow data={data} />
 
-      {/* Charts row 1 */}
+      {/* Charts row 1 — widgets respect module View permissions */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <ActivityTrendChart data={data.trend} />
-        <ProjectStatusChart data={data.projectStatus} />
+        {canView("activities") && <ActivityTrendChart data={data.trend} />}
+        {canView("projects") && <ProjectStatusChart data={data.projectStatus} />}
       </div>
 
       {/* Charts row 2 */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <ToolUsageChart data={data.toolUsage} />
-        <LearningProgressWidget learning={data.learning} />
+        {canView("activities") && <ToolUsageChart data={data.toolUsage} />}
+        {canView("learning") && <LearningProgressWidget learning={data.learning} />}
       </div>
 
       {/* Lists row — Top Contributors is hidden for the personal scope */}
       <div className="grid gap-4 lg:grid-cols-2">
-        {data.recentActivities.length > 0 ? (
-          <RecentActivities activities={data.recentActivities} />
-        ) : (
-          <EmptyState
-            icon={Brain}
-            title="No AI Activities Found"
-            description="Logged activities will appear here."
-          />
+        {canView("activities") &&
+          (data.recentActivities.length > 0 ? (
+            <RecentActivities activities={data.recentActivities} />
+          ) : (
+            <EmptyState
+              icon={Brain}
+              title="No AI Activities Found"
+              description="Logged activities will appear here."
+            />
+          ))}
+        {data.scope !== "personal" && canView("people") && (
+          <TopContributors contributors={data.topContributors} />
         )}
-        {data.scope !== "personal" && <TopContributors contributors={data.topContributors} />}
       </div>
     </div>
   );

@@ -5,18 +5,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import type { POCRow } from "@/hooks/usePOCs";
+import { usePermission } from "@/security";
 import { getInitials } from "@/utils/format";
 
 interface POCCardProps {
   poc: POCRow;
-  /** Whether the active role can edit/delete this POC (docs/05). */
+  /** Whether the signed-in user can edit this POC. */
   canEdit: boolean;
+  /** Whether the signed-in user can delete this POC. */
+  canDelete: boolean;
   onViewDetails: (poc: POCRow) => void;
   onEdit: (poc: POCRow) => void;
   onDelete: (poc: POCRow) => void;
 }
 
-export function POCCard({ poc, canEdit, onViewDetails, onEdit, onDelete }: POCCardProps) {
+export function POCCard({ poc, canEdit, canDelete, onViewDetails, onEdit, onDelete }: POCCardProps) {
+  const { canViewField } = usePermission();
   return (
     <Card className="flex flex-col shadow-sm transition-shadow hover:shadow-md">
       <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
@@ -38,7 +42,7 @@ export function POCCard({ poc, canEdit, onViewDetails, onEdit, onDelete }: POCCa
         </p>
         <div className="flex flex-wrap items-center gap-1.5">
           <Badge variant="secondary">{poc.category}</Badge>
-          {poc.hoursSaved > 0 && (
+          {poc.hoursSaved > 0 && canViewField("pocs", "hoursSaved") && (
             <Badge variant="outline" className="gap-1">
               <Clock className="size-3" /> {poc.hoursSaved}h saved
             </Badge>
@@ -68,20 +72,24 @@ export function POCCard({ poc, canEdit, onViewDetails, onEdit, onDelete }: POCCa
         <Button variant="outline" size="sm" onClick={() => onViewDetails(poc)}>
           View Details
         </Button>
-        {canEdit && (
+        {(canEdit || canDelete) && (
           <div className="flex gap-1">
-            <Button variant="ghost" size="icon" aria-label={`Edit ${poc.title}`} onClick={() => onEdit(poc)}>
-              <Pencil className="size-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={`Delete ${poc.title}`}
-              className="text-destructive hover:text-destructive"
-              onClick={() => onDelete(poc)}
-            >
-              <Trash2 className="size-4" />
-            </Button>
+            {canEdit && (
+              <Button variant="ghost" size="icon" aria-label={`Edit ${poc.title}`} onClick={() => onEdit(poc)}>
+                <Pencil className="size-4" />
+              </Button>
+            )}
+            {canDelete && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Delete ${poc.title}`}
+                className="text-destructive hover:text-destructive"
+                onClick={() => onDelete(poc)}
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            )}
           </div>
         )}
       </CardFooter>

@@ -33,6 +33,8 @@ interface BaseFieldProps<T extends FieldValues> {
   name: FieldPath<T>;
   label: string;
   required?: boolean;
+  /** Renders the field read-only (field-level security: editable = false). */
+  disabled?: boolean;
 }
 
 function FieldLabel({ label, required }: { label: string; required?: boolean }) {
@@ -56,6 +58,7 @@ export function FormSelectField<T extends FieldValues>({
   options,
   placeholder = "Select…",
   required,
+  disabled,
 }: FormSelectFieldProps<T>) {
   return (
     <FormField
@@ -64,7 +67,7 @@ export function FormSelectField<T extends FieldValues>({
       render={({ field }) => (
         <FormItem>
           <FieldLabel label={label} required={required} />
-          <Select value={field.value ?? ""} onValueChange={field.onChange}>
+          <Select value={field.value ?? ""} onValueChange={field.onChange} disabled={disabled}>
             <FormControl>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder={placeholder} />
@@ -107,6 +110,7 @@ export function FormInputField<T extends FieldValues>({
   min,
   max,
   required,
+  disabled,
 }: FormInputFieldProps<T>) {
   return (
     <FormField
@@ -116,7 +120,15 @@ export function FormInputField<T extends FieldValues>({
         <FormItem>
           <FieldLabel label={label} required={required} />
           <FormControl>
-            <Input type={type} placeholder={placeholder} step={step} min={min} max={max} {...field} />
+            <Input
+              type={type}
+              placeholder={placeholder}
+              step={step}
+              min={min}
+              max={max}
+              disabled={disabled}
+              {...field}
+            />
           </FormControl>
           <FormMessage />
         </FormItem>
@@ -140,6 +152,7 @@ export function FormSliderField<T extends FieldValues>({
   max = 100,
   step = 1,
   required,
+  disabled,
 }: FormSliderFieldProps<T>) {
   return (
     <FormField
@@ -156,6 +169,7 @@ export function FormSliderField<T extends FieldValues>({
               min={min}
               max={max}
               step={step}
+              disabled={disabled}
               value={[Number(field.value ?? 0)]}
               onValueChange={([value]) => field.onChange(value)}
             />
@@ -178,6 +192,7 @@ export function FormCheckboxGroupField<T extends FieldValues>({
   label,
   options,
   required,
+  disabled,
 }: FormCheckboxGroupFieldProps<T>) {
   return (
     <FormField
@@ -202,6 +217,7 @@ export function FormCheckboxGroupField<T extends FieldValues>({
                 >
                   <Checkbox
                     checked={selected.includes(option.value)}
+                    disabled={disabled}
                     onCheckedChange={(checked) => toggle(option.value, checked === true)}
                   />
                   <span className="truncate">{option.label}</span>
@@ -230,6 +246,7 @@ export function FormTextareaField<T extends FieldValues>({
   rows = 3,
   maxLength,
   required,
+  disabled,
 }: FormTextareaFieldProps<T>) {
   return (
     <FormField
@@ -239,7 +256,7 @@ export function FormTextareaField<T extends FieldValues>({
         <FormItem className="sm:col-span-2">
           <FieldLabel label={label} required={required} />
           <FormControl>
-            <Textarea placeholder={placeholder} rows={rows} maxLength={maxLength} {...field} />
+            <Textarea placeholder={placeholder} rows={rows} maxLength={maxLength} disabled={disabled} {...field} />
           </FormControl>
           <FormMessage />
         </FormItem>
