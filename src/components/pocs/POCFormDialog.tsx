@@ -6,6 +6,7 @@ import { z } from "zod";
 import { FormInputField, FormSelectField, FormTextareaField, Modal } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
+import { usePermission } from "@/security";
 import type { Employee, POC, Project } from "@/types";
 
 const REQUIRED = "This field is required.";
@@ -85,6 +86,11 @@ export function POCFormDialog({ open, onOpenChange, poc, pocs, employees, projec
   const [isSaving, setIsSaving] = useState(false);
   const isEdit = Boolean(poc);
 
+  // Field-level security: hidden fields are not rendered, read-only fields are disabled.
+  const { canViewField, canEditField } = usePermission();
+  const show = (field: string) => canViewField("pocs", field);
+  const readOnly = (field: string) => !canEditField("pocs", field);
+
   const schema = useMemo(() => buildPOCSchema(pocs, poc?.id ?? null), [pocs, poc]);
 
   const form = useForm<POCFormValues>({
@@ -145,55 +151,81 @@ export function POCFormDialog({ open, onOpenChange, poc, pocs, employees, projec
     >
       <Form {...form}>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
-          <FormInputField control={form.control} name="title" label="Title" placeholder="POC title" required />
-          <FormSelectField
-            control={form.control}
-            name="projectId"
-            label="Project"
-            required
-            options={projects.map((p) => ({ value: p.id, label: p.name }))}
-          />
-          <FormSelectField
-            control={form.control}
-            name="ownerId"
-            label="Owner"
-            required
-            options={employees.map((e) => ({ value: e.id, label: e.name }))}
-          />
-          <FormSelectField control={form.control} name="category" label="Category" required options={CATEGORIES} />
-          <FormSelectField control={form.control} name="status" label="Status" required options={STATUSES} />
-          <FormInputField
-            control={form.control}
-            name="hoursSaved"
-            label="Hours Saved"
-            type="number"
-            min="0"
-            step="0.5"
-          />
-          <FormTextareaField
-            control={form.control}
-            name="description"
-            label="Description"
-            placeholder="What does this POC do?"
-            maxLength={500}
-            required
-          />
-          <FormTextareaField
-            control={form.control}
-            name="businessValue"
-            label="Business Value"
-            placeholder="What value does it deliver?"
-            rows={2}
-            maxLength={500}
-            required
-          />
-          <FormInputField
-            control={form.control}
-            name="repo"
-            label="Repository URL"
-            placeholder="https://github.com/…"
-          />
-          <FormInputField control={form.control} name="demo" label="Demo URL" placeholder="https://…" />
+          {show("title") && (
+            <FormInputField control={form.control} name="title" label="Title" placeholder="POC title" required disabled={readOnly("title")} />
+          )}
+          {show("projectId") && (
+            <FormSelectField
+              control={form.control}
+              name="projectId"
+              label="Project"
+              required
+              options={projects.map((p) => ({ value: p.id, label: p.name }))}
+              disabled={readOnly("projectId")}
+            />
+          )}
+          {show("ownerId") && (
+            <FormSelectField
+              control={form.control}
+              name="ownerId"
+              label="Owner"
+              required
+              options={employees.map((e) => ({ value: e.id, label: e.name }))}
+              disabled={readOnly("ownerId")}
+            />
+          )}
+          {show("category") && (
+            <FormSelectField control={form.control} name="category" label="Category" required options={CATEGORIES} disabled={readOnly("category")} />
+          )}
+          {show("status") && (
+            <FormSelectField control={form.control} name="status" label="Status" required options={STATUSES} disabled={readOnly("status")} />
+          )}
+          {show("hoursSaved") && (
+            <FormInputField
+              control={form.control}
+              name="hoursSaved"
+              label="Hours Saved"
+              type="number"
+              min="0"
+              step="0.5"
+              disabled={readOnly("hoursSaved")}
+            />
+          )}
+          {show("description") && (
+            <FormTextareaField
+              control={form.control}
+              name="description"
+              label="Description"
+              placeholder="What does this POC do?"
+              maxLength={500}
+              required
+              disabled={readOnly("description")}
+            />
+          )}
+          {show("businessValue") && (
+            <FormTextareaField
+              control={form.control}
+              name="businessValue"
+              label="Business Value"
+              placeholder="What value does it deliver?"
+              rows={2}
+              maxLength={500}
+              required
+              disabled={readOnly("businessValue")}
+            />
+          )}
+          {show("repo") && (
+            <FormInputField
+              control={form.control}
+              name="repo"
+              label="Repository URL"
+              placeholder="https://github.com/…"
+              disabled={readOnly("repo")}
+            />
+          )}
+          {show("demo") && (
+            <FormInputField control={form.control} name="demo" label="Demo URL" placeholder="https://…" disabled={readOnly("demo")} />
+          )}
 
           <div className="flex justify-end gap-2 sm:col-span-2">
             <Button type="button" variant="secondary" disabled={isSaving} onClick={() => onOpenChange(false)}>

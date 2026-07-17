@@ -6,3 +6,5 @@ export { learningService } from "./LearningService";
 export { pocService } from "./POCService";
 export { settingsService } from "./SettingsService";
 export { userService } from "./UserService";
+export { roleService } from "./RoleService";
+export { permissionService } from "./PermissionService";

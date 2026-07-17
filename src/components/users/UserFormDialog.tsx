@@ -6,8 +6,7 @@ import { z } from "zod";
 import { FormInputField, FormSelectField, Modal } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { USER_ROLES } from "@/context/AuthContext";
-import type { Employee, User, UserRole } from "@/types";
+import type { Employee, Role, User } from "@/types";
 
 const REQUIRED = "This field is required.";
 const NO_EMPLOYEE = "none";
@@ -28,7 +27,7 @@ function buildUserSchema(takenUsernames: Set<string>, isEdit: boolean) {
           message: "Password must be at least 6 characters.",
         })
       : z.string().min(6, "Password must be at least 6 characters."),
-    role: z.string().min(1, REQUIRED),
+    roleId: z.string().min(1, REQUIRED),
     employeeId: z.string(),
     status: z.string().min(1, REQUIRED),
   });
@@ -39,7 +38,7 @@ type UserFormValues = z.infer<ReturnType<typeof buildUserSchema>>;
 const EMPTY_VALUES: UserFormValues = {
   username: "",
   password: "",
-  role: "",
+  roleId: "",
   employeeId: NO_EMPLOYEE,
   status: "Active",
 };
@@ -51,10 +50,12 @@ interface UserFormDialogProps {
   user: User | null;
   users: User[];
   employees: Employee[];
+  /** Assignable roles (roles.json via RoleService). */
+  roles: Role[];
   onSave: (values: Omit<User, "id">) => Promise<void>;
 }
 
-export function UserFormDialog({ open, onOpenChange, user, users, employees, onSave }: UserFormDialogProps) {
+export function UserFormDialog({ open, onOpenChange, user, users, employees, roles, onSave }: UserFormDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
   const isEdit = Boolean(user);
 
@@ -77,7 +78,7 @@ export function UserFormDialog({ open, onOpenChange, user, users, employees, onS
           ? {
               username: user.username,
               password: "",
-              role: user.role,
+              roleId: user.roleId,
               employeeId: user.employeeId || NO_EMPLOYEE,
               status: user.status,
             }
@@ -93,7 +94,7 @@ export function UserFormDialog({ open, onOpenChange, user, users, employees, onS
         username: values.username.trim().toLowerCase(),
         // Blank password in Edit mode keeps the current one.
         password: values.password || user?.password || "",
-        role: values.role as UserRole,
+        roleId: values.roleId,
         employeeId: values.employeeId === NO_EMPLOYEE ? "" : values.employeeId,
         status: values.status as User["status"],
       });
@@ -134,7 +135,13 @@ export function UserFormDialog({ open, onOpenChange, user, users, employees, onS
             placeholder={isEdit ? "Leave blank to keep current" : "Minimum 6 characters"}
             required={!isEdit}
           />
-          <FormSelectField control={form.control} name="role" label="Role" required options={USER_ROLES} />
+          <FormSelectField
+            control={form.control}
+            name="roleId"
+            label="Role"
+            required
+            options={roles.map((role) => ({ value: role.id, label: role.name }))}
+          />
           <FormSelectField
             control={form.control}
             name="status"

@@ -1,0 +1,164 @@
+[
+  {
+    "roleId": "super-admin",
+    "modules": [
+      { "module": "dashboard", "actions": { "view": true }, "scope": { "view": "all" } },
+      { "module": "projects", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "activities", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "people", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "skills", "actions": { "view": true, "export": true }, "scope": { "view": "all" } },
+      { "module": "learning", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "pocs", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "reports", "actions": { "view": true, "export": true }, "scope": { "view": "all" } },
+      { "module": "settings", "actions": { "view": true, "edit": true } },
+      { "module": "users", "actions": { "view": true, "create": true, "edit": true, "delete": true } },
+      { "module": "roles", "actions": { "view": true, "create": true, "edit": true, "delete": true } }
+    ]
+  },
+  {
+    "roleId": "director",
+    "modules": [
+      { "module": "dashboard", "actions": { "view": true }, "scope": { "view": "all" } },
+      { "module": "projects", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "activities", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "people", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "skills", "actions": { "view": true, "export": true }, "scope": { "view": "all" } },
+      { "module": "learning", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "pocs", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "reports", "actions": { "view": true, "export": true }, "scope": { "view": "all" } },
+      { "module": "settings", "actions": { "view": true, "edit": true } },
+      { "module": "users", "actions": { "view": true, "create": true, "edit": true, "delete": true } },
+      { "module": "roles", "actions": { "view": true, "create": true, "edit": true, "delete": true } }
+    ]
+  },
+  {
+    "roleId": "delivery-manager",
+    "modules": [
+      { "module": "dashboard", "actions": { "view": true }, "scope": { "view": "all" } },
+      { "module": "projects", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "activities", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "people", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "skills", "actions": { "view": true, "export": true }, "scope": { "view": "all" } },
+      { "module": "learning", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "pocs", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "reports", "actions": { "view": true, "export": true }, "scope": { "view": "all" } },
+      { "module": "settings", "actions": { "view": true } }
+    ]
+  },
+  {
+    "roleId": "engineering-manager",
+    "modules": [
+      { "module": "dashboard", "actions": { "view": true }, "scope": { "view": "all" } },
+      { "module": "projects", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "activities", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "people", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "skills", "actions": { "view": true, "export": true }, "scope": { "view": "all" } },
+      { "module": "learning", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "pocs", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "reports", "actions": { "view": true, "export": true }, "scope": { "view": "all" } },
+      { "module": "settings", "actions": { "view": true } }
+    ]
+  },
+  {
+    "roleId": "senior-tech-lead",
+    "modules": [
+      { "module": "dashboard", "actions": { "view": true }, "scope": { "view": "all" } },
+      { "module": "projects", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "activities", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "people", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "skills", "actions": { "view": true, "export": true }, "scope": { "view": "all" } },
+      { "module": "learning", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "pocs", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "reports", "actions": { "view": true, "export": true }, "scope": { "view": "all" } }
+    ]
+  },
+  {
+    "roleId": "tech-lead",
+    "modules": [
+      { "module": "dashboard", "actions": { "view": true }, "scope": { "view": "team" } },
+      { "module": "projects", "actions": { "view": true }, "scope": { "view": "all" } },
+      { "module": "activities", "actions": { "view": true, "create": true, "edit": true, "delete": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "people", "actions": { "view": true }, "scope": { "view": "all" } },
+      { "module": "skills", "actions": { "view": true, "export": true }, "scope": { "view": "all" } },
+      { "module": "learning", "actions": { "view": true, "create": true, "edit": true, "delete": true }, "scope": { "view": "all", "edit": "all" } },
+      {
+        "module": "pocs",
+        "actions": { "view": true, "create": true, "edit": true, "delete": true },
+        "scope": { "view": "all", "edit": "own" }
+      },
+      { "module": "reports", "actions": { "view": true, "export": true }, "scope": { "view": "all" } }
+    ]
+  },
+  {
+    "roleId": "senior-developer",
+    "modules": [
+      { "module": "dashboard", "actions": { "view": true }, "scope": { "view": "own" } },
+      {
+        "module": "projects",
+        "actions": { "view": true },
+        "scope": { "view": "all" },
+        "fields": { "aiAdoption": { "visible": true, "editable": false } }
+      },
+      { "module": "activities", "actions": { "view": true, "create": true, "edit": true, "delete": true }, "scope": { "view": "own", "edit": "own" } },
+      {
+        "module": "people",
+        "actions": { "view": true },
+        "scope": { "view": "own" },
+        "fields": { "experience": { "visible": true, "editable": false } }
+      },
+      { "module": "skills", "actions": { "view": true, "export": true }, "scope": { "view": "own" } },
+      { "module": "learning", "actions": { "view": true, "create": true, "edit": true, "delete": true }, "scope": { "view": "own", "edit": "own" } },
+      { "module": "pocs", "actions": { "view": true, "create": true, "edit": true, "delete": true }, "scope": { "view": "own", "edit": "own" } },
+      { "module": "reports", "actions": { "view": true, "export": true }, "scope": { "view": "own" } }
+    ]
+  },
+  {
+    "roleId": "developer",
+    "modules": [
+      { "module": "dashboard", "actions": { "view": true }, "scope": { "view": "own" } },
+      {
+        "module": "projects",
+        "actions": { "view": true },
+        "scope": { "view": "all" },
+        "fields": { "aiAdoption": { "visible": true, "editable": false } }
+      },
+      { "module": "activities", "actions": { "view": true, "create": true, "edit": true, "delete": true }, "scope": { "view": "own", "edit": "own" } },
+      {
+        "module": "people",
+        "actions": { "view": true },
+        "scope": { "view": "own" },
+        "fields": { "experience": { "visible": true, "editable": false } }
+      },
+      { "module": "skills", "actions": { "view": true, "export": true }, "scope": { "view": "own" } },
+      { "module": "learning", "actions": { "view": true, "create": true, "edit": true, "delete": true }, "scope": { "view": "own", "edit": "own" } },
+      { "module": "pocs", "actions": { "view": true, "create": true, "edit": true, "delete": true }, "scope": { "view": "own", "edit": "own" } },
+      { "module": "reports", "actions": { "view": true, "export": true }, "scope": { "view": "own" } }
+    ]
+  },
+  {
+    "roleId": "intern",
+    "modules": [
+      { "module": "dashboard", "actions": { "view": true }, "scope": { "view": "own" } },
+      {
+        "module": "projects",
+        "actions": { "view": true },
+        "scope": { "view": "all" },
+        "fields": {
+          "client": { "visible": false, "editable": false },
+          "aiAdoption": { "visible": true, "editable": false }
+        }
+      },
+      { "module": "activities", "actions": { "view": true, "create": true, "edit": true, "delete": true }, "scope": { "view": "own", "edit": "own" } },
+      { "module": "people", "actions": { "view": true }, "scope": { "view": "own" } },
+      { "module": "skills", "actions": { "view": true, "export": true }, "scope": { "view": "own" } },
+      { "module": "learning", "actions": { "view": true, "create": true, "edit": true, "delete": true }, "scope": { "view": "own", "edit": "own" } },
+      {
+        "module": "pocs",
+        "actions": { "view": true },
+        "scope": { "view": "own" },
+        "fields": { "hoursSaved": { "visible": false, "editable": false } }
+      },
+      { "module": "reports", "actions": { "view": true, "export": true }, "scope": { "view": "own" } }
+    ]
+  }
+]

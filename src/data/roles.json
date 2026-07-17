@@ -1,0 +1,56 @@
+[
+  {
+    "id": "super-admin",
+    "name": "Super Admin",
+    "description": "Full administrative access to every module, including users, roles and permissions.",
+    "isSystem": true
+  },
+  {
+    "id": "director",
+    "name": "Director",
+    "description": "Portfolio-wide access to all modules with settings, user and role management.",
+    "isSystem": true
+  },
+  {
+    "id": "delivery-manager",
+    "name": "Delivery Manager",
+    "description": "Manages projects, people and delivery data across the portfolio. Read-only settings.",
+    "isSystem": true
+  },
+  {
+    "id": "engineering-manager",
+    "name": "Engineering Manager",
+    "description": "Manages engineering teams, projects and AI adoption data. Read-only settings.",
+    "isSystem": true
+  },
+  {
+    "id": "senior-tech-lead",
+    "name": "Senior Tech Lead",
+    "description": "Portfolio-wide access to delivery and AI adoption data. No settings access.",
+    "isSystem": true
+  },
+  {
+    "id": "tech-lead",
+    "name": "Tech Lead",
+    "description": "Team-scoped dashboards; manages team activities, learning and own POCs.",
+    "isSystem": true
+  },
+  {
+    "id": "senior-developer",
+    "name": "Senior Developer",
+    "description": "Works with own activities, learning records and POCs.",
+    "isSystem": true
+  },
+  {
+    "id": "developer",
+    "name": "Developer",
+    "description": "Works with own activities, learning records and POCs.",
+    "isSystem": true
+  },
+  {
+    "id": "intern",
+    "name": "Intern",
+    "description": "View-only access limited to own records; sensitive fields hidden.",
+    "isSystem": true
+  }
+]

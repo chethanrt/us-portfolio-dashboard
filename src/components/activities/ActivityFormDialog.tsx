@@ -7,6 +7,7 @@ import { z } from "zod";
 import { FormInputField, FormSelectField, FormTextareaField, Modal } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
+import { usePermission } from "@/security";
 import type { Activity, AppSettings, Employee, Project } from "@/types";
 
 const REQUIRED = "This field is required.";
@@ -88,6 +89,11 @@ export function ActivityFormDialog({
   const [isSaving, setIsSaving] = useState(false);
   const isEdit = Boolean(activity);
 
+  // Field-level security: hidden fields are not rendered, read-only fields are disabled.
+  const { canViewField, canEditField } = usePermission();
+  const show = (field: string) => canViewField("activities", field);
+  const readOnly = (field: string) => !canEditField("activities", field);
+
   const form = useForm<ActivityFormValues>({
     resolver: zodResolver(activitySchema),
     defaultValues: EMPTY_VALUES,
@@ -131,69 +137,97 @@ export function ActivityFormDialog({
     >
       <Form {...form}>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
-          <FormSelectField
-            control={form.control}
-            name="employeeId"
-            label="Employee"
-            required
-            options={employees.map((e) => ({ value: e.id, label: e.name }))}
-          />
-          <FormSelectField
-            control={form.control}
-            name="projectId"
-            label="Project"
-            required
-            options={projects.map((p) => ({ value: p.id, label: p.name }))}
-          />
-          <FormInputField control={form.control} name="date" label="Date" type="date" required />
-          <FormSelectField control={form.control} name="tool" label="AI Tool" required options={settings.aiTools} />
-          <FormSelectField
-            control={form.control}
-            name="category"
-            label="Activity Type"
-            required
-            options={settings.activityTypes}
-          />
-          <FormSelectField
-            control={form.control}
-            name="projectStage"
-            label="Project Stage"
-            required
-            options={settings.projectStages}
-          />
-          <FormTextareaField
-            control={form.control}
-            name="promptSummary"
-            label="Prompt Summary"
-            placeholder="What did you ask the AI to do?"
-            maxLength={1000}
-            required
-          />
-          <FormTextareaField
-            control={form.control}
-            name="outcome"
-            label="Outcome"
-            placeholder="What was the result?"
-            maxLength={2000}
-            required
-          />
-          <FormInputField
-            control={form.control}
-            name="hoursSaved"
-            label="Hours Saved"
-            type="number"
-            step="0.5"
-            min="0"
-            max="100"
-            required
-          />
-          <FormSelectField
-            control={form.control}
-            name="impact"
-            label="Impact"
-            required
-            options={settings.impactLevels}
-          />
+          {show("employeeId") && (
+            <FormSelectField
+              control={form.control}
+              name="employeeId"
+              label="Employee"
+              required
+              options={employees.map((e) => ({ value: e.id, label: e.name }))}
+              disabled={readOnly("employeeId")}
+            />
+          )}
+          {show("projectId") && (
+            <FormSelectField
+              control={form.control}
+              name="projectId"
+              label="Project"
+              required
+              options={projects.map((p) => ({ value: p.id, label: p.name }))}
+              disabled={readOnly("projectId")}
+            />
+          )}
+          {show("date") && (
+            <FormInputField control={form.control} name="date" label="Date" type="date" required disabled={readOnly("date")} />
+          )}
+          {show("tool") && (
+            <FormSelectField control={form.control} name="tool" label="AI Tool" required options={settings.aiTools} disabled={readOnly("tool")} />
+          )}
+          {show("category") && (
+            <FormSelectField
+              control={form.control}
+              name="category"
+              label="Activity Type"
+              required
+              options={settings.activityTypes}
+              disabled={readOnly("category")}
+            />
+          )}
+          {show("projectStage") && (
+            <FormSelectField
+              control={form.control}
+              name="projectStage"
+              label="Project Stage"
+              required
+              options={settings.projectStages}
+              disabled={readOnly("projectStage")}
+            />
+          )}
+          {show("promptSummary") && (
+            <FormTextareaField
+              control={form.control}
+              name="promptSummary"
+              label="Prompt Summary"
+              placeholder="What did you ask the AI to do?"
+              maxLength={1000}
+              required
+              disabled={readOnly("promptSummary")}
+            />
+          )}
+          {show("outcome") && (
+            <FormTextareaField
+              control={form.control}
+              name="outcome"
+              label="Outcome"
+              placeholder="What was the result?"
+              maxLength={2000}
+              required
+              disabled={readOnly("outcome")}
+            />
+          )}
+          {show("hoursSaved") && (
+            <FormInputField
+              control={form.control}
+              name="hoursSaved"
+              label="Hours Saved"
+              type="number"
+              step="0.5"
+              min="0"
+              max="100"
+              required
+              disabled={readOnly("hoursSaved")}
+            />
+          )}
+          {show("impact") && (
+            <FormSelectField
+              control={form.control}
+              name="impact"
+              label="Impact"
+              required
+              options={settings.impactLevels}
+              disabled={readOnly("impact")}
+            />
+          )}
 
           <div className="flex justify-end gap-2 sm:col-span-2">
             <Button type="button" variant="secondary" disabled={isSaving} onClick={() => onOpenChange(false)}>

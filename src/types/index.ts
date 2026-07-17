@@ -8,7 +8,8 @@
 // Enumerated values
 // ---------------------------------------------------------------------------
 
-export type Role =
+/** Employee job title (domain data, not authorization). */
+export type EmployeeRole =
   | "Director"
   | "Delivery Manager"
   | "Engineering Manager"
@@ -82,7 +83,7 @@ export interface Employee {
   id: string;
   name: string;
   email: string;
-  role: Role;
+  role: EmployeeRole;
   experience: number;
   team: string;
   primarySkill: string;
@@ -173,7 +174,7 @@ export interface POC {
 
 /** settings.json — application master data */
 export interface AppSettings {
-  roles: Role[];
+  roles: EmployeeRole[];
   technicalSkills: string[];
   aiSkills: string[];
   skillLevels: SkillLevel[];
@@ -192,11 +193,8 @@ export interface AppSettings {
 }
 
 // ---------------------------------------------------------------------------
-// Authentication
+// Authentication & authorization
 // ---------------------------------------------------------------------------
-
-/** Application role: employee roles plus the Super Admin account role. */
-export type UserRole = Role | "Super Admin";
 
 /**
  * users.json — login accounts.
@@ -208,8 +206,12 @@ export interface User {
   id: string;
   username: string;
   password: string;
-  role: UserRole;
+  /** References a role in roles.json — permissions flow from the role. */
+  roleId: string;
   /** Linked employee; empty for accounts like Super Admin. */
   employeeId: string;
   status: "Active" | "Inactive";
 }
+
+// Role & Permission framework types (Role, Permission, Resource, …).
+export * from "./permissions";

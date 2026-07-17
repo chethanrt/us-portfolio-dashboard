@@ -1,26 +1,29 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { employeeService, userService } from "@/services";
-import type { Employee, User } from "@/types";
+import { employeeService, roleService, userService } from "@/services";
+import type { Employee, Role, User } from "@/types";
 
 export interface UserRow extends User {
   employeeName: string;
+  roleName: string;
 }
 
-/** Loads login accounts with linked employee names and exposes CRUD. */
+/** Loads login accounts with employee and role names and exposes CRUD. */
 export function useUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([userService.getAll(), employeeService.getAll()])
-      .then(([allUsers, allEmployees]) => {
+    Promise.all([userService.getAll(), employeeService.getAll(), roleService.getAll()])
+      .then(([allUsers, allEmployees, allRoles]) => {
         if (cancelled) return;
         setUsers(allUsers);
         setEmployees(allEmployees);
+        setRoles(allRoles);
       })
       .catch(() => {
         if (!cancelled) setError("Unable to load user accounts.");
@@ -36,11 +39,13 @@ export function useUsers() {
 
   const rows = useMemo<UserRow[]>(() => {
     const employeeById = new Map(employees.map((e) => [e.id, e.name]));
+    const roleById = new Map(roles.map((r) => [r.id, r.name]));
     return users.map((user) => ({
       ...user,
       employeeName: user.employeeId ? employeeById.get(user.employeeId) ?? "Unknown" : "—",
+      roleName: roleById.get(user.roleId) ?? user.roleId,
     }));
-  }, [users, employees]);
+  }, [users, employees, roles]);
 
   const addUser = useCallback(async (input: Omit<User, "id">) => {
     const created = await userService.create(input);
@@ -57,5 +62,5 @@ export function useUsers() {
     setUsers((current) => current.filter((u) => u.id !== id));
   }, []);
 
-  return { rows, users, employees, isLoading, error, addUser, updateUser, deleteUser };
+  return { rows, users, employees, roles, isLoading, error, addUser, updateUser, deleteUser };
 }
