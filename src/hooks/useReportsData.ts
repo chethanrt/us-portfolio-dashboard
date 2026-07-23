@@ -6,6 +6,7 @@ import {
   pocService,
   projectService,
   skillService,
+  taskService,
 } from "@/services";
 import type { ReportSources } from "@/utils/reportDefinitions";
 
@@ -25,9 +26,10 @@ export function useReportsData() {
       learningService.getAll(),
       skillService.getAll(),
       pocService.getAll(),
+      taskService.getAll(),
     ])
-      .then(([employees, projects, activities, learning, skills, pocs]) => {
-        if (!cancelled) setSources({ employees, projects, activities, learning, skills, pocs });
+      .then(([employees, projects, activities, learning, skills, pocs, tasks]) => {
+        if (!cancelled) setSources({ employees, projects, activities, learning, skills, pocs, tasks });
       })
       .catch(() => {
         if (!cancelled) setError("Unable to load report data.");

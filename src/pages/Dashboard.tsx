@@ -5,12 +5,14 @@ import { ActivityTrendChart } from "@/components/dashboard/ActivityTrendChart";
 import { LearningProgressWidget } from "@/components/dashboard/LearningProgressWidget";
 import { ProjectStatusChart } from "@/components/dashboard/ProjectStatusChart";
 import { RecentActivities } from "@/components/dashboard/RecentActivities";
+import { MyTasksWidget, TasksByStatusChart } from "@/components/dashboard/TaskWidgets";
 import { ToolUsageChart } from "@/components/dashboard/ToolUsageChart";
 import { TopContributors } from "@/components/dashboard/TopContributors";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import type { DashboardData } from "@/hooks/useDashboardData";
+import { useTaskStats } from "@/hooks/useTaskStats";
 import { usePermission } from "@/security";
 
 /** Permission-aware quick actions: hidden without Create permission. */
@@ -79,6 +81,7 @@ export default function Dashboard() {
   const { currentUser } = useAuth();
   const { role, canView } = usePermission();
   const { data, isLoading, error } = useDashboardData();
+  const { data: taskStats } = useTaskStats();
   const firstName = currentUser?.name.split(" ")[0] ?? "there";
 
   if (isLoading || (!data && !error)) {
@@ -106,6 +109,14 @@ export default function Dashboard() {
       />
 
       <KPIRow data={data} />
+
+      {/* Task Board widgets (docs/11 Dashboard Integration) */}
+      {canView("tasks") && taskStats && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <MyTasksWidget data={taskStats} />
+          <TasksByStatusChart data={taskStats} />
+        </div>
+      )}
 
       {/* Charts row 1 — widgets respect module View permissions */}
       <div className="grid gap-4 lg:grid-cols-2">

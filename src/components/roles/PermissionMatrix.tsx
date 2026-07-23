@@ -16,6 +16,8 @@ const ACTION_LABELS: Record<PermissionAction, string> = {
   edit: "Edit",
   delete: "Delete",
   export: "Export",
+  assign: "Assign",
+  comment: "Comment",
 };
 
 const SCOPE_OPTIONS: { value: DataScope; label: string }[] = [

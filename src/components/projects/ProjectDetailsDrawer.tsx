@@ -1,10 +1,14 @@
-import { Brain, GraduationCap, Lightbulb, Users } from "lucide-react";
+import { Brain, GraduationCap, KanbanSquare, Lightbulb, Users } from "lucide-react";
 import type { ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { Drawer, LoadingSkeleton, ProgressBar, StatusBadge } from "@/components/common";
+import { TaskStatusBadge } from "@/components/tasks/TaskBadges";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useProjectDetails } from "@/hooks/useProjectDetails";
+import { useScopedTasks } from "@/hooks/useScopedTasks";
 import { usePermission } from "@/security";
 import type { Employee, Project } from "@/types";
 import { formatDate, getInitials } from "@/utils/format";
@@ -38,9 +42,17 @@ interface ProjectDetailsDrawerProps {
 
 export function ProjectDetailsDrawer({ project, employeesById, onClose }: ProjectDetailsDrawerProps) {
   const { details, isLoading } = useProjectDetails(project);
+  const navigate = useNavigate();
   // Field-level security: hidden fields are omitted from the drawer.
-  const { canViewField } = usePermission();
+  const { canViewField, canView } = usePermission();
   const show = (field: string) => canViewField("projects", field);
+
+  // Task Board integration (docs/11): project tasks only, never standalone.
+  const showTasks = canView("tasks");
+  const { tasks, workflow } = useScopedTasks(showTasks && Boolean(project));
+  const projectTasks = project
+    ? tasks.filter((task) => task.projectId === project.id && !task.archived)
+    : [];
 
   if (!project) return null;
 
@@ -93,6 +105,40 @@ export function ProjectDetailsDrawer({ project, employeesById, onClose }: Projec
         </ul>
       </Section>
       <Separator />
+
+      {/* Tasks (Task Board integration) */}
+      {showTasks && (
+        <>
+          <Section icon={<KanbanSquare className="size-4 text-primary" />} title={`Tasks (${projectTasks.length})`}>
+            {projectTasks.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No tasks linked to this project yet.</p>
+            ) : (
+              <ul className="space-y-2">
+                {projectTasks.slice(0, 5).map((task) => (
+                  <li key={task.id} className="flex items-center justify-between gap-2 rounded-lg border p-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{task.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {task.taskNumber} · {employeesById.get(task.assigneeId)?.name ?? "Unknown"}
+                      </p>
+                    </div>
+                    <TaskStatusBadge status={task.status} workflow={workflow} />
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() => navigate(`/tasks?project=${project.id}`)}
+            >
+              View on Task Board
+            </Button>
+          </Section>
+          <Separator />
+        </>
+      )}
 
       {isLoading || !details ? (
         <LoadingSkeleton variant="list" count={3} />

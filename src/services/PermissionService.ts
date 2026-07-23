@@ -20,11 +20,34 @@ class PermissionService {
   private load(): Permission[] {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return JSON.parse(stored) as Permission[];
+      if (stored) return this.mergeWithSeed(JSON.parse(stored) as Permission[]);
     } catch {
       // fall through to seed data on corrupt storage
     }
     return seedPermissions;
+  }
+
+  /**
+   * Modules shipped after a Local Storage snapshot was saved (e.g. the Task
+   * Board) would otherwise be missing and silently denied. Merge in seed
+   * roles and modules the stored copy does not know about, without touching
+   * any grants the user has edited.
+   */
+  private mergeWithSeed(stored: Permission[]): Permission[] {
+    const byRole = new Map(stored.map((permission) => [permission.roleId, permission]));
+    for (const seed of seedPermissions) {
+      const existing = byRole.get(seed.roleId);
+      if (!existing) {
+        byRole.set(seed.roleId, seed);
+        continue;
+      }
+      const known = new Set(existing.modules.map((m) => m.module));
+      const missing = seed.modules.filter((m) => !known.has(m.module));
+      if (missing.length > 0) {
+        byRole.set(seed.roleId, { ...existing, modules: [...existing.modules, ...missing] });
+      }
+    }
+    return [...byRole.values()];
   }
 
   private persist(permissions: Permission[]): void {

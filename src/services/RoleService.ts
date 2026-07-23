@@ -15,7 +15,13 @@ class RoleService {
   private load(): Role[] {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return JSON.parse(stored) as Role[];
+      if (stored) {
+        // Merge in system roles shipped after this snapshot was saved.
+        const roles = JSON.parse(stored) as Role[];
+        const known = new Set(roles.map((role) => role.id));
+        const missing = seedRoles.filter((role) => role.isSystem && !known.has(role.id));
+        return missing.length > 0 ? [...roles, ...missing] : roles;
+      }
     } catch {
       // fall through to seed data on corrupt storage
     }

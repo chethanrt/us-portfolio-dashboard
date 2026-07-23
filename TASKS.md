@@ -203,6 +203,396 @@ Before starting any task:
 - [x] T106b - Elevated access: Director = Super Admin; DM/EM/STL full access except Settings editing and User Management (added)
 
 ---
+---
+
+# Task Board Module
+
+## T301 - Task Board Foundation
+
+- Create Task Board module
+- Add navigation menu
+- Configure routing
+- Create page layout
+- Create reusable folder structure
+- Configure module entry point
+
+Status: Pending
+
+---
+
+## T302 - Task Data Model
+
+- Create Task model
+- Create Task Type definitions
+- Create Task Category model
+- Create Workflow model
+- Create Comment model
+- Create Attachment model
+
+Status: Pending
+
+---
+
+## T303 - JSON Configuration
+
+Create
+
+- tasks.json
+- taskWorkflow.json
+- taskCategories.json
+
+Generate realistic sample data.
+
+Status: Pending
+
+---
+
+## T304 - Task Services
+
+Create
+
+- TaskService
+- TaskBoardService
+- TaskFilterService
+- TaskStatisticsService
+- TaskWorkflowService
+- TaskPermissionService
+- TaskSearchService
+- TaskExportService
+
+Status: Pending
+
+---
+
+## T305 - Board View
+
+Implement
+
+- Kanban Board
+- Dynamic Columns
+- Column Headers
+- Task Count
+- Horizontal Scrolling
+- Vertical Scrolling
+
+Status: Pending
+
+---
+
+## T306 - Drag & Drop
+
+Implement using @dnd-kit
+
+Support
+
+- Drag within column
+- Drag across columns
+- Update Status
+- Update Display Order
+- Persist changes
+
+Status: Pending
+
+---
+
+## T307 - Task Cards
+
+Create reusable Task Card component.
+
+Display
+
+- Task Number
+- Title
+- Project Badge
+- Standalone Badge
+- Category
+- Assignee
+- Priority
+- Due Date
+- Estimate
+- Labels
+- AI Tool
+
+Status: Pending
+
+---
+
+## T308 - Task Details Drawer
+
+Create right-side drawer.
+
+Include
+
+- Overview
+- Assignment
+- Project
+- Scheduling
+- AI Information
+- Comments
+- Attachments
+- Save
+- Cancel
+
+Status: Pending
+
+---
+
+## T309 - Task CRUD
+
+Support
+
+- Create
+- Edit
+- Delete
+- Duplicate
+- Archive
+- Restore
+
+Status: Pending
+
+---
+
+## T310 - Quick Task
+
+Create lightweight dialog.
+
+Fields
+
+- Title
+- Assignee
+- Project
+- Category
+- Priority
+- Due Date
+
+Automatically create task in To Do.
+
+Status: Pending
+
+---
+
+## T311 - Board Filters
+
+Support
+
+- Project
+- Task Type
+- Category
+- Status
+- Priority
+- Assignee
+- Reporter
+- Labels
+- AI Tool
+- Due Date
+
+Status: Pending
+
+---
+
+## T312 - Search
+
+Search
+
+- Task Number
+- Title
+- Description
+- Labels
+- Category
+- Project
+- Assignee
+- Reporter
+
+Status: Pending
+
+---
+
+## T313 - Board Grouping
+
+Support grouping by
+
+- Status
+- Project
+- Assignee
+- Category
+- Priority
+
+Status: Pending
+
+---
+
+## T314 - List View
+
+Create table view.
+
+Support
+
+- Sorting
+- Filtering
+- Pagination
+- Column Visibility
+
+Status: Pending
+
+---
+
+## T315 - Project Integration
+
+Integrate Task Board into Projects.
+
+Add
+
+Tasks Tab
+
+Display project-specific tasks.
+
+Status: Pending
+
+---
+
+## T316 - People Integration
+
+Integrate into Employee Profile.
+
+Display
+
+- Assigned Tasks
+- Completed Tasks
+- Workload
+- Standalone Tasks
+- Project Tasks
+
+Status: Pending
+
+---
+
+## T317 - AI Activity Integration
+
+Support linking
+
+- AI Activity
+- AI Tool
+- Hours Saved
+- Prompt Reference
+
+Status: Pending
+
+---
+
+## T318 - Learning & POC Integration
+
+Support
+
+- Learning Tasks
+- POC Links
+- Related Records
+
+Status: Pending
+
+---
+
+## T319 - Dashboard Integration
+
+Create widgets
+
+- My Tasks
+- Recent Tasks
+- Tasks by Status
+- Tasks by Priority
+- Overdue Tasks
+- Due Today
+- Standalone Tasks
+- Project Tasks
+- Workload by Employee
+
+Status: Pending
+
+---
+
+## T320 - Reports
+
+Create reporting support.
+
+Include
+
+- Tasks by Employee
+- Tasks by Project
+- Tasks by Category
+- Tasks by Status
+- Tasks by Priority
+- Completion Trends
+- Workload Distribution
+
+Status: Pending
+
+---
+
+## T321 - Permissions
+
+Integrate with existing permission framework.
+
+Support
+
+- tasks.view
+- tasks.create
+- tasks.edit
+- tasks.delete
+- tasks.assign
+- tasks.comment
+- tasks.export
+
+Respect field-level permissions.
+
+Status: Pending
+
+---
+
+## T322 - Responsive Design
+
+Support
+
+- Desktop
+- Tablet
+- Mobile
+
+Optimize Board and List views.
+
+Status: Pending
+
+---
+
+## T323 - Performance Optimization
+
+Implement
+
+- Lazy Loading
+- Memoization
+- Optimized Rendering
+- Virtualization where appropriate
+
+Status: Pending
+
+---
+
+## T324 - Testing & Validation
+
+Validate
+
+- Board View
+- List View
+- Drag & Drop
+- CRUD
+- Search
+- Filters
+- Grouping
+- Permissions
+- Dashboard Integration
+- Project Integration
+- People Integration
+
+Fix all TypeScript, ESLint, and build errors.
+
+Status: Pending
 
 # Phase 14b - Authentication (added by request)
 
@@ -279,3 +669,5 @@ Example
 T042 - Build KPI Cards
 
 Then STOP and wait for approval.
+
+
