@@ -94,7 +94,8 @@
       { "key": "primarySkill", "label": "Primary Skill" },
       { "key": "secondarySkill", "label": "Secondary Skill" },
       { "key": "currentProject", "label": "Current Project" },
-      { "key": "status", "label": "Status" }
+      { "key": "status", "label": "Status" },
+      { "key": "managerId", "label": "Reports To" }
     ]
   },
   {

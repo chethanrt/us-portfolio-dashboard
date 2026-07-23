@@ -3,7 +3,6 @@ import { Plus, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
   ALL_FILTER,
-  ConfirmationDialog,
   EmptyState,
   FilterBar,
   FilterSelect,
@@ -14,6 +13,7 @@ import {
 import { EmployeeCard } from "@/components/people/EmployeeCard";
 import { EmployeeFormDialog } from "@/components/people/EmployeeFormDialog";
 import { EmployeeProfileDrawer } from "@/components/people/EmployeeProfileDrawer";
+import { OffboardEmployeeDialog } from "@/components/people/OffboardEmployeeDialog";
 import { Button } from "@/components/ui/button";
 import { ALL_ROLES } from "@/context/AuthContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,7 +23,7 @@ import { usePermission } from "@/security";
 import type { Employee } from "@/types";
 
 export default function People() {
-  const { employees, projects, isLoading, error, addEmployee, updateEmployee, deleteEmployee } =
+  const { employees, projects, isLoading, error, addEmployee, updateEmployee, offboardEmployee } =
     useEmployees();
   const { currentUser } = useAuth();
   const { canCreate, canEditRow, canDeleteRow, isOwnDataScope } = usePermission();
@@ -43,7 +43,20 @@ export default function People() {
   const [viewing, setViewing] = useState<EmployeeWithStats | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<EmployeeWithStats | null>(null);
-  const [deleting, setDeleting] = useState<EmployeeWithStats | null>(null);
+  const [offboarding, setOffboarding] = useState<EmployeeWithStats | null>(null);
+
+  // People who'd be left reporting to a departed manager, and who's eligible to take over for them.
+  const directReports = useMemo(
+    () =>
+      offboarding
+        ? employees.filter((e) => e.managerId === offboarding.id && e.status !== "Ex-Employee")
+        : [],
+    [employees, offboarding]
+  );
+  const candidateManagers = useMemo(
+    () => (offboarding ? employees.filter((e) => e.id !== offboarding.id && e.status !== "Ex-Employee") : []),
+    [employees, offboarding]
+  );
 
   const technologyOptions = useMemo(
     () => [...new Set(visibleEmployees.map((e) => e.primarySkill))].sort(),
@@ -84,19 +97,18 @@ export default function People() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleting) return;
+  const handleOffboard = async (reassignments: Record<string, string>) => {
+    if (!offboarding) return;
     try {
-      await deleteEmployee(deleting.id);
-      toast.success("Employee deleted successfully.");
-    } catch (err) {
-      toast.error(
-        err instanceof Error && err.message === "REFERENCED"
-          ? "Cannot delete — this employee has linked activities or POCs."
-          : "Unable to delete. Please try again."
+      await offboardEmployee(offboarding.id, reassignments);
+      toast.success(
+        directReports.length > 0
+          ? `${offboarding.name} marked as Ex-Employee. ${directReports.length} report(s) reassigned.`
+          : `${offboarding.name} marked as Ex-Employee.`
       );
-    } finally {
-      setDeleting(null);
+    } catch {
+      toast.error("Unable to update. Please try again.");
+      throw new Error("offboard failed");
     }
   };
 
@@ -181,13 +193,17 @@ export default function People() {
                 setEditing(e);
                 setFormOpen(true);
               }}
-              onDelete={setDeleting}
+              onRemove={setOffboarding}
             />
           ))}
         </div>
       )}
 
-      <EmployeeProfileDrawer employee={viewing} onClose={() => setViewing(null)} />
+      <EmployeeProfileDrawer
+        employee={viewing}
+        managerName={employees.find((e) => e.id === viewing?.managerId)?.name}
+        onClose={() => setViewing(null)}
+      />
 
       <EmployeeFormDialog
         open={formOpen}
@@ -198,15 +214,13 @@ export default function People() {
         onSave={handleSave}
       />
 
-      <ConfirmationDialog
-        open={Boolean(deleting)}
-        onOpenChange={(open) => !open && setDeleting(null)}
-        onConfirm={handleDelete}
-        message={
-          deleting
-            ? `Are you sure you want to delete ${deleting.name}? This cannot be undone.`
-            : "Are you sure you want to delete this record?"
-        }
+      <OffboardEmployeeDialog
+        open={Boolean(offboarding)}
+        onOpenChange={(open) => !open && setOffboarding(null)}
+        employee={offboarding}
+        directReports={directReports}
+        candidateManagers={candidateManagers}
+        onConfirm={handleOffboard}
       />
     </div>
   );

@@ -58,8 +58,17 @@ Structure
 "secondarySkill":"",
 "currentProject":"",
 "profileImage":"",
-"status":"Active"
+"status":"Active",
+"managerId":null
 }
+
+status is one of Active, Inactive, Ex-Employee. Employees are never deleted
+from this file — removing one sets status to Ex-Employee instead, so
+activities.json/pocs.json/learning.json relations stay valid.
+
+managerId is the id of the employee this person reports to, or null at the
+top of the hierarchy (e.g. Director). Nobody's managerId may point at an
+Ex-Employee — offboarding an employee reassigns their direct reports first.
 
 Example
 
@@ -74,7 +83,8 @@ Example
 "secondarySkill":"React",
 "currentProject":"Project Phoenix",
 "profileImage":"john.png",
-"status":"Active"
+"status":"Active",
+"managerId":"EMP004"
 }
 
 ---

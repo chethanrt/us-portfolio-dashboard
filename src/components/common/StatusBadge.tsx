@@ -15,6 +15,7 @@ const STATUS_STYLES: Record<string, string> = {
   Idea: "border-slate-200 bg-slate-50 text-slate-600",
   "Not Started": "border-slate-200 bg-slate-50 text-slate-600",
   Inactive: "border-slate-200 bg-slate-50 text-slate-600",
+  "Ex-Employee": "border-red-200 bg-red-50 text-red-700",
   High: "border-green-200 bg-green-50 text-green-700",
   Medium: "border-orange-200 bg-orange-50 text-orange-700",
   Low: "border-slate-200 bg-slate-50 text-slate-600",

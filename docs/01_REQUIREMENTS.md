@@ -168,6 +168,8 @@ Basic Information
 - Experience
 - Email
 - Team
+- Status (Active / Inactive / Ex-Employee)
+- Reports To (manager, another employee)
 
 Professional Information
 
@@ -182,6 +184,16 @@ Statistics
 - Learning %
 - POCs
 - Innovation Ideas
+
+Offboarding
+
+- Removing an employee never deletes their record — it sets Status to
+  Ex-Employee so historical activities, POCs and learning records stay
+  intact and their profile remains visible (with an Ex-Employee badge).
+- If the employee being removed has direct reports (other employees whose
+  "Reports To" points at them), the admin must choose a new manager for
+  each report before the removal completes — nobody is left reporting to
+  someone who has left.
 
 ---
 
