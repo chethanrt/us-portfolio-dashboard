@@ -1,9 +1,12 @@
 import { Drawer, LoadingSkeleton, ProgressBar, SkillBadge, StatusBadge } from "@/components/common";
+import { TaskStatusBadge } from "@/components/tasks/TaskBadges";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEmployeeDetails } from "@/hooks/useEmployeeDetails";
 import type { EmployeeWithStats } from "@/hooks/useEmployees";
+import { useScopedTasks } from "@/hooks/useScopedTasks";
 import { usePermission } from "@/security";
+import { taskStatisticsService } from "@/services";
 import type { SkillLevel } from "@/types";
 import { formatDate } from "@/utils/format";
 import { SKILL_COLUMNS } from "@/utils/skills";
@@ -34,8 +37,18 @@ interface EmployeeProfileDrawerProps {
 export function EmployeeProfileDrawer({ employee, onClose }: EmployeeProfileDrawerProps) {
   const { details, isLoading } = useEmployeeDetails(employee);
   // Field-level security: hidden fields are omitted from the drawer.
-  const { canViewField } = usePermission();
+  const { canViewField, canView } = usePermission();
   const show = (field: string) => canViewField("people", field);
+
+  // Task Board integration (docs/11 People integration).
+  const showTasks = canView("tasks");
+  const { tasks, workflow } = useScopedTasks(showTasks && Boolean(employee));
+  const taskSummary = employee ? taskStatisticsService.employeeSummary(tasks, employee.id) : null;
+  const employeeTasks = employee
+    ? tasks
+        .filter((task) => task.assigneeId === employee.id && !task.archived)
+        .sort((a, b) => b.updatedDate.localeCompare(a.updatedDate))
+    : [];
 
   if (!employee) return null;
 
@@ -66,6 +79,7 @@ export function EmployeeProfileDrawer({ employee, onClose }: EmployeeProfileDraw
           <TabsTrigger value="skills">Skills</TabsTrigger>
           <TabsTrigger value="learning">Learning</TabsTrigger>
           <TabsTrigger value="activities">Activities</TabsTrigger>
+          {showTasks && <TabsTrigger value="tasks">Tasks</TabsTrigger>}
           <TabsTrigger value="pocs">POCs</TabsTrigger>
         </TabsList>
 
@@ -143,6 +157,41 @@ export function EmployeeProfileDrawer({ employee, onClose }: EmployeeProfileDraw
             ))
           )}
         </TabsContent>
+
+        {showTasks && (
+          <TabsContent value="tasks" className="mt-4 space-y-4">
+            {taskSummary && (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <StatTile value={taskSummary.total} label="Assigned" />
+                <StatTile value={taskSummary.completed} label="Completed" />
+                <StatTile value={taskSummary.overdue} label="Overdue" />
+                <StatTile value={`${taskSummary.actualHours}/${taskSummary.estimateHours}h`} label="Actual / Est." />
+              </div>
+            )}
+            {taskSummary && (
+              <p className="text-xs text-muted-foreground">
+                {taskSummary.projectTasks} project task{taskSummary.projectTasks === 1 ? "" : "s"} ·{" "}
+                {taskSummary.standalone} standalone · {taskSummary.inProgress} in progress
+              </p>
+            )}
+            {employeeTasks.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No tasks assigned.</p>
+            ) : (
+              employeeTasks.slice(0, 8).map((task) => (
+                <div key={task.id} className="flex items-center justify-between gap-2 rounded-lg border p-2.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{task.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {task.taskNumber} · {task.priority}
+                      {task.dueDate ? ` · due ${formatDate(task.dueDate)}` : ""}
+                    </p>
+                  </div>
+                  <TaskStatusBadge status={task.status} workflow={workflow} />
+                </div>
+              ))
+            )}
+          </TabsContent>
+        )}
 
         <TabsContent value="pocs" className="mt-4 space-y-2">
           {isLoading || !details ? (

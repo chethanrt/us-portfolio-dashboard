@@ -31,6 +31,34 @@
     ]
   },
   {
+    "id": "tasks",
+    "label": "Task Board",
+    "path": "/tasks",
+    "description": "Kanban board for project and standalone engineering work.",
+    "actions": ["view", "create", "edit", "delete", "assign", "comment", "export"],
+    "scopable": true,
+    "fields": [
+      { "key": "title", "label": "Title" },
+      { "key": "description", "label": "Description" },
+      { "key": "type", "label": "Task Type" },
+      { "key": "category", "label": "Category" },
+      { "key": "projectId", "label": "Project" },
+      { "key": "assigneeId", "label": "Assignee" },
+      { "key": "reporterId", "label": "Reporter" },
+      { "key": "priority", "label": "Priority" },
+      { "key": "status", "label": "Status" },
+      { "key": "estimateHours", "label": "Estimate Hours" },
+      { "key": "actualHours", "label": "Actual Hours" },
+      { "key": "startDate", "label": "Start Date" },
+      { "key": "dueDate", "label": "Due Date" },
+      { "key": "completedDate", "label": "Completed Date" },
+      { "key": "labels", "label": "Labels" },
+      { "key": "aiTool", "label": "AI Tool" },
+      { "key": "linkedActivityId", "label": "Linked AI Activity" },
+      { "key": "linkedPocId", "label": "Linked POC" }
+    ]
+  },
+  {
     "id": "activities",
     "label": "AI Activities",
     "path": "/activities",

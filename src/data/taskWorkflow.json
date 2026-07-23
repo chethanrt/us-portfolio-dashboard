@@ -1,0 +1,56 @@
+[
+  {
+    "id": "backlog",
+    "name": "Backlog",
+    "color": "#64748b",
+    "order": 1,
+    "description": "Captured but not yet planned.",
+    "isFinalState": false,
+    "percentComplete": 0
+  },
+  {
+    "id": "to-do",
+    "name": "To Do",
+    "color": "#3b82f6",
+    "order": 2,
+    "description": "Planned and ready to start.",
+    "isFinalState": false,
+    "percentComplete": 0
+  },
+  {
+    "id": "in-progress",
+    "name": "In Progress",
+    "color": "#6366f1",
+    "order": 3,
+    "description": "Actively being worked on.",
+    "isFinalState": false,
+    "percentComplete": 50
+  },
+  {
+    "id": "code-review",
+    "name": "Code Review",
+    "color": "#a855f7",
+    "order": 4,
+    "description": "Waiting for or under review.",
+    "isFinalState": false,
+    "percentComplete": 70
+  },
+  {
+    "id": "testing",
+    "name": "Testing",
+    "color": "#f97316",
+    "order": 5,
+    "description": "Being verified by QA or the author.",
+    "isFinalState": false,
+    "percentComplete": 80
+  },
+  {
+    "id": "done",
+    "name": "Done",
+    "color": "#22c55e",
+    "order": 6,
+    "description": "Completed work.",
+    "isFinalState": true,
+    "percentComplete": 100
+  }
+]

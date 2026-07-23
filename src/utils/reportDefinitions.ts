@@ -1,5 +1,5 @@
 import { format, subDays } from "date-fns";
-import type { Activity, Employee, LearningRecord, POC, Project, SkillRecord } from "@/types";
+import type { Activity, Employee, LearningRecord, POC, Project, SkillRecord, Task } from "@/types";
 import { SKILL_COLUMNS } from "./skills";
 
 export interface ReportSources {
@@ -9,6 +9,7 @@ export interface ReportSources {
   learning: LearningRecord[];
   skills: SkillRecord[];
   pocs: POC[];
+  tasks: Task[];
 }
 
 export interface ReportFilters {
@@ -38,6 +39,8 @@ export const REPORT_TYPES = [
   "Skill Matrix",
   "POCs",
   "Team Performance",
+  "Task Workload",
+  "Tasks by Project",
 ] as const;
 
 export type ReportType = (typeof REPORT_TYPES)[number];
@@ -312,6 +315,101 @@ function teamPerformanceReport(sources: ReportSources, rangeDays: number): Repor
   };
 }
 
+function isTaskDone(task: Task): boolean {
+  return task.percentComplete >= 100 || Boolean(task.completedDate);
+}
+
+/** Task workload distribution per employee (docs/11 Reports Integration). */
+function taskWorkloadReport(sources: ReportSources): ReportResult {
+  const tasks = sources.tasks;
+  const today = format(new Date(), "yyyy-MM-dd");
+  const overdue = tasks.filter((t) => t.dueDate && t.dueDate < today && !isTaskDone(t));
+  const byEmployee = new Map<string, Task[]>();
+  for (const task of tasks) {
+    const list = byEmployee.get(task.assigneeId) ?? [];
+    list.push(task);
+    byEmployee.set(task.assigneeId, list);
+  }
+  const employeeById = new Map(sources.employees.map((e) => [e.id, e]));
+
+  return {
+    metrics: [
+      { label: "Tasks", value: tasks.length },
+      { label: "Completed", value: tasks.filter(isTaskDone).length },
+      { label: "Overdue", value: overdue.length },
+      { label: "Standalone", value: tasks.filter((t) => t.type === "Standalone").length },
+    ],
+    columns: [
+      { key: "employee", label: "Employee" },
+      { key: "role", label: "Role" },
+      { key: "assigned", label: "Assigned" },
+      { key: "completed", label: "Completed" },
+      { key: "overdue", label: "Overdue" },
+      { key: "estimate", label: "Estimate (h)" },
+      { key: "actual", label: "Actual (h)" },
+    ],
+    rows: [...byEmployee.entries()]
+      .map(([employeeId, own]) => {
+        const employee = employeeById.get(employeeId);
+        return {
+          employee: employee?.name ?? "Unknown",
+          role: employee?.role ?? "—",
+          assigned: own.length,
+          completed: own.filter(isTaskDone).length,
+          overdue: own.filter((t) => t.dueDate && t.dueDate < today && !isTaskDone(t)).length,
+          estimate: own.reduce((s, t) => s + t.estimateHours, 0),
+          actual: Math.round(own.reduce((s, t) => s + t.actualHours, 0) * 10) / 10,
+        };
+      })
+      .sort((a, b) => Number(b.assigned) - Number(a.assigned)),
+  };
+}
+
+/** Tasks grouped per project, including the standalone bucket. */
+function tasksByProjectReport(sources: ReportSources, projectId: string): ReportResult {
+  const tasks = sources.tasks.filter(
+    (t) => projectId === "all" || t.projectId === projectId || (projectId === "all" && t.projectId === null)
+  );
+  const buckets: { key: string; label: string; tasks: Task[] }[] = [
+    ...sources.projects
+      .filter((p) => projectId === "all" || p.id === projectId)
+      .map((p) => ({ key: p.id, label: p.name, tasks: tasks.filter((t) => t.projectId === p.id) })),
+    ...(projectId === "all"
+      ? [{ key: "standalone", label: "Standalone Tasks", tasks: tasks.filter((t) => t.projectId === null) }]
+      : []),
+  ];
+
+  return {
+    metrics: [
+      { label: "Tasks", value: tasks.length },
+      { label: "Completed", value: tasks.filter(isTaskDone).length },
+      { label: "Remaining", value: tasks.filter((t) => !isTaskDone(t)).length },
+      {
+        label: "Hours Logged",
+        value: Math.round(tasks.reduce((s, t) => s + t.actualHours, 0) * 10) / 10,
+      },
+    ],
+    columns: [
+      { key: "project", label: "Project" },
+      { key: "tasks", label: "Tasks" },
+      { key: "completed", label: "Completed" },
+      { key: "remaining", label: "Remaining" },
+      { key: "estimate", label: "Estimate (h)" },
+      { key: "actual", label: "Actual (h)" },
+    ],
+    rows: buckets
+      .filter((bucket) => bucket.tasks.length > 0)
+      .map((bucket) => ({
+        project: bucket.label,
+        tasks: bucket.tasks.length,
+        completed: bucket.tasks.filter(isTaskDone).length,
+        remaining: bucket.tasks.filter((t) => !isTaskDone(t)).length,
+        estimate: bucket.tasks.reduce((s, t) => s + t.estimateHours, 0),
+        actual: Math.round(bucket.tasks.reduce((s, t) => s + t.actualHours, 0) * 10) / 10,
+      })),
+  };
+}
+
 export function computeReport(type: ReportType, sources: ReportSources, filters: ReportFilters): ReportResult {
   switch (type) {
     case "Weekly Summary":
@@ -330,6 +428,10 @@ export function computeReport(type: ReportType, sources: ReportSources, filters:
       return pocsReport(sources, filters.projectId);
     case "Team Performance":
       return teamPerformanceReport(sources, filters.rangeDays);
+    case "Task Workload":
+      return taskWorkloadReport(sources);
+    case "Tasks by Project":
+      return tasksByProjectReport(sources, filters.projectId);
   }
 }
 
@@ -345,6 +447,7 @@ export function scopeSourcesToEmployee(sources: ReportSources, employeeId: strin
     learning: sources.learning.filter((l) => l.employeeId === employeeId),
     skills: sources.skills.filter((s) => s.employeeId === employeeId),
     pocs: sources.pocs.filter((p) => p.ownerId === employeeId),
+    tasks: sources.tasks.filter((t) => t.assigneeId === employeeId || t.reporterId === employeeId),
   };
 }
 

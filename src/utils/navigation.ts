@@ -3,6 +3,7 @@ import {
   Brain,
   FolderKanban,
   GraduationCap,
+  KanbanSquare,
   LayoutDashboard,
   LayoutGrid,
   Lightbulb,
@@ -26,6 +27,7 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { title: "Dashboard", path: "/dashboard", icon: LayoutDashboard, module: "dashboard" },
   { title: "Projects", path: "/projects", icon: FolderKanban, module: "projects" },
+  { title: "Task Board", path: "/tasks", icon: KanbanSquare, module: "tasks" },
   { title: "AI Activities", path: "/activities", icon: Brain, module: "activities" },
   { title: "People", path: "/people", icon: Users, module: "people" },
   { title: "Skill Matrix", path: "/skills", icon: LayoutGrid, module: "skills" },
