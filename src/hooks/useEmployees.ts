@@ -88,16 +88,9 @@ export function useEmployees() {
     setEmployees((current) => current.map((e) => (e.id === id ? updated : e)));
   }, []);
 
-  /** Marks an employee as an Ex-Employee and reassigns their direct reports. */
-  const offboardEmployee = useCallback(async (id: string, reassignments: Record<string, string>) => {
-    await employeeService.offboard(id, reassignments);
-    setEmployees((current) =>
-      current.map((employee) => {
-        if (employee.id === id) return { ...employee, status: "Ex-Employee" };
-        const newManagerId = reassignments[employee.id];
-        return newManagerId ? { ...employee, managerId: newManagerId } : employee;
-      })
-    );
+  const deleteEmployee = useCallback(async (id: string) => {
+    await employeeService.delete(id);
+    setEmployees((current) => current.filter((e) => e.id !== id));
   }, []);
 
   return {
@@ -107,6 +100,6 @@ export function useEmployees() {
     error,
     addEmployee,
     updateEmployee,
-    offboardEmployee,
+    deleteEmployee,
   };
 }

@@ -12,10 +12,7 @@ import type { Employee, Project } from "@/types";
 
 const REQUIRED = "This field is required.";
 
-const TEAMS = ["Leadership", "Software Engineering", "Marketing & Communication", "Quality Assurance"];
-
-/** Sentinel for "no manager" — Radix Select can't hold an empty string value. */
-const NO_MANAGER = "__none__";
+const TEAMS = ["Magento", "PHP", "CMS", "Marketing", "Frontend", "Leadership"];
 
 function buildEmployeeSchema(takenEmails: Set<string>) {
   return z.object({
@@ -45,7 +42,6 @@ function buildEmployeeSchema(takenEmails: Set<string>) {
     secondarySkill: z.string().trim(),
     currentProject: z.string().min(1, REQUIRED),
     status: z.string().min(1, REQUIRED),
-    managerId: z.string(),
   });
 }
 
@@ -61,7 +57,6 @@ const EMPTY_VALUES: EmployeeFormValues = {
   secondarySkill: "",
   currentProject: "US Portfolio",
   status: "Active",
-  managerId: NO_MANAGER,
 };
 
 interface EmployeeFormDialogProps {
@@ -117,28 +112,11 @@ export function EmployeeFormDialog({
               secondarySkill: employee.secondarySkill,
               currentProject: employee.currentProject,
               status: employee.status,
-              managerId: employee.managerId ?? NO_MANAGER,
             }
           : EMPTY_VALUES
       );
     }
   }, [open, employee, form]);
-
-  // Can't report to yourself or to one of your own direct reports (would create a cycle).
-  const managerOptions = useMemo(() => {
-    const ownDirectReportIds = new Set(
-      employees.filter((e) => employee && e.managerId === employee.id).map((e) => e.id)
-    );
-    return [
-      { value: NO_MANAGER, label: "— No manager (top of hierarchy) —" },
-      ...employees
-        .filter(
-          (e) =>
-            e.id !== employee?.id && e.status !== "Ex-Employee" && !ownDirectReportIds.has(e.id)
-        )
-        .map((e) => ({ value: e.id, label: `${e.name} (${e.role})` })),
-    ];
-  }, [employees, employee]);
 
   const handleSubmit = form.handleSubmit(async (values) => {
     setIsSaving(true);
@@ -154,7 +132,6 @@ export function EmployeeFormDialog({
         currentProject: values.currentProject,
         profileImage: employee?.profileImage ?? "",
         status: values.status as Employee["status"],
-        managerId: values.managerId === NO_MANAGER ? null : values.managerId,
       });
       onOpenChange(false);
     } catch {
@@ -216,18 +193,9 @@ export function EmployeeFormDialog({
               control={form.control}
               name="status"
               label="Status"
-              options={["Active", "Inactive", "Ex-Employee"]}
+              options={["Active", "Inactive"]}
               required
               disabled={readOnly("status")}
-            />
-          )}
-          {show("managerId") && (
-            <FormSelectField
-              control={form.control}
-              name="managerId"
-              label="Reports To"
-              options={managerOptions}
-              disabled={readOnly("managerId")}
             />
           )}
           {show("primarySkill") && (
@@ -235,7 +203,7 @@ export function EmployeeFormDialog({
               control={form.control}
               name="primarySkill"
               label="Primary Skill"
-              placeholder="e.g. Software Engineering"
+              placeholder="e.g. Magento"
               required
               disabled={readOnly("primarySkill")}
             />

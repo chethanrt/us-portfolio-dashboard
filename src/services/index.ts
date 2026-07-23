@@ -1,5 +1,4 @@
 export { employeeService } from "./EmployeeService";
-export { calendarService } from "./CalendarService";
 export { projectService } from "./ProjectService";
 export { activityService } from "./ActivityService";
 export { skillService } from "./SkillService";
