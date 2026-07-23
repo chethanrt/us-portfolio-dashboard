@@ -9,7 +9,7 @@
   },
   {
     "id": "USR001",
-    "username": "niraj.narkhede",
+    "username": "michael.thompson",
     "password": "Welcome@123",
     "roleId": "director",
     "employeeId": "EMP001",
@@ -17,7 +17,7 @@
   },
   {
     "id": "USR002",
-    "username": "sony.panchakshari",
+    "username": "priya.sharma",
     "password": "Welcome@123",
     "roleId": "delivery-manager",
     "employeeId": "EMP002",
@@ -25,79 +25,79 @@
   },
   {
     "id": "USR003",
-    "username": "avinash.sreeramula",
+    "username": "david.chen",
     "password": "Welcome@123",
-    "roleId": "engineering-manager",
+    "roleId": "delivery-manager",
     "employeeId": "EMP003",
     "status": "Active"
   },
   {
     "id": "USR004",
-    "username": "benjamin.samodar",
+    "username": "rajesh.kumar",
     "password": "Welcome@123",
-    "roleId": "tech-lead",
+    "roleId": "engineering-manager",
     "employeeId": "EMP004",
     "status": "Active"
   },
   {
     "id": "USR005",
-    "username": "nikitha.r",
+    "username": "sarah.mitchell",
     "password": "Welcome@123",
-    "roleId": "developer",
+    "roleId": "engineering-manager",
     "employeeId": "EMP005",
     "status": "Active"
   },
   {
     "id": "USR006",
-    "username": "ravi.dodwad",
+    "username": "anand.krishnan",
     "password": "Welcome@123",
-    "roleId": "senior-developer",
+    "roleId": "engineering-manager",
     "employeeId": "EMP006",
     "status": "Active"
   },
   {
     "id": "USR007",
-    "username": "pradeep.katigari",
+    "username": "james.rodriguez",
     "password": "Welcome@123",
-    "roleId": "senior-developer",
+    "roleId": "senior-tech-lead",
     "employeeId": "EMP007",
     "status": "Active"
   },
   {
     "id": "USR008",
-    "username": "praveen.hb",
+    "username": "deepa.nair",
     "password": "Welcome@123",
-    "roleId": "tech-lead",
+    "roleId": "senior-tech-lead",
     "employeeId": "EMP008",
     "status": "Active"
   },
   {
     "id": "USR009",
-    "username": "jerin.pinhero",
+    "username": "kevin.obrien",
     "password": "Welcome@123",
-    "roleId": "developer",
+    "roleId": "senior-tech-lead",
     "employeeId": "EMP009",
     "status": "Active"
   },
   {
     "id": "USR010",
-    "username": "vani.cherukuri",
+    "username": "john.abraham",
     "password": "Welcome@123",
-    "roleId": "developer",
+    "roleId": "tech-lead",
     "employeeId": "EMP010",
     "status": "Active"
   },
   {
     "id": "USR011",
-    "username": "arun.p",
+    "username": "emily.watson",
     "password": "Welcome@123",
-    "roleId": "senior-developer",
+    "roleId": "tech-lead",
     "employeeId": "EMP011",
     "status": "Active"
   },
   {
     "id": "USR012",
-    "username": "avadhkumar.patel",
+    "username": "suresh.reddy",
     "password": "Welcome@123",
     "roleId": "tech-lead",
     "employeeId": "EMP012",
@@ -105,15 +105,15 @@
   },
   {
     "id": "USR013",
-    "username": "prathamesh.herlekar",
+    "username": "maria.garcia",
     "password": "Welcome@123",
-    "roleId": "developer",
+    "roleId": "tech-lead",
     "employeeId": "EMP013",
     "status": "Active"
   },
   {
     "id": "USR014",
-    "username": "marco.pinto",
+    "username": "arjun.patel",
     "password": "Welcome@123",
     "roleId": "senior-developer",
     "employeeId": "EMP014",
@@ -121,55 +121,55 @@
   },
   {
     "id": "USR015",
-    "username": "rahul.pawar",
+    "username": "jessica.lee",
     "password": "Welcome@123",
-    "roleId": "developer",
+    "roleId": "senior-developer",
     "employeeId": "EMP015",
     "status": "Active"
   },
   {
     "id": "USR016",
-    "username": "ankush.kulkarni",
+    "username": "vikram.singh",
     "password": "Welcome@123",
-    "roleId": "senior-tech-lead",
+    "roleId": "senior-developer",
     "employeeId": "EMP016",
     "status": "Active"
   },
   {
     "id": "USR017",
-    "username": "chethan.t",
+    "username": "rachel.adams",
     "password": "Welcome@123",
-    "roleId": "senior-tech-lead",
+    "roleId": "senior-developer",
     "employeeId": "EMP017",
     "status": "Active"
   },
   {
     "id": "USR018",
-    "username": "avantika.krishnan",
+    "username": "karthik.subramanian",
     "password": "Welcome@123",
-    "roleId": "developer",
+    "roleId": "senior-developer",
     "employeeId": "EMP018",
     "status": "Active"
   },
   {
     "id": "USR019",
-    "username": "priyanshu.yadav",
+    "username": "daniel.foster",
     "password": "Welcome@123",
-    "roleId": "developer",
+    "roleId": "senior-developer",
     "employeeId": "EMP019",
     "status": "Active"
   },
   {
     "id": "USR020",
-    "username": "nailesh.agrawal",
+    "username": "nikhil.menon",
     "password": "Welcome@123",
-    "roleId": "tech-lead",
+    "roleId": "developer",
     "employeeId": "EMP020",
     "status": "Active"
   },
   {
     "id": "USR021",
-    "username": "shreya.n",
+    "username": "ashley.brooks",
     "password": "Welcome@123",
     "roleId": "developer",
     "employeeId": "EMP021",
@@ -177,15 +177,15 @@
   },
   {
     "id": "USR022",
-    "username": "suganya.pandian",
+    "username": "rohan.desai",
     "password": "Welcome@123",
-    "roleId": "engineering-manager",
+    "roleId": "developer",
     "employeeId": "EMP022",
     "status": "Active"
   },
   {
     "id": "USR023",
-    "username": "achche.kumar",
+    "username": "tyler.bennett",
     "password": "Welcome@123",
     "roleId": "developer",
     "employeeId": "EMP023",
@@ -193,7 +193,7 @@
   },
   {
     "id": "USR024",
-    "username": "teju.kc",
+    "username": "sneha.iyer",
     "password": "Welcome@123",
     "roleId": "developer",
     "employeeId": "EMP024",
@@ -201,7 +201,7 @@
   },
   {
     "id": "USR025",
-    "username": "praneet.kaisare",
+    "username": "chris.palmer",
     "password": "Welcome@123",
     "roleId": "developer",
     "employeeId": "EMP025",
@@ -209,7 +209,7 @@
   },
   {
     "id": "USR026",
-    "username": "s.kumar",
+    "username": "divya.ramesh",
     "password": "Welcome@123",
     "roleId": "developer",
     "employeeId": "EMP026",
@@ -217,7 +217,7 @@
   },
   {
     "id": "USR027",
-    "username": "syed.hassim",
+    "username": "lucas.wright",
     "password": "Welcome@123",
     "roleId": "developer",
     "employeeId": "EMP027",
@@ -225,58 +225,26 @@
   },
   {
     "id": "USR028",
-    "username": "andres.arias",
+    "username": "aditi.verma",
     "password": "Welcome@123",
-    "roleId": "developer",
+    "roleId": "intern",
     "employeeId": "EMP028",
     "status": "Active"
   },
   {
     "id": "USR029",
-    "username": "eliana.caraballo",
+    "username": "ethan.cole",
     "password": "Welcome@123",
-    "roleId": "developer",
+    "roleId": "intern",
     "employeeId": "EMP029",
     "status": "Active"
   },
   {
     "id": "USR030",
-    "username": "eylen.arias",
+    "username": "meghana.rao",
     "password": "Welcome@123",
-    "roleId": "developer",
+    "roleId": "intern",
     "employeeId": "EMP030",
-    "status": "Active"
-  },
-  {
-    "id": "USR031",
-    "username": "gustavo.herrera",
-    "password": "Welcome@123",
-    "roleId": "developer",
-    "employeeId": "EMP031",
-    "status": "Active"
-  },
-  {
-    "id": "USR032",
-    "username": "luis.begazo",
-    "password": "Welcome@123",
-    "roleId": "developer",
-    "employeeId": "EMP032",
-    "status": "Active"
-  },
-  {
-    "id": "USR033",
-    "username": "vanderlei.vinicius",
-    "password": "Welcome@123",
-    "roleId": "developer",
-    "employeeId": "EMP033",
-    "status": "Active"
-  },
-  {
-    "id": "USR034",
-    "username": "joaquim.jose",
-    "password": "Welcome@123",
-    "roleId": "developer",
-    "employeeId": "EMP034",
     "status": "Active"
   }
 ]

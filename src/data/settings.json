@@ -92,8 +92,7 @@
     ],
     "employee": [
       "Active",
-      "Inactive",
-      "Ex-Employee"
+      "Inactive"
     ],
     "learning": [
       "Not Started",

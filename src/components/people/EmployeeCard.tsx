@@ -1,4 +1,4 @@
-import { Pencil, UserX } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { StatusBadge } from "@/components/common";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -11,15 +11,14 @@ interface EmployeeCardProps {
   employee: EmployeeWithStats;
   /** Whether the signed-in user can edit this employee. */
   canEdit: boolean;
-  /** Whether the signed-in user can remove (offboard) this employee. */
+  /** Whether the signed-in user can delete this employee. */
   canDelete: boolean;
   onViewProfile: (employee: EmployeeWithStats) => void;
   onEdit: (employee: EmployeeWithStats) => void;
-  onRemove: (employee: EmployeeWithStats) => void;
+  onDelete: (employee: EmployeeWithStats) => void;
 }
 
-export function EmployeeCard({ employee, canEdit, canDelete, onViewProfile, onEdit, onRemove }: EmployeeCardProps) {
-  const isExEmployee = employee.status === "Ex-Employee";
+export function EmployeeCard({ employee, canEdit, canDelete, onViewProfile, onEdit, onDelete }: EmployeeCardProps) {
   return (
     <Card className="flex flex-col shadow-sm transition-shadow hover:shadow-md">
       <CardHeader className="flex flex-row items-start gap-3 space-y-0">
@@ -68,7 +67,12 @@ export function EmployeeCard({ employee, canEdit, canDelete, onViewProfile, onEd
         </Button>
         <div className="flex gap-1">
           {canEdit && (
-            <Button variant="ghost" size="icon" aria-label={`Edit ${employee.name}`} onClick={() => onEdit(employee)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={`Edit ${employee.name}`}
+              onClick={() => onEdit(employee)}
+            >
               <Pencil className="size-4" />
             </Button>
           )}
@@ -76,13 +80,11 @@ export function EmployeeCard({ employee, canEdit, canDelete, onViewProfile, onEd
             <Button
               variant="ghost"
               size="icon"
-              aria-label={`Remove ${employee.name}`}
-              title={isExEmployee ? "Already marked as Ex-Employee" : "Mark as Ex-Employee"}
-              disabled={isExEmployee}
+              aria-label={`Delete ${employee.name}`}
               className="text-destructive hover:text-destructive"
-              onClick={() => onRemove(employee)}
+              onClick={() => onDelete(employee)}
             >
-              <UserX className="size-4" />
+              <Trash2 className="size-4" />
             </Button>
           )}
         </div>

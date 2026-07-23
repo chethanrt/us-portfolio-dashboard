@@ -2,7 +2,6 @@ import { Drawer, LoadingSkeleton, ProgressBar, SkillBadge, StatusBadge } from "@
 import { TaskStatusBadge } from "@/components/tasks/TaskBadges";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from "@/hooks/useAuth";
 import { useEmployeeDetails } from "@/hooks/useEmployeeDetails";
 import type { EmployeeWithStats } from "@/hooks/useEmployees";
 import { useScopedTasks } from "@/hooks/useScopedTasks";
@@ -10,9 +9,7 @@ import { usePermission } from "@/security";
 import { taskStatisticsService } from "@/services";
 import type { SkillLevel } from "@/types";
 import { formatDate } from "@/utils/format";
-import { canViewCalendar } from "@/utils/permissions";
 import { SKILL_COLUMNS } from "@/utils/skills";
-import { PeopleCalendar } from "./PeopleCalendar";
 
 function StatTile({ value, label }: { value: string | number; label: string }) {
   return (
@@ -34,16 +31,12 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 interface EmployeeProfileDrawerProps {
   employee: EmployeeWithStats | null;
-  /** Display name of whoever `employee.managerId` points to, if any. */
-  managerName?: string;
   onClose: () => void;
 }
 
-export function EmployeeProfileDrawer({ employee, managerName, onClose }: EmployeeProfileDrawerProps) {
+export function EmployeeProfileDrawer({ employee, onClose }: EmployeeProfileDrawerProps) {
   const { details, isLoading } = useEmployeeDetails(employee);
-  const { currentUser } = useAuth();
   // Field-level security: hidden fields are omitted from the drawer.
-  const { canViewField, role } = usePermission();
   const { canViewField, canView } = usePermission();
   const show = (field: string) => canViewField("people", field);
 
@@ -58,8 +51,6 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
     : [];
 
   if (!employee) return null;
-
-  const canViewEmployeeCalendar = canViewCalendar(role?.id, employee.id, currentUser?.id);
 
   const headerParts = [
     show("role") ? employee.role : null,
@@ -90,7 +81,6 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
           <TabsTrigger value="activities">Activities</TabsTrigger>
           {showTasks && <TabsTrigger value="tasks">Tasks</TabsTrigger>}
           <TabsTrigger value="pocs">POCs</TabsTrigger>
-          {canViewEmployeeCalendar && <TabsTrigger value="calendar">Calendar</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="overview" className="mt-4 space-y-2">
@@ -103,7 +93,6 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
             <InfoRow label="Secondary Technology" value={employee.secondarySkill || "—"} />
           )}
           {show("currentProject") && <InfoRow label="Current Project" value={employee.currentProject} />}
-          {show("managerId") && <InfoRow label="Reports To" value={managerName ?? "—"} />}
           {show("status") && (
             <div className="flex justify-between gap-4 text-sm">
               <span className="text-muted-foreground">Status</span>
@@ -224,12 +213,6 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
             ))
           )}
         </TabsContent>
-
-        {canViewEmployeeCalendar && (
-          <TabsContent value="calendar" className="mt-4">
-            <PeopleCalendar employee={employee} />
-          </TabsContent>
-        )}
       </Tabs>
     </Drawer>
   );
