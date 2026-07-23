@@ -1,17 +1,18 @@
 import employeesData from "@/data/employees.json";
 import type { Employee, Role } from "@/types";
 import { simulateRequest } from "./BaseService";
-import { activityService } from "./ActivityService";
-import { pocService } from "./POCService";
 
 const seedEmployees = employeesData as Employee[];
 
 const STORAGE_KEY = "ai-portfolio-dashboard.employees";
 
 /**
- * Employees support full CRUD. Mutations persist to Local Storage
- * (JSON file remains the seed). Deletion is blocked while the employee
- * is referenced by activities or POCs to keep the JSON relations valid.
+ * Employees support full CRUD, plus offboarding. Mutations persist to Local
+ * Storage (JSON file remains the seed). Employees are never hard-deleted —
+ * removing one sets `status: "Ex-Employee"` instead, so their historical
+ * activities/POCs/learning records stay valid and their profile is still
+ * visible (per docs/01 §7); `offboard()` also reassigns anyone who reported
+ * to them so the manager hierarchy never points at a departed employee.
  */
 class EmployeeService {
   private load(): Employee[] {
@@ -67,17 +68,30 @@ class EmployeeService {
     return simulateRequest(updated);
   }
 
-  /** Throws if the employee is still referenced by activities or POCs. */
-  async delete(id: string): Promise<void> {
-    const [activities, pocs] = await Promise.all([
-      activityService.getByEmployee(id),
-      pocService.getByOwner(id),
-    ]);
-    if (activities.length > 0 || pocs.length > 0) {
-      throw new Error("REFERENCED");
+  /**
+   * Marks an employee as an Ex-Employee instead of deleting their record, and
+   * reassigns each direct report to the manager chosen for them in
+   * `reassignments` (map of reportId -> newManagerId). Throws if a direct
+   * report was left without a replacement manager.
+   */
+  async offboard(id: string, reassignments: Record<string, string>): Promise<Employee> {
+    const all = this.load();
+    if (!all.some((employee) => employee.id === id)) {
+      throw new Error(`Employee ${id} not found`);
     }
-    this.persist(this.load().filter((employee) => employee.id !== id));
-    await simulateRequest(undefined);
+    const directReports = all.filter((employee) => employee.managerId === id && employee.status !== "Ex-Employee");
+    const missing = directReports.find((report) => !reassignments[report.id]);
+    if (missing) {
+      throw new Error("REPORTS_UNASSIGNED");
+    }
+
+    const updated = all.map((employee) => {
+      if (employee.id === id) return { ...employee, status: "Ex-Employee" as const };
+      const newManagerId = reassignments[employee.id];
+      return newManagerId ? { ...employee, managerId: newManagerId } : employee;
+    });
+    this.persist(updated);
+    return simulateRequest(updated.find((employee) => employee.id === id)!);
   }
 }
 

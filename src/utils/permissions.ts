@@ -84,3 +84,60 @@ export function canEditSettings(role: UserRole): boolean {
 export function canManageUsers(role: UserRole): boolean {
   return isAdmin(role);
 }
+
+/**
+ * Calendar: view a given employee's calendar.
+ * Admins/Managers/Tech Lead see any calendar; own-data roles see only their own.
+ */
+export function canViewCalendar(
+  role: UserRole,
+  targetEmployeeId: string,
+  currentEmployeeId: string | undefined
+): boolean {
+  if (isAdmin(role) || isManager(role) || role === "Tech Lead") return true;
+  return targetEmployeeId === currentEmployeeId;
+}
+
+/**
+ * Calendar: create an event on a given employee's calendar.
+ * Admins/Managers/Tech Lead can block time on anyone's calendar; Senior
+ * Developer/Developer only on their own; Intern is view-only.
+ */
+export function canCreateCalendarEvent(
+  role: UserRole,
+  targetEmployeeId: string,
+  currentEmployeeId: string | undefined
+): boolean {
+  if (isAdmin(role) || isManager(role) || role === "Tech Lead") return true;
+  if (role === "Senior Developer" || role === "Developer") return targetEmployeeId === currentEmployeeId;
+  return false;
+}
+
+/**
+ * Calendar: edit a specific event.
+ * Admins/Managers edit any event; Tech Lead only events they created;
+ * Senior Developer/Developer only their own created events; Intern never.
+ */
+export function canEditCalendarEvent(
+  role: UserRole,
+  event: { createdBy: string },
+  currentEmployeeId: string | undefined
+): boolean {
+  if (isAdmin(role) || isManager(role)) return true;
+  if (role === "Tech Lead" || role === "Senior Developer" || role === "Developer") {
+    return event.createdBy === currentEmployeeId;
+  }
+  return false;
+}
+
+/**
+ * Calendar: delete a specific event. Same shape as edit — a Lead cannot
+ * delete an event created by someone else.
+ */
+export function canDeleteCalendarEvent(
+  role: UserRole,
+  event: { createdBy: string },
+  currentEmployeeId: string | undefined
+): boolean {
+  return canEditCalendarEvent(role, event, currentEmployeeId);
+}

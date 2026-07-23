@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, UserX } from "lucide-react";
 import { StatusBadge } from "@/components/common";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -9,14 +9,15 @@ import { getInitials } from "@/utils/format";
 
 interface EmployeeCardProps {
   employee: EmployeeWithStats;
-  /** Whether the active role can edit/delete employees (docs/05: EM only). */
+  /** Whether the active role can edit/remove employees (docs/05: EM only). */
   canManage: boolean;
   onViewProfile: (employee: EmployeeWithStats) => void;
   onEdit: (employee: EmployeeWithStats) => void;
-  onDelete: (employee: EmployeeWithStats) => void;
+  onRemove: (employee: EmployeeWithStats) => void;
 }
 
-export function EmployeeCard({ employee, canManage, onViewProfile, onEdit, onDelete }: EmployeeCardProps) {
+export function EmployeeCard({ employee, canManage, onViewProfile, onEdit, onRemove }: EmployeeCardProps) {
+  const isExEmployee = employee.status === "Ex-Employee";
   return (
     <Card className="flex flex-col shadow-sm transition-shadow hover:shadow-md">
       <CardHeader className="flex flex-row items-start gap-3 space-y-0">
@@ -76,12 +77,13 @@ export function EmployeeCard({ employee, canManage, onViewProfile, onEdit, onDel
           <Button
             variant="ghost"
             size="icon"
-            aria-label={`Delete ${employee.name}`}
-            disabled={!canManage}
+            aria-label={`Remove ${employee.name}`}
+            title={isExEmployee ? "Already marked as Ex-Employee" : "Mark as Ex-Employee"}
+            disabled={!canManage || isExEmployee}
             className="text-destructive hover:text-destructive"
-            onClick={() => onDelete(employee)}
+            onClick={() => onRemove(employee)}
           >
-            <Trash2 className="size-4" />
+            <UserX className="size-4" />
           </Button>
         </div>
       </CardFooter>
