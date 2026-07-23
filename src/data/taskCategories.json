@@ -1,0 +1,14 @@
+[
+  { "id": "development", "name": "Development", "description": "Feature and implementation work." },
+  { "id": "bug-fix", "name": "Bug Fix", "description": "Defect investigation and fixes." },
+  { "id": "research", "name": "Research", "description": "Spikes, investigation and evaluation." },
+  { "id": "ai", "name": "AI", "description": "AI-assisted or AI-focused engineering work." },
+  { "id": "documentation", "name": "Documentation", "description": "Specs, guides and technical writing." },
+  { "id": "learning", "name": "Learning", "description": "Courses, certifications and study." },
+  { "id": "innovation", "name": "Innovation", "description": "POCs and experimentation." },
+  { "id": "support", "name": "Support", "description": "Production support and maintenance." },
+  { "id": "meeting", "name": "Meeting", "description": "Meetings, ceremonies and reviews." },
+  { "id": "training", "name": "Training", "description": "Delivering or attending training." },
+  { "id": "administration", "name": "Administration", "description": "Administrative and process work." },
+  { "id": "general", "name": "General", "description": "Anything that fits nowhere else." }
+]

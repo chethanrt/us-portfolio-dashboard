@@ -16,6 +16,7 @@
 export type ModuleId =
   | "dashboard"
   | "projects"
+  | "tasks"
   | "activities"
   | "people"
   | "skills"
@@ -27,7 +28,16 @@ export type ModuleId =
   | "roles";
 
 /** Actions a role can be granted on a module. */
-export type PermissionAction = "view" | "create" | "edit" | "delete" | "export";
+export type PermissionAction =
+  | "view"
+  | "create"
+  | "edit"
+  | "delete"
+  | "export"
+  /** Assign work to other people (Task Board). */
+  | "assign"
+  /** Participate in discussion threads (Task Board). */
+  | "comment";
 
 /**
  * Row-level data scope.

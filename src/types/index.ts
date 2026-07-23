@@ -262,3 +262,6 @@ export interface User {
 
 // Role & Permission framework types (Role, Permission, Resource, …).
 export * from "./permissions";
+
+// Task Board types (Task, TaskComment, TaskWorkflowStatus, …).
+export * from "./tasks";

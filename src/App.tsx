@@ -14,6 +14,7 @@ const Login = lazy(() => import("@/pages/Login"));
 // Pages are lazy-loaded; AppLayout renders a LoadingSkeleton while a chunk loads.
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const Projects = lazy(() => import("@/pages/Projects"));
+const TaskBoard = lazy(() => import("@/pages/TaskBoard"));
 const Activities = lazy(() => import("@/pages/Activities"));
 const People = lazy(() => import("@/pages/People"));
 const SkillMatrix = lazy(() => import("@/pages/SkillMatrix"));
@@ -28,6 +29,7 @@ const Roles = lazy(() => import("@/pages/Roles"));
 const PROTECTED_ROUTES: { path: string; module: ModuleId; Page: LazyExoticComponent<ComponentType> }[] = [
   { path: "/dashboard", module: "dashboard", Page: Dashboard },
   { path: "/projects", module: "projects", Page: Projects },
+  { path: "/tasks", module: "tasks", Page: TaskBoard },
   { path: "/activities", module: "activities", Page: Activities },
   { path: "/people", module: "people", Page: People },
   { path: "/skills", module: "skills", Page: SkillMatrix },

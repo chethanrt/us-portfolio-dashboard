@@ -10,10 +10,15 @@ import { cn } from "@/lib/utils";
 
 export const ALL_FILTER = "all";
 
+interface FilterOption {
+  value: string;
+  label: string;
+}
+
 interface FilterSelectProps {
   /** Placeholder shown when "All" is selected, e.g. "Status". */
   placeholder: string;
-  options: string[];
+  options: (FilterOption | string)[];
   value: string;
   onChange: (value: string) => void;
   className?: string;
@@ -28,11 +33,15 @@ export function FilterSelect({ placeholder, options, value, onChange, className 
       </SelectTrigger>
       <SelectContent>
         <SelectItem value={ALL_FILTER}>All {placeholder}</SelectItem>
-        {options.map((option) => (
-          <SelectItem key={option} value={option}>
-            {option}
-          </SelectItem>
-        ))}
+        {options.map((option) => {
+          const { value: optionValue, label } =
+            typeof option === "string" ? { value: option, label: option } : option;
+          return (
+            <SelectItem key={optionValue} value={optionValue}>
+              {label}
+            </SelectItem>
+          );
+        })}
       </SelectContent>
     </Select>
   );

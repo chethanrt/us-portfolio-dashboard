@@ -4,6 +4,7 @@
     "modules": [
       { "module": "dashboard", "actions": { "view": true }, "scope": { "view": "all" } },
       { "module": "projects", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "tasks", "actions": { "view": true, "create": true, "edit": true, "delete": true, "assign": true, "comment": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
       { "module": "activities", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
       { "module": "people", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
       { "module": "skills", "actions": { "view": true, "export": true }, "scope": { "view": "all" } },
@@ -20,6 +21,7 @@
     "modules": [
       { "module": "dashboard", "actions": { "view": true }, "scope": { "view": "all" } },
       { "module": "projects", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "tasks", "actions": { "view": true, "create": true, "edit": true, "delete": true, "assign": true, "comment": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
       { "module": "activities", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
       { "module": "people", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
       { "module": "skills", "actions": { "view": true, "export": true }, "scope": { "view": "all" } },
@@ -36,6 +38,7 @@
     "modules": [
       { "module": "dashboard", "actions": { "view": true }, "scope": { "view": "all" } },
       { "module": "projects", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "tasks", "actions": { "view": true, "create": true, "edit": true, "delete": true, "assign": true, "comment": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
       { "module": "activities", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
       { "module": "people", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
       { "module": "skills", "actions": { "view": true, "export": true }, "scope": { "view": "all" } },
@@ -50,6 +53,7 @@
     "modules": [
       { "module": "dashboard", "actions": { "view": true }, "scope": { "view": "all" } },
       { "module": "projects", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "tasks", "actions": { "view": true, "create": true, "edit": true, "delete": true, "assign": true, "comment": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
       { "module": "activities", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
       { "module": "people", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
       { "module": "skills", "actions": { "view": true, "export": true }, "scope": { "view": "all" } },
@@ -64,6 +68,7 @@
     "modules": [
       { "module": "dashboard", "actions": { "view": true }, "scope": { "view": "all" } },
       { "module": "projects", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
+      { "module": "tasks", "actions": { "view": true, "create": true, "edit": true, "delete": true, "assign": true, "comment": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
       { "module": "activities", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
       { "module": "people", "actions": { "view": true, "create": true, "edit": true, "delete": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
       { "module": "skills", "actions": { "view": true, "export": true }, "scope": { "view": "all" } },
@@ -77,6 +82,7 @@
     "modules": [
       { "module": "dashboard", "actions": { "view": true }, "scope": { "view": "team" } },
       { "module": "projects", "actions": { "view": true }, "scope": { "view": "all" } },
+      { "module": "tasks", "actions": { "view": true, "create": true, "edit": true, "delete": true, "assign": true, "comment": true, "export": true }, "scope": { "view": "all", "edit": "all" } },
       { "module": "activities", "actions": { "view": true, "create": true, "edit": true, "delete": true }, "scope": { "view": "all", "edit": "all" } },
       { "module": "people", "actions": { "view": true }, "scope": { "view": "all" } },
       { "module": "skills", "actions": { "view": true, "export": true }, "scope": { "view": "all" } },
@@ -93,6 +99,11 @@
     "roleId": "senior-developer",
     "modules": [
       { "module": "dashboard", "actions": { "view": true }, "scope": { "view": "own" } },
+      {
+        "module": "tasks",
+        "actions": { "view": true, "create": true, "edit": true, "delete": true, "assign": true, "comment": true },
+        "scope": { "view": "own", "edit": "own" }
+      },
       {
         "module": "projects",
         "actions": { "view": true },
@@ -117,6 +128,15 @@
     "modules": [
       { "module": "dashboard", "actions": { "view": true }, "scope": { "view": "own" } },
       {
+        "module": "tasks",
+        "actions": { "view": true, "create": true, "edit": true, "delete": true, "comment": true },
+        "scope": { "view": "own", "edit": "own" },
+        "fields": {
+          "estimateHours": { "visible": true, "editable": false },
+          "actualHours": { "visible": true, "editable": true }
+        }
+      },
+      {
         "module": "projects",
         "actions": { "view": true },
         "scope": { "view": "all" },
@@ -139,6 +159,15 @@
     "roleId": "intern",
     "modules": [
       { "module": "dashboard", "actions": { "view": true }, "scope": { "view": "own" } },
+      {
+        "module": "tasks",
+        "actions": { "view": true, "edit": true, "comment": true },
+        "scope": { "view": "own", "edit": "own" },
+        "fields": {
+          "estimateHours": { "visible": true, "editable": false },
+          "actualHours": { "visible": true, "editable": false }
+        }
+      },
       {
         "module": "projects",
         "actions": { "view": true },
