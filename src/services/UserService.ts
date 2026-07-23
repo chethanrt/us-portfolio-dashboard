@@ -6,8 +6,21 @@ const seedUsers = usersData as User[];
 
 const STORAGE_KEY = "ai-portfolio-dashboard.users";
 
+/** Maps pre-framework role names to role ids (legacy Local Storage data). */
+const LEGACY_ROLE_IDS: Record<string, string> = {
+  "Super Admin": "super-admin",
+  Director: "director",
+  "Delivery Manager": "delivery-manager",
+  "Engineering Manager": "engineering-manager",
+  "Senior Tech Lead": "senior-tech-lead",
+  "Tech Lead": "tech-lead",
+  "Senior Developer": "senior-developer",
+  Developer: "developer",
+  Intern: "intern",
+};
+
 /**
- * Login accounts with full CRUD (Super Admin only in the UI).
+ * Login accounts with full CRUD (permission-gated in the UI).
  * Client-side demo authentication — no backend, no hashing. Mutations
  * persist to Local Storage; users.json remains the seed data.
  */
@@ -15,7 +28,14 @@ class UserService {
   private load(): User[] {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return JSON.parse(stored) as User[];
+      if (stored) {
+        const parsed = JSON.parse(stored) as (User & { role?: string })[];
+        // Migrate accounts stored before the permission framework existed.
+        return parsed.map(({ role, ...user }) => ({
+          ...user,
+          roleId: user.roleId ?? LEGACY_ROLE_IDS[role ?? ""] ?? "intern",
+        }));
+      }
     } catch {
       // fall through to seed data on corrupt storage
     }
@@ -74,14 +94,19 @@ class UserService {
     const all = this.load();
     const user = all.find((u) => u.id === id);
     // Never delete the last active Super Admin — that would lock everyone out.
-    if (user?.role === "Super Admin") {
+    if (user?.roleId === "super-admin") {
       const remainingAdmins = all.filter(
-        (u) => u.id !== id && u.role === "Super Admin" && u.status === "Active"
+        (u) => u.id !== id && u.roleId === "super-admin" && u.status === "Active"
       );
       if (remainingAdmins.length === 0) throw new Error("LAST_ADMIN");
     }
     this.persist(all.filter((u) => u.id !== id));
     await simulateRequest(undefined);
+  }
+
+  /** Number of accounts assigned to a role (used before deleting a role). */
+  async countByRole(roleId: string): Promise<number> {
+    return simulateRequest(this.load().filter((user) => user.roleId === roleId).length);
   }
 }
 

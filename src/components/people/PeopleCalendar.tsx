@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { ConfirmationDialog, EmptyState, LoadingSkeleton } from "@/components/common";
 import { useAuth } from "@/hooks/useAuth";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
+import { usePermission } from "@/security";
 import type { CalendarEvent, Employee } from "@/types";
 import { getEventTypeColor } from "@/utils/calendarColors";
 import {
@@ -35,7 +36,9 @@ function toLocalIso(date: Date): string {
 
 /** FullCalendar tab for a person's profile — Phase 1 runs on local mock data. */
 export function PeopleCalendar({ employee }: PeopleCalendarProps) {
-  const { currentUser, role } = useAuth();
+  const { currentUser } = useAuth();
+  const { role } = usePermission();
+  const roleId = role?.id;
   const { events, isLoading, error, createEvent, updateEvent, deleteEvent } = useCalendarEvents(employee);
   const calendarRef = useRef<FullCalendar>(null);
 
@@ -47,14 +50,14 @@ export function PeopleCalendar({ employee }: PeopleCalendarProps) {
   const [initialSlot, setInitialSlot] = useState<{ start: Date; end: Date } | null>(null);
   const [deletingEvent, setDeletingEvent] = useState<CalendarEvent | null>(null);
 
-  const canView = canViewCalendar(role, employee.id, currentUser?.id);
-  const canCreate = canCreateCalendarEvent(role, employee.id, currentUser?.id);
+  const canView = canViewCalendar(roleId, employee.id, currentUser?.id);
+  const canCreate = canCreateCalendarEvent(roleId, employee.id, currentUser?.id);
 
   const calendarEvents = useMemo(
     () =>
       events.map((event) => {
         const color = getEventTypeColor(event.eventType);
-        const editable = canEditCalendarEvent(role, event, currentUser?.id);
+        const editable = canEditCalendarEvent(roleId, event, currentUser?.id);
         return {
           id: event.id,
           title: event.title,
@@ -69,7 +72,7 @@ export function PeopleCalendar({ employee }: PeopleCalendarProps) {
           extendedProps: { event },
         };
       }),
-    [events, role, currentUser]
+    [events, roleId, currentUser]
   );
 
   if (!canView) {
@@ -116,7 +119,7 @@ export function PeopleCalendar({ employee }: PeopleCalendarProps) {
 
   const handleEventDrop = async (arg: EventDropArg) => {
     const original = arg.event.extendedProps.event as CalendarEvent;
-    if (!canEditCalendarEvent(role, original, currentUser?.id) || !arg.event.start || !arg.event.end) {
+    if (!canEditCalendarEvent(roleId, original, currentUser?.id) || !arg.event.start || !arg.event.end) {
       arg.revert();
       return;
     }
@@ -135,7 +138,7 @@ export function PeopleCalendar({ employee }: PeopleCalendarProps) {
 
   const handleEventResize = async (arg: EventResizeDoneArg) => {
     const original = arg.event.extendedProps.event as CalendarEvent;
-    if (!canEditCalendarEvent(role, original, currentUser?.id) || !arg.event.start || !arg.event.end) {
+    if (!canEditCalendarEvent(roleId, original, currentUser?.id) || !arg.event.start || !arg.event.end) {
       arg.revert();
       return;
     }
@@ -185,8 +188,8 @@ export function PeopleCalendar({ employee }: PeopleCalendarProps) {
     }
   };
 
-  const selectedCanEdit = selectedEvent ? canEditCalendarEvent(role, selectedEvent, currentUser?.id) : false;
-  const selectedCanDelete = selectedEvent ? canDeleteCalendarEvent(role, selectedEvent, currentUser?.id) : false;
+  const selectedCanEdit = selectedEvent ? canEditCalendarEvent(roleId, selectedEvent, currentUser?.id) : false;
+  const selectedCanDelete = selectedEvent ? canDeleteCalendarEvent(roleId, selectedEvent, currentUser?.id) : false;
 
   return (
     <div className="space-y-4">

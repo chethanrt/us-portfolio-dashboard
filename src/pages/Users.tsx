@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Pencil, Plus, ShieldAlert, Trash2, UserCog } from "lucide-react";
+import { Pencil, Plus, Trash2, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import {
   ConfirmationDialog,
@@ -18,12 +18,13 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useUsers } from "@/hooks/useUsers";
 import type { UserRow } from "@/hooks/useUsers";
+import { usePermission } from "@/security";
 import type { User } from "@/types";
-import { canManageUsers } from "@/utils/permissions";
 
 export default function Users() {
-  const { account, role } = useAuth();
-  const { rows, users, employees, isLoading, error, addUser, updateUser, deleteUser } = useUsers();
+  const { account } = useAuth();
+  const { canCreate, canEdit, canDelete } = usePermission();
+  const { rows, users, employees, roles, isLoading, error, addUser, updateUser, deleteUser } = useUsers();
 
   const [search, setSearch] = useState("");
   const [formOpen, setFormOpen] = useState(false);
@@ -34,7 +35,7 @@ export default function Users() {
     const query = search.trim().toLowerCase();
     if (!query) return rows;
     return rows.filter((row) =>
-      [row.username, row.employeeName, row.role].some((field) => field.toLowerCase().includes(query))
+      [row.username, row.employeeName, row.roleName].some((field) => field.toLowerCase().includes(query))
     );
   }, [rows, search]);
 
@@ -52,11 +53,11 @@ export default function Users() {
       },
       { accessorKey: "employeeName", header: "Employee" },
       {
-        accessorKey: "role",
+        accessorKey: "roleName",
         header: "Role",
         cell: ({ row }) => (
-          <Badge variant={row.original.role === "Super Admin" ? "default" : "secondary"}>
-            {row.original.role}
+          <Badge variant={row.original.roleId === "super-admin" ? "default" : "secondary"}>
+            {row.original.roleName}
           </Badge>
         ),
       },
@@ -70,48 +71,38 @@ export default function Users() {
         header: () => <span className="sr-only">Actions</span>,
         cell: ({ row }) => (
           <div className="flex justify-end gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={`Edit ${row.original.username}`}
-              onClick={() => {
-                setEditing(row.original);
-                setFormOpen(true);
-              }}
-            >
-              <Pencil className="size-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={`Delete ${row.original.username}`}
-              className="text-destructive hover:text-destructive"
-              disabled={row.original.id === account?.id}
-              title={row.original.id === account?.id ? "You cannot delete your own account" : undefined}
-              onClick={() => setDeleting(row.original)}
-            >
-              <Trash2 className="size-4" />
-            </Button>
+            {canEdit("users") && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Edit ${row.original.username}`}
+                onClick={() => {
+                  setEditing(row.original);
+                  setFormOpen(true);
+                }}
+              >
+                <Pencil className="size-4" />
+              </Button>
+            )}
+            {canDelete("users") && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Delete ${row.original.username}`}
+                className="text-destructive hover:text-destructive"
+                disabled={row.original.id === account?.id}
+                title={row.original.id === account?.id ? "You cannot delete your own account" : undefined}
+                onClick={() => setDeleting(row.original)}
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            )}
           </div>
         ),
       },
     ],
-    [account]
+    [account, canEdit, canDelete]
   );
-
-  // Super Admin only — guard direct URL access too.
-  if (!canManageUsers(role)) {
-    return (
-      <div className="space-y-6">
-        <PageHeader title="User Management" />
-        <EmptyState
-          icon={ShieldAlert}
-          title="Access Restricted"
-          description="Only the Super Admin and Director can manage user accounts."
-        />
-      </div>
-    );
-  }
 
   if (isLoading) {
     return (
@@ -168,14 +159,16 @@ export default function Users() {
         title="User Management"
         description={`${rows.length} login accounts`}
         actions={
-          <Button
-            onClick={() => {
-              setEditing(null);
-              setFormOpen(true);
-            }}
-          >
-            <Plus /> Create User
-          </Button>
+          canCreate("users") ? (
+            <Button
+              onClick={() => {
+                setEditing(null);
+                setFormOpen(true);
+              }}
+            >
+              <Plus /> Create User
+            </Button>
+          ) : undefined
         }
       />
 
@@ -201,6 +194,7 @@ export default function Users() {
         user={editing}
         users={users}
         employees={employees}
+        roles={roles}
         onSave={handleSave}
       />
 

@@ -12,6 +12,7 @@ import {
 } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
+import { usePermission } from "@/security";
 import type { Employee, Project } from "@/types";
 
 const REQUIRED = "This field is required.";
@@ -105,6 +106,11 @@ export function ProjectFormDialog({ open, onOpenChange, project, projects, emplo
   const [isSaving, setIsSaving] = useState(false);
   const isEdit = Boolean(project);
 
+  // Field-level security: hidden fields are not rendered, read-only fields are disabled.
+  const { canViewField, canEditField } = usePermission();
+  const show = (field: string) => canViewField("projects", field);
+  const readOnly = (field: string) => !canEditField("projects", field);
+
   const schema = useMemo(() => buildProjectSchema(projects, project?.id ?? null), [projects, project]);
 
   const form = useForm<ProjectFormValues>({
@@ -175,32 +181,58 @@ export function ProjectFormDialog({ open, onOpenChange, project, projects, emplo
     >
       <Form {...form}>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
-          <FormInputField control={form.control} name="name" label="Project Name" placeholder="Project name" required />
-          <FormInputField control={form.control} name="client" label="Client" placeholder="Client name" required />
-          <FormSelectField control={form.control} name="program" label="Program" required options={PROGRAMS} />
-          <FormSelectField control={form.control} name="technology" label="Technology" required options={TECHNOLOGIES} />
-          <FormSelectField control={form.control} name="stage" label="Project Stage" required options={STAGES} />
-          <FormSelectField control={form.control} name="status" label="Status" required options={STATUSES} />
-          <FormSelectField
-            control={form.control}
-            name="manager"
-            label="Engineering Manager"
-            required
-            options={managerOptions}
-          />
-          <FormSelectField control={form.control} name="techLead" label="Tech Lead" required options={techLeadOptions} />
-          <FormInputField control={form.control} name="startDate" label="Start Date" type="date" required />
-          <FormInputField control={form.control} name="endDate" label="End Date" type="date" />
-          <div className="sm:col-span-2">
-            <FormSliderField control={form.control} name="aiAdoption" label="AI Adoption" />
-          </div>
-          <FormCheckboxGroupField
-            control={form.control}
-            name="members"
-            label="Team Members"
-            required
-            options={employees.map((e) => ({ value: e.id, label: `${e.name} (${e.role})` }))}
-          />
+          {show("name") && (
+            <FormInputField control={form.control} name="name" label="Project Name" placeholder="Project name" required disabled={readOnly("name")} />
+          )}
+          {show("client") && (
+            <FormInputField control={form.control} name="client" label="Client" placeholder="Client name" required disabled={readOnly("client")} />
+          )}
+          {show("program") && (
+            <FormSelectField control={form.control} name="program" label="Program" required options={PROGRAMS} disabled={readOnly("program")} />
+          )}
+          {show("technology") && (
+            <FormSelectField control={form.control} name="technology" label="Technology" required options={TECHNOLOGIES} disabled={readOnly("technology")} />
+          )}
+          {show("stage") && (
+            <FormSelectField control={form.control} name="stage" label="Project Stage" required options={STAGES} disabled={readOnly("stage")} />
+          )}
+          {show("status") && (
+            <FormSelectField control={form.control} name="status" label="Status" required options={STATUSES} disabled={readOnly("status")} />
+          )}
+          {show("manager") && (
+            <FormSelectField
+              control={form.control}
+              name="manager"
+              label="Engineering Manager"
+              required
+              options={managerOptions}
+              disabled={readOnly("manager")}
+            />
+          )}
+          {show("techLead") && (
+            <FormSelectField control={form.control} name="techLead" label="Tech Lead" required options={techLeadOptions} disabled={readOnly("techLead")} />
+          )}
+          {show("startDate") && (
+            <FormInputField control={form.control} name="startDate" label="Start Date" type="date" required disabled={readOnly("startDate")} />
+          )}
+          {show("endDate") && (
+            <FormInputField control={form.control} name="endDate" label="End Date" type="date" disabled={readOnly("endDate")} />
+          )}
+          {show("aiAdoption") && (
+            <div className="sm:col-span-2">
+              <FormSliderField control={form.control} name="aiAdoption" label="AI Adoption" disabled={readOnly("aiAdoption")} />
+            </div>
+          )}
+          {show("members") && (
+            <FormCheckboxGroupField
+              control={form.control}
+              name="members"
+              label="Team Members"
+              required
+              options={employees.map((e) => ({ value: e.id, label: `${e.name} (${e.role})` }))}
+              disabled={readOnly("members")}
+            />
+          )}
 
           <div className="flex justify-end gap-2 sm:col-span-2">
             <Button type="button" variant="secondary" disabled={isSaving} onClick={() => onOpenChange(false)}>

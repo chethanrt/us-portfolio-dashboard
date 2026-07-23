@@ -8,9 +8,9 @@ import {
   projectService,
 } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermission } from "@/security";
+import type { DashboardScope } from "@/security";
 import type { Activity, Employee, LearningRecord, POC, Project } from "@/types";
-import { getDashboardScope } from "@/utils/permissions";
-import type { DashboardScope } from "@/utils/permissions";
 
 export interface TrendPoint {
   week: string;
@@ -108,7 +108,8 @@ function scopeProjects(sources: Sources, scope: DashboardScope, user: Employee |
 
 /** Loads all sources and aggregates dashboard metrics for the active role. */
 export function useDashboardData() {
-  const { currentUser, role } = useAuth();
+  const { currentUser } = useAuth();
+  const { dashboardScope } = usePermission();
   const [sources, setSources] = useState<Sources | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -140,7 +141,7 @@ export function useDashboardData() {
 
   const data = useMemo<DashboardData | null>(() => {
     if (!sources) return null;
-    const scope = getDashboardScope(role);
+    const scope = dashboardScope;
     const now = new Date();
 
     const scopedEmployees = scopeEmployees(sources, scope, currentUser);
@@ -252,7 +253,7 @@ export function useDashboardData() {
       topContributors,
       recentActivities,
     };
-  }, [sources, role, currentUser]);
+  }, [sources, dashboardScope, currentUser]);
 
   return { data, isLoading, error };
 }

@@ -1,5 +1,5 @@
 import employeesData from "@/data/employees.json";
-import type { Employee, Role } from "@/types";
+import type { Employee, EmployeeRole } from "@/types";
 import { simulateRequest } from "./BaseService";
 
 const seedEmployees = employeesData as Employee[];
@@ -46,7 +46,7 @@ class EmployeeService {
     return all.find((employee) => employee.id === id);
   }
 
-  async getByRole(role: Role): Promise<Employee[]> {
+  async getByRole(role: EmployeeRole): Promise<Employee[]> {
     const all = await this.getAll();
     return all.filter((employee) => employee.role === role);
   }

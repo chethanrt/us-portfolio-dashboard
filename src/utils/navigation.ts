@@ -7,47 +7,37 @@ import {
   LayoutGrid,
   Lightbulb,
   Settings,
+  ShieldCheck,
   UserCog,
   Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { UserRole } from "@/types";
+import type { ModuleId } from "@/types";
 
 export interface NavItem {
   title: string;
   path: string;
   icon: LucideIcon;
-  /** Roles allowed to see this page. Omit to allow every role. */
-  roles?: UserRole[];
+  /** Module whose View permission controls the item's visibility. */
+  module: ModuleId;
 }
 
-/**
- * Sidebar navigation. Per docs/05, every role can view all modules except
- * Settings (Director/DM/EM + Super Admin) and User Management (Super Admin).
- */
+/** Sidebar navigation — items are filtered by the user's View permissions. */
 export const NAV_ITEMS: NavItem[] = [
-  { title: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-  { title: "Projects", path: "/projects", icon: FolderKanban },
-  { title: "AI Activities", path: "/activities", icon: Brain },
-  { title: "People", path: "/people", icon: Users },
-  { title: "Skill Matrix", path: "/skills", icon: LayoutGrid },
-  { title: "Learning", path: "/learning", icon: GraduationCap },
-  { title: "POCs", path: "/pocs", icon: Lightbulb },
-  { title: "Reports", path: "/reports", icon: BarChart3 },
-  {
-    title: "Settings",
-    path: "/settings",
-    icon: Settings,
-    roles: ["Super Admin", "Director", "Delivery Manager", "Engineering Manager"],
-  },
-  {
-    title: "User Management",
-    path: "/users",
-    icon: UserCog,
-    roles: ["Super Admin", "Director"],
-  },
+  { title: "Dashboard", path: "/dashboard", icon: LayoutDashboard, module: "dashboard" },
+  { title: "Projects", path: "/projects", icon: FolderKanban, module: "projects" },
+  { title: "AI Activities", path: "/activities", icon: Brain, module: "activities" },
+  { title: "People", path: "/people", icon: Users, module: "people" },
+  { title: "Skill Matrix", path: "/skills", icon: LayoutGrid, module: "skills" },
+  { title: "Learning", path: "/learning", icon: GraduationCap, module: "learning" },
+  { title: "POCs", path: "/pocs", icon: Lightbulb, module: "pocs" },
+  { title: "Reports", path: "/reports", icon: BarChart3, module: "reports" },
+  { title: "Settings", path: "/settings", icon: Settings, module: "settings" },
+  { title: "User Management", path: "/users", icon: UserCog, module: "users" },
+  { title: "Roles & Permissions", path: "/roles", icon: ShieldCheck, module: "roles" },
 ];
 
-export function getNavItemsForRole(role: UserRole): NavItem[] {
-  return NAV_ITEMS.filter((item) => !item.roles || item.roles.includes(role));
+/** Items the given permission check allows (hide modules without View). */
+export function getVisibleNavItems(canView: (module: ModuleId) => boolean): NavItem[] {
+  return NAV_ITEMS.filter((item) => canView(item.module));
 }

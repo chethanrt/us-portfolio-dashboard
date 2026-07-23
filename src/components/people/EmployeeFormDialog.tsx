@@ -7,6 +7,7 @@ import { FormInputField, FormSelectField, Modal } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { ALL_ROLES } from "@/context/AuthContext";
+import { usePermission } from "@/security";
 import type { Employee, Project } from "@/types";
 
 const REQUIRED = "This field is required.";
@@ -83,6 +84,11 @@ export function EmployeeFormDialog({
 }: EmployeeFormDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
   const isEdit = Boolean(employee);
+
+  // Field-level security: hidden fields are not rendered, read-only fields are disabled.
+  const { canViewField, canEditField } = usePermission();
+  const show = (field: string) => canViewField("people", field);
+  const readOnly = (field: string) => !canEditField("people", field);
 
   // Duplicate email check excludes the employee being edited (docs/08).
   const schema = useMemo(() => {
@@ -173,59 +179,86 @@ export function EmployeeFormDialog({
     >
       <Form {...form}>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
-          <FormInputField control={form.control} name="name" label="Name" placeholder="Full name" required />
-          <FormInputField
-            control={form.control}
-            name="email"
-            label="Email"
-            type="email"
-            placeholder="name@company.com"
-            required
-          />
-          <FormSelectField control={form.control} name="role" label="Role" options={ALL_ROLES} required />
-          <FormInputField
-            control={form.control}
-            name="experience"
-            label="Experience (years)"
-            type="number"
-            min="0"
-            max="40"
-            required
-          />
-          <FormSelectField control={form.control} name="team" label="Team" options={TEAMS} required />
-          <FormSelectField
-            control={form.control}
-            name="status"
-            label="Status"
-            options={["Active", "Inactive", "Ex-Employee"]}
-            required
-          />
-          <FormSelectField
-            control={form.control}
-            name="managerId"
-            label="Reports To"
-            options={managerOptions}
-          />
-          <FormInputField
-            control={form.control}
-            name="primarySkill"
-            label="Primary Skill"
-            placeholder="e.g. Software Engineering"
-            required
-          />
-          <FormInputField
-            control={form.control}
-            name="secondarySkill"
-            label="Secondary Skill"
-            placeholder="e.g. React"
-          />
-          <FormSelectField
-            control={form.control}
-            name="currentProject"
-            label="Current Project"
-            options={projectOptions}
-            required
-          />
+          {show("name") && (
+            <FormInputField control={form.control} name="name" label="Name" placeholder="Full name" required disabled={readOnly("name")} />
+          )}
+          {show("email") && (
+            <FormInputField
+              control={form.control}
+              name="email"
+              label="Email"
+              type="email"
+              placeholder="name@company.com"
+              required
+              disabled={readOnly("email")}
+            />
+          )}
+          {show("role") && (
+            <FormSelectField control={form.control} name="role" label="Role" options={ALL_ROLES} required disabled={readOnly("role")} />
+          )}
+          {show("experience") && (
+            <FormInputField
+              control={form.control}
+              name="experience"
+              label="Experience (years)"
+              type="number"
+              min="0"
+              max="40"
+              required
+              disabled={readOnly("experience")}
+            />
+          )}
+          {show("team") && (
+            <FormSelectField control={form.control} name="team" label="Team" options={TEAMS} required disabled={readOnly("team")} />
+          )}
+          {show("status") && (
+            <FormSelectField
+              control={form.control}
+              name="status"
+              label="Status"
+              options={["Active", "Inactive", "Ex-Employee"]}
+              required
+              disabled={readOnly("status")}
+            />
+          )}
+          {show("managerId") && (
+            <FormSelectField
+              control={form.control}
+              name="managerId"
+              label="Reports To"
+              options={managerOptions}
+              disabled={readOnly("managerId")}
+            />
+          )}
+          {show("primarySkill") && (
+            <FormInputField
+              control={form.control}
+              name="primarySkill"
+              label="Primary Skill"
+              placeholder="e.g. Software Engineering"
+              required
+              disabled={readOnly("primarySkill")}
+            />
+          )}
+          {show("secondarySkill") && (
+            <FormInputField
+              control={form.control}
+              name="secondarySkill"
+              label="Secondary Skill"
+              placeholder="e.g. React"
+              disabled={readOnly("secondarySkill")}
+            />
+          )}
+          {show("currentProject") && (
+            <FormSelectField
+              control={form.control}
+              name="currentProject"
+              label="Current Project"
+              options={projectOptions}
+              required
+              disabled={readOnly("currentProject")}
+            />
+          )}
 
           <div className="flex justify-end gap-2 sm:col-span-2">
             <Button type="button" variant="secondary" disabled={isSaving} onClick={() => onOpenChange(false)}>

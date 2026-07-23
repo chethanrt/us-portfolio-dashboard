@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
+import { usePermission } from "@/security";
 import { getInitials } from "@/utils/format";
-import { getNavItemsForRole } from "@/utils/navigation";
+import { getVisibleNavItems } from "@/utils/navigation";
 
 interface SidebarProps {
   /** Called after a nav item is clicked (used to close the mobile drawer). */
@@ -16,9 +17,11 @@ interface SidebarProps {
 }
 
 export function Sidebar({ onNavigate, className }: SidebarProps) {
-  const { account, currentUser, role, logout } = useAuth();
+  const { account, currentUser, logout } = useAuth();
+  const { canView, role } = usePermission();
   const navigate = useNavigate();
-  const navItems = getNavItemsForRole(role);
+  // Menu items are hidden automatically when View permission is missing.
+  const navItems = getVisibleNavItems(canView);
   const displayName = currentUser?.name ?? account?.username ?? "Guest";
 
   const handleLogout = () => {
@@ -62,7 +65,7 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
           </Avatar>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">{displayName}</p>
-            <p className="truncate text-xs text-muted-foreground">{role}</p>
+            <p className="truncate text-xs text-muted-foreground">{role?.name ?? "—"}</p>
           </div>
           <Button variant="ghost" size="icon" aria-label="Sign out" onClick={handleLogout}>
             <LogOut className="size-4" />

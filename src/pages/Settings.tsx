@@ -1,14 +1,11 @@
-import { Settings as SettingsIcon, ShieldAlert } from "lucide-react";
+import { Settings as SettingsIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState, LoadingSkeleton, PageHeader } from "@/components/common";
 import { SettingsSection } from "@/components/settings/SettingsSection";
-import { useAuth } from "@/hooks/useAuth";
 import { useSettings } from "@/hooks/useSettings";
+import { usePermission } from "@/security";
 import type { EditableSettingsKey } from "@/services/SettingsService";
-import { canEditSettings } from "@/utils/permissions";
-
-const ALLOWED_ROLES = ["Super Admin", "Director", "Delivery Manager", "Engineering Manager"];
 
 const SECTIONS: { key: EditableSettingsKey; label: string; description: string }[] = [
   { key: "roles", label: "Roles", description: "Organization roles used across the application." },
@@ -22,23 +19,10 @@ const SECTIONS: { key: EditableSettingsKey; label: string; description: string }
 ];
 
 export default function Settings() {
-  const { role } = useAuth();
+  const { role, canEdit } = usePermission();
   const { settings, isLoading, error, updateList } = useSettings();
-  const readOnly = !canEditSettings(role);
-
-  // Settings is restricted per docs/05 — guard direct URL access too.
-  if (!ALLOWED_ROLES.includes(role)) {
-    return (
-      <div className="space-y-6">
-        <PageHeader title="Settings" />
-        <EmptyState
-          icon={ShieldAlert}
-          title="Access Restricted"
-          description={`The ${role} role does not have access to Settings. Switch to a Director or Manager role to view this page.`}
-        />
-      </div>
-    );
-  }
+  // Route access is enforced by RequirePermission; here we only gate editing.
+  const readOnly = !canEdit("settings");
 
   if (isLoading) {
     return (
@@ -65,8 +49,8 @@ export default function Settings() {
         description="Manage roles, skills, AI tools, stages and platforms"
         actions={
           readOnly ? (
-            <Badge variant="secondary" title="Only the Director can edit settings">
-              Read-only ({role})
+            <Badge variant="secondary" title="Your role does not have Edit permission for Settings">
+              Read-only ({role?.name ?? "No role"})
             </Badge>
           ) : undefined
         }

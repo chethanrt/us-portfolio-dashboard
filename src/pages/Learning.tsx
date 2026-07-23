@@ -19,8 +19,8 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useLearning } from "@/hooks/useLearning";
 import type { LearningRow } from "@/hooks/useLearning";
+import { usePermission } from "@/security";
 import type { LearningRecord } from "@/types";
-import { canAddOwnRecords, canEditRecord, isOwnDataRole } from "@/utils/permissions";
 
 const PLATFORMS = ["Udemy AI Lab", "Internal Training", "Other"];
 const STATUSES = ["Not Started", "In Progress", "Completed"];
@@ -28,10 +28,11 @@ const STATUSES = ["Not Started", "In Progress", "Completed"];
 export default function Learning() {
   const { rows, employees, stats, leaderboard, isLoading, error, addRecord, updateRecord, deleteRecord } =
     useLearning();
-  const { currentUser, role } = useAuth();
-  const ownDataOnly = isOwnDataRole(role);
+  const { currentUser } = useAuth();
+  const { canCreate, canEditRow, canDeleteRow, isOwnDataScope } = usePermission();
+  const ownDataOnly = isOwnDataScope("learning");
 
-  // Own-data roles (docs/05): see and track only their own learning.
+  // Own-data view scope: see and track only their own learning.
   const visibleRows = useMemo(
     () => (ownDataOnly ? rows.filter((row) => row.employeeId === currentUser?.id) : rows),
     [rows, ownDataOnly, currentUser]
@@ -137,16 +138,16 @@ export default function Learning() {
             : `${visibleRows.length} learning records across the team`
         }
         actions={
-          <Button
-            disabled={!canAddOwnRecords(role)}
-            title={!canAddOwnRecords(role) ? `The ${role} role is view-only for learning` : undefined}
-            onClick={() => {
-              setEditing(null);
-              setFormOpen(true);
-            }}
-          >
-            <Plus /> Add Learning
-          </Button>
+          canCreate("learning") ? (
+            <Button
+              onClick={() => {
+                setEditing(null);
+                setFormOpen(true);
+              }}
+            >
+              <Plus /> Add Learning
+            </Button>
+          ) : undefined
         }
       />
 
@@ -188,7 +189,8 @@ export default function Learning() {
               <LearningCard
                 key={record.id}
                 record={record}
-                canEdit={canEditRecord(role, record.employeeId, currentUser?.id)}
+                canEdit={canEditRow("learning", record.employeeId)}
+                canDelete={canDeleteRow("learning", record.employeeId)}
                 onEdit={(r) => {
                   setEditing(r);
                   setFormOpen(true);

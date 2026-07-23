@@ -1,12 +1,12 @@
 import { createContext, useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { employeeService, userService } from "@/services";
-import type { Employee, Role, User, UserRole } from "@/types";
+import type { Employee, EmployeeRole, User } from "@/types";
 
 const SESSION_STORAGE_KEY = "ai-portfolio-dashboard.session";
 
-/** Employee roles (used by employee forms and filters). */
-export const ALL_ROLES: Role[] = [
+/** Employee job roles (used by employee forms and filters — domain data). */
+export const ALL_ROLES: EmployeeRole[] = [
   "Director",
   "Delivery Manager",
   "Engineering Manager",
@@ -17,16 +17,11 @@ export const ALL_ROLES: Role[] = [
   "Intern",
 ];
 
-/** Account roles assignable in User Management. */
-export const USER_ROLES: UserRole[] = ["Super Admin", ...ALL_ROLES];
-
 export interface AuthContextValue {
   /** The logged-in account, or null when signed out. */
   account: User | null;
   /** The employee linked to the account (null for Super Admin). */
   currentUser: Employee | null;
-  /** Role driving dashboards and permissions. */
-  role: UserRole;
   isAuthenticated: boolean;
   isLoading: boolean;
   /** Returns true on success; false shows "invalid credentials". */
@@ -88,8 +83,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return {
       account,
       currentUser,
-      // Fallback is the least-privileged role; guarded routes never render signed out.
-      role: account?.role ?? "Intern",
       isAuthenticated: Boolean(account),
       isLoading,
       login,

@@ -1,9 +1,13 @@
 import { lazy } from "react";
+import type { ComponentType, LazyExoticComponent } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster } from "sonner";
 import { RequireAuth } from "@/components/auth/RequireAuth";
+import { RequirePermission } from "@/components/auth/RequirePermission";
 import { AuthProvider } from "@/context/AuthContext";
 import { AppLayout } from "@/layouts/AppLayout";
+import { PermissionProvider } from "@/security";
+import type { ModuleId } from "@/types";
 
 const Login = lazy(() => import("@/pages/Login"));
 
@@ -18,37 +22,56 @@ const POCs = lazy(() => import("@/pages/POCs"));
 const Reports = lazy(() => import("@/pages/Reports"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const Users = lazy(() => import("@/pages/Users"));
+const Roles = lazy(() => import("@/pages/Roles"));
+
+/** Route table — every page is protected by its module's View permission. */
+const PROTECTED_ROUTES: { path: string; module: ModuleId; Page: LazyExoticComponent<ComponentType> }[] = [
+  { path: "/dashboard", module: "dashboard", Page: Dashboard },
+  { path: "/projects", module: "projects", Page: Projects },
+  { path: "/activities", module: "activities", Page: Activities },
+  { path: "/people", module: "people", Page: People },
+  { path: "/skills", module: "skills", Page: SkillMatrix },
+  { path: "/learning", module: "learning", Page: Learning },
+  { path: "/pocs", module: "pocs", Page: POCs },
+  { path: "/reports", module: "reports", Page: Reports },
+  { path: "/settings", module: "settings", Page: Settings },
+  { path: "/users", module: "users", Page: Users },
+  { path: "/roles", module: "roles", Page: Roles },
+];
 
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route
-            element={
-              <RequireAuth>
-                <AppLayout />
-              </RequireAuth>
-            }
-          >
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/activities" element={<Activities />} />
-            <Route path="/people" element={<People />} />
-            <Route path="/skills" element={<SkillMatrix />} />
-            <Route path="/learning" element={<Learning />} />
-            <Route path="/pocs" element={<POCs />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/users" element={<Users />} />
-            {/* Unknown routes redirect to Dashboard per docs/04 */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-      <Toaster position="top-right" richColors />
+      <PermissionProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route
+              element={
+                <RequireAuth>
+                  <AppLayout />
+                </RequireAuth>
+              }
+            >
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              {PROTECTED_ROUTES.map(({ path, module, Page }) => (
+                <Route
+                  key={path}
+                  path={path}
+                  element={
+                    <RequirePermission module={module}>
+                      <Page />
+                    </RequirePermission>
+                  }
+                />
+              ))}
+              {/* Unknown routes redirect to Dashboard per docs/04 */}
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+        <Toaster position="top-right" richColors />
+      </PermissionProvider>
     </AuthProvider>
   );
 }

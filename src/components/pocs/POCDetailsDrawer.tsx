@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type { POCRow } from "@/hooks/usePOCs";
+import { usePermission } from "@/security";
 import { getInitials } from "@/utils/format";
 
 function InfoRow({ label, value }: { label: string; value: string }) {
@@ -22,6 +23,10 @@ interface POCDetailsDrawerProps {
 }
 
 export function POCDetailsDrawer({ poc, onClose }: POCDetailsDrawerProps) {
+  // Field-level security: hidden fields are omitted from the drawer.
+  const { canViewField } = usePermission();
+  const show = (field: string) => canViewField("pocs", field);
+
   if (!poc) return null;
 
   return (
@@ -53,49 +58,57 @@ export function POCDetailsDrawer({ poc, onClose }: POCDetailsDrawerProps) {
       </div>
       <Separator />
 
-      {/* Overview */}
-      <section className="space-y-2">
-        <h4 className="text-sm font-semibold">Description</h4>
-        <p className="text-sm text-muted-foreground">{poc.description}</p>
-      </section>
+      {/* Overview — fields respect field-level security */}
+      {show("description") && (
+        <section className="space-y-2">
+          <h4 className="text-sm font-semibold">Description</h4>
+          <p className="text-sm text-muted-foreground">{poc.description}</p>
+        </section>
+      )}
 
-      <section className="space-y-2">
-        <h4 className="text-sm font-semibold">Business Value</h4>
-        <p className="text-sm text-muted-foreground">{poc.businessValue}</p>
-      </section>
+      {show("businessValue") && (
+        <section className="space-y-2">
+          <h4 className="text-sm font-semibold">Business Value</h4>
+          <p className="text-sm text-muted-foreground">{poc.businessValue}</p>
+        </section>
+      )}
       <Separator />
 
       <div className="space-y-2">
-        <InfoRow label="Project" value={poc.projectName} />
-        <InfoRow label="Category" value={poc.category} />
-        <InfoRow label="Hours Saved" value={poc.hoursSaved > 0 ? `${poc.hoursSaved}h` : "—"} />
+        {show("projectId") && <InfoRow label="Project" value={poc.projectName} />}
+        {show("category") && <InfoRow label="Category" value={poc.category} />}
+        {show("hoursSaved") && (
+          <InfoRow label="Hours Saved" value={poc.hoursSaved > 0 ? `${poc.hoursSaved}h` : "—"} />
+        )}
       </div>
       <Separator />
 
       {/* Links */}
-      <section className="space-y-2">
-        <h4 className="text-sm font-semibold">Links</h4>
-        {!poc.repo && !poc.demo ? (
-          <p className="text-sm text-muted-foreground">No links added yet.</p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {poc.repo && (
-              <Button variant="outline" size="sm" asChild>
-                <a href={poc.repo} target="_blank" rel="noreferrer">
-                  <GitBranch /> Repository
-                </a>
-              </Button>
-            )}
-            {poc.demo && (
-              <Button variant="outline" size="sm" asChild>
-                <a href={poc.demo} target="_blank" rel="noreferrer">
-                  <ExternalLink /> Demo
-                </a>
-              </Button>
-            )}
-          </div>
-        )}
-      </section>
+      {(show("repo") || show("demo")) && (
+        <section className="space-y-2">
+          <h4 className="text-sm font-semibold">Links</h4>
+          {!poc.repo && !poc.demo ? (
+            <p className="text-sm text-muted-foreground">No links added yet.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {poc.repo && show("repo") && (
+                <Button variant="outline" size="sm" asChild>
+                  <a href={poc.repo} target="_blank" rel="noreferrer">
+                    <GitBranch /> Repository
+                  </a>
+                </Button>
+              )}
+              {poc.demo && show("demo") && (
+                <Button variant="outline" size="sm" asChild>
+                  <a href={poc.demo} target="_blank" rel="noreferrer">
+                    <ExternalLink /> Demo
+                  </a>
+                </Button>
+              )}
+            </div>
+          )}
+        </section>
+      )}
     </Drawer>
   );
 }

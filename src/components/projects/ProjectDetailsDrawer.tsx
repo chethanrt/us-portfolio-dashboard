@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useProjectDetails } from "@/hooks/useProjectDetails";
+import { usePermission } from "@/security";
 import type { Employee, Project } from "@/types";
 import { formatDate, getInitials } from "@/utils/format";
 
@@ -37,6 +38,9 @@ interface ProjectDetailsDrawerProps {
 
 export function ProjectDetailsDrawer({ project, employeesById, onClose }: ProjectDetailsDrawerProps) {
   const { details, isLoading } = useProjectDetails(project);
+  // Field-level security: hidden fields are omitted from the drawer.
+  const { canViewField } = usePermission();
+  const show = (field: string) => canViewField("projects", field);
 
   if (!project) return null;
 
@@ -55,18 +59,18 @@ export function ProjectDetailsDrawer({ project, employeesById, onClose }: Projec
           <StatusBadge status={project.status} />
         </span>
       }
-      description={`${project.client} · ${project.program}`}
+      description={show("client") ? `${project.client} · ${project.program}` : project.program}
     >
-      {/* Project information */}
+      {/* Project information — fields respect field-level security */}
       <div className="space-y-2">
-        <InfoRow label="Technology" value={project.technology} />
-        <InfoRow label="Current Stage" value={project.stage} />
-        <InfoRow label="Manager" value={project.manager} />
-        <InfoRow label="Tech Lead" value={project.techLead} />
-        <InfoRow label="Start Date" value={formatDate(project.startDate)} />
-        <InfoRow label="End Date" value={formatDate(project.endDate)} />
+        {show("technology") && <InfoRow label="Technology" value={project.technology} />}
+        {show("stage") && <InfoRow label="Current Stage" value={project.stage} />}
+        {show("manager") && <InfoRow label="Manager" value={project.manager} />}
+        {show("techLead") && <InfoRow label="Tech Lead" value={project.techLead} />}
+        {show("startDate") && <InfoRow label="Start Date" value={formatDate(project.startDate)} />}
+        {show("endDate") && <InfoRow label="End Date" value={formatDate(project.endDate)} />}
       </div>
-      <ProgressBar label="AI Adoption" value={project.aiAdoption} />
+      {show("aiAdoption") && <ProgressBar label="AI Adoption" value={project.aiAdoption} />}
       <Separator />
 
       {/* Assigned team */}

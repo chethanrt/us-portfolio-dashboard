@@ -1,0 +1,161 @@
+[
+  {
+    "id": "dashboard",
+    "label": "Dashboard",
+    "path": "/dashboard",
+    "description": "KPIs, charts and portfolio overview widgets.",
+    "actions": ["view"],
+    "scopable": true,
+    "fields": []
+  },
+  {
+    "id": "projects",
+    "label": "Projects",
+    "path": "/projects",
+    "description": "Portfolio projects with stages, teams and AI adoption.",
+    "actions": ["view", "create", "edit", "delete", "export"],
+    "scopable": true,
+    "fields": [
+      { "key": "name", "label": "Project Name" },
+      { "key": "client", "label": "Client" },
+      { "key": "program", "label": "Program" },
+      { "key": "technology", "label": "Technology" },
+      { "key": "stage", "label": "Project Stage" },
+      { "key": "status", "label": "Status" },
+      { "key": "manager", "label": "Engineering Manager" },
+      { "key": "techLead", "label": "Tech Lead" },
+      { "key": "startDate", "label": "Start Date" },
+      { "key": "endDate", "label": "End Date" },
+      { "key": "aiAdoption", "label": "AI Adoption" },
+      { "key": "members", "label": "Team Members" }
+    ]
+  },
+  {
+    "id": "activities",
+    "label": "AI Activities",
+    "path": "/activities",
+    "description": "Logged AI usage across projects and stages.",
+    "actions": ["view", "create", "edit", "delete", "export"],
+    "scopable": true,
+    "fields": [
+      { "key": "employeeId", "label": "Employee" },
+      { "key": "projectId", "label": "Project" },
+      { "key": "date", "label": "Date" },
+      { "key": "tool", "label": "AI Tool" },
+      { "key": "category", "label": "Activity Type" },
+      { "key": "projectStage", "label": "Project Stage" },
+      { "key": "promptSummary", "label": "Prompt Summary" },
+      { "key": "outcome", "label": "Outcome" },
+      { "key": "hoursSaved", "label": "Hours Saved" },
+      { "key": "impact", "label": "Impact" }
+    ]
+  },
+  {
+    "id": "people",
+    "label": "People",
+    "path": "/people",
+    "description": "Employee profiles, skills and AI statistics.",
+    "actions": ["view", "create", "edit", "delete", "export"],
+    "scopable": true,
+    "fields": [
+      { "key": "name", "label": "Name" },
+      { "key": "email", "label": "Email" },
+      { "key": "role", "label": "Role" },
+      { "key": "experience", "label": "Experience" },
+      { "key": "team", "label": "Team" },
+      { "key": "primarySkill", "label": "Primary Skill" },
+      { "key": "secondarySkill", "label": "Secondary Skill" },
+      { "key": "currentProject", "label": "Current Project" },
+      { "key": "status", "label": "Status" },
+      { "key": "managerId", "label": "Reports To" }
+    ]
+  },
+  {
+    "id": "skills",
+    "label": "Skill Matrix",
+    "path": "/skills",
+    "description": "Technical and AI skill levels across the team.",
+    "actions": ["view", "export"],
+    "scopable": true,
+    "fields": []
+  },
+  {
+    "id": "learning",
+    "label": "Learning",
+    "path": "/learning",
+    "description": "Courses, certifications and learning progress.",
+    "actions": ["view", "create", "edit", "delete", "export"],
+    "scopable": true,
+    "fields": [
+      { "key": "employeeId", "label": "Employee" },
+      { "key": "course", "label": "Course" },
+      { "key": "platform", "label": "Platform" },
+      { "key": "status", "label": "Status" },
+      { "key": "progress", "label": "Completion %" },
+      { "key": "hours", "label": "Hours" },
+      { "key": "completionDate", "label": "Completion Date" }
+    ]
+  },
+  {
+    "id": "pocs",
+    "label": "POCs",
+    "path": "/pocs",
+    "description": "AI proofs of concept and innovation initiatives.",
+    "actions": ["view", "create", "edit", "delete", "export"],
+    "scopable": true,
+    "fields": [
+      { "key": "title", "label": "Title" },
+      { "key": "projectId", "label": "Project" },
+      { "key": "ownerId", "label": "Owner" },
+      { "key": "category", "label": "Category" },
+      { "key": "status", "label": "Status" },
+      { "key": "description", "label": "Description" },
+      { "key": "businessValue", "label": "Business Value" },
+      { "key": "hoursSaved", "label": "Hours Saved" },
+      { "key": "repo", "label": "Repository URL" },
+      { "key": "demo", "label": "Demo URL" }
+    ]
+  },
+  {
+    "id": "reports",
+    "label": "Reports",
+    "path": "/reports",
+    "description": "Generated adoption, learning and delivery reports.",
+    "actions": ["view", "export"],
+    "scopable": true,
+    "fields": []
+  },
+  {
+    "id": "settings",
+    "label": "Settings",
+    "path": "/settings",
+    "description": "Application master data (roles, skills, tools, stages).",
+    "actions": ["view", "edit"],
+    "scopable": false,
+    "fields": []
+  },
+  {
+    "id": "users",
+    "label": "User Management",
+    "path": "/users",
+    "description": "Login accounts and role assignment.",
+    "actions": ["view", "create", "edit", "delete"],
+    "scopable": false,
+    "fields": [
+      { "key": "username", "label": "Username" },
+      { "key": "password", "label": "Password" },
+      { "key": "roleId", "label": "Role" },
+      { "key": "employeeId", "label": "Linked Employee" },
+      { "key": "status", "label": "Status" }
+    ]
+  },
+  {
+    "id": "roles",
+    "label": "Roles & Permissions",
+    "path": "/roles",
+    "description": "Roles with module, action and field permissions.",
+    "actions": ["view", "create", "edit", "delete"],
+    "scopable": false,
+    "fields": []
+  }
+]

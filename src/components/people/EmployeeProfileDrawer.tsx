@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { useEmployeeDetails } from "@/hooks/useEmployeeDetails";
 import type { EmployeeWithStats } from "@/hooks/useEmployees";
+import { usePermission } from "@/security";
 import type { SkillLevel } from "@/types";
 import { formatDate } from "@/utils/format";
 import { canViewCalendar } from "@/utils/permissions";
@@ -37,18 +38,27 @@ interface EmployeeProfileDrawerProps {
 
 export function EmployeeProfileDrawer({ employee, managerName, onClose }: EmployeeProfileDrawerProps) {
   const { details, isLoading } = useEmployeeDetails(employee);
-  const { currentUser, role } = useAuth();
+  const { currentUser } = useAuth();
+  // Field-level security: hidden fields are omitted from the drawer.
+  const { canViewField, role } = usePermission();
+  const show = (field: string) => canViewField("people", field);
 
   if (!employee) return null;
 
-  const canViewEmployeeCalendar = canViewCalendar(role, employee.id, currentUser?.id);
+  const canViewEmployeeCalendar = canViewCalendar(role?.id, employee.id, currentUser?.id);
+
+  const headerParts = [
+    show("role") ? employee.role : null,
+    show("team") ? `${employee.team} team` : null,
+    show("email") ? employee.email : null,
+  ].filter(Boolean);
 
   return (
     <Drawer
       open={Boolean(employee)}
       onOpenChange={(open) => !open && onClose()}
       title={employee.name}
-      description={`${employee.role} · ${employee.team} team · ${employee.email}`}
+      description={headerParts.join(" · ")}
     >
       {/* Statistics */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -70,17 +80,21 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
 
         <TabsContent value="overview" className="mt-4 space-y-2">
           <InfoRow label="Employee ID" value={employee.id} />
-          <InfoRow label="Role" value={employee.role} />
-          <InfoRow label="Experience" value={`${employee.experience} years`} />
-          <InfoRow label="Team" value={employee.team} />
-          <InfoRow label="Primary Technology" value={employee.primarySkill} />
-          <InfoRow label="Secondary Technology" value={employee.secondarySkill || "—"} />
-          <InfoRow label="Current Project" value={employee.currentProject} />
-          <InfoRow label="Reports To" value={managerName ?? "—"} />
-          <div className="flex justify-between gap-4 text-sm">
-            <span className="text-muted-foreground">Status</span>
-            <StatusBadge status={employee.status} />
-          </div>
+          {show("role") && <InfoRow label="Role" value={employee.role} />}
+          {show("experience") && <InfoRow label="Experience" value={`${employee.experience} years`} />}
+          {show("team") && <InfoRow label="Team" value={employee.team} />}
+          {show("primarySkill") && <InfoRow label="Primary Technology" value={employee.primarySkill} />}
+          {show("secondarySkill") && (
+            <InfoRow label="Secondary Technology" value={employee.secondarySkill || "—"} />
+          )}
+          {show("currentProject") && <InfoRow label="Current Project" value={employee.currentProject} />}
+          {show("managerId") && <InfoRow label="Reports To" value={managerName ?? "—"} />}
+          {show("status") && (
+            <div className="flex justify-between gap-4 text-sm">
+              <span className="text-muted-foreground">Status</span>
+              <StatusBadge status={employee.status} />
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="skills" className="mt-4">

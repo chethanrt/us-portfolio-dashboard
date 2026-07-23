@@ -9,14 +9,16 @@ import { getInitials } from "@/utils/format";
 
 interface EmployeeCardProps {
   employee: EmployeeWithStats;
-  /** Whether the active role can edit/remove employees (docs/05: EM only). */
-  canManage: boolean;
+  /** Whether the signed-in user can edit this employee. */
+  canEdit: boolean;
+  /** Whether the signed-in user can remove (offboard) this employee. */
+  canDelete: boolean;
   onViewProfile: (employee: EmployeeWithStats) => void;
   onEdit: (employee: EmployeeWithStats) => void;
   onRemove: (employee: EmployeeWithStats) => void;
 }
 
-export function EmployeeCard({ employee, canManage, onViewProfile, onEdit, onRemove }: EmployeeCardProps) {
+export function EmployeeCard({ employee, canEdit, canDelete, onViewProfile, onEdit, onRemove }: EmployeeCardProps) {
   const isExEmployee = employee.status === "Ex-Employee";
   return (
     <Card className="flex flex-col shadow-sm transition-shadow hover:shadow-md">
@@ -65,26 +67,24 @@ export function EmployeeCard({ employee, canManage, onViewProfile, onEdit, onRem
           View Profile
         </Button>
         <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={`Edit ${employee.name}`}
-            disabled={!canManage}
-            onClick={() => onEdit(employee)}
-          >
-            <Pencil className="size-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={`Remove ${employee.name}`}
-            title={isExEmployee ? "Already marked as Ex-Employee" : "Mark as Ex-Employee"}
-            disabled={!canManage || isExEmployee}
-            className="text-destructive hover:text-destructive"
-            onClick={() => onRemove(employee)}
-          >
-            <UserX className="size-4" />
-          </Button>
+          {canEdit && (
+            <Button variant="ghost" size="icon" aria-label={`Edit ${employee.name}`} onClick={() => onEdit(employee)}>
+              <Pencil className="size-4" />
+            </Button>
+          )}
+          {canDelete && (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={`Remove ${employee.name}`}
+              title={isExEmployee ? "Already marked as Ex-Employee" : "Mark as Ex-Employee"}
+              disabled={isExEmployee}
+              className="text-destructive hover:text-destructive"
+              onClick={() => onRemove(employee)}
+            >
+              <UserX className="size-4" />
+            </Button>
+          )}
         </div>
       </CardFooter>
     </Card>

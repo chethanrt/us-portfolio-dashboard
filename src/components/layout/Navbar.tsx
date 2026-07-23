@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermission } from "@/security";
 import { formatNavbarDate, getInitials } from "@/utils/format";
 
 interface NavbarProps {
@@ -22,7 +23,8 @@ interface NavbarProps {
 }
 
 export function Navbar({ onMenuClick }: NavbarProps) {
-  const { account, currentUser, role, logout } = useAuth();
+  const { account, currentUser, logout } = useAuth();
+  const { role } = usePermission();
   const navigate = useNavigate();
 
   const displayName = currentUser?.name ?? account?.username ?? "Guest";
@@ -87,9 +89,11 @@ export function Navbar({ onMenuClick }: NavbarProps) {
         </Button>
 
         {/* Role badge */}
-        <Badge variant="secondary" className="hidden sm:inline-flex">
-          {role}
-        </Badge>
+        {role && (
+          <Badge variant="secondary" className="hidden sm:inline-flex">
+            {role.name}
+          </Badge>
+        )}
 
         {/* Account menu */}
         <DropdownMenu>

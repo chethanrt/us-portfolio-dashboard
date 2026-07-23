@@ -7,6 +7,7 @@ import { z } from "zod";
 import { FormInputField, FormSelectField, Modal } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
+import { usePermission } from "@/security";
 import type { Employee, LearningRecord } from "@/types";
 
 const REQUIRED = "This field is required.";
@@ -67,6 +68,11 @@ export function LearningFormDialog({ open, onOpenChange, record, employees, onSa
   const [isSaving, setIsSaving] = useState(false);
   const isEdit = Boolean(record);
 
+  // Field-level security: hidden fields are not rendered, read-only fields are disabled.
+  const { canViewField, canEditField } = usePermission();
+  const show = (field: string) => canViewField("learning", field);
+  const readOnly = (field: string) => !canEditField("learning", field);
+
   const form = useForm<LearningFormValues>({
     resolver: zodResolver(learningSchema),
     defaultValues: EMPTY_VALUES,
@@ -121,45 +127,64 @@ export function LearningFormDialog({ open, onOpenChange, record, employees, onSa
     >
       <Form {...form}>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
-          <FormSelectField
-            control={form.control}
-            name="employeeId"
-            label="Employee"
-            required
-            options={employees.map((e) => ({ value: e.id, label: e.name }))}
-          />
-          <FormInputField
-            control={form.control}
-            name="course"
-            label="Course"
-            placeholder="e.g. Prompt Engineering"
-            required
-          />
-          <FormSelectField
-            control={form.control}
-            name="platform"
-            label="Platform"
-            required
-            options={["Udemy AI Lab", "Internal Training", "Other"]}
-          />
-          <FormSelectField
-            control={form.control}
-            name="status"
-            label="Status"
-            required
-            options={["Not Started", "In Progress", "Completed"]}
-          />
-          <FormInputField
-            control={form.control}
-            name="progress"
-            label="Completion %"
-            type="number"
-            min="0"
-            max="100"
-            required
-          />
-          <FormInputField control={form.control} name="hours" label="Hours" type="number" min="0" step="0.5" required />
-          <FormInputField control={form.control} name="completionDate" label="Completion Date" type="date" />
+          {show("employeeId") && (
+            <FormSelectField
+              control={form.control}
+              name="employeeId"
+              label="Employee"
+              required
+              options={employees.map((e) => ({ value: e.id, label: e.name }))}
+              disabled={readOnly("employeeId")}
+            />
+          )}
+          {show("course") && (
+            <FormInputField
+              control={form.control}
+              name="course"
+              label="Course"
+              placeholder="e.g. Prompt Engineering"
+              required
+              disabled={readOnly("course")}
+            />
+          )}
+          {show("platform") && (
+            <FormSelectField
+              control={form.control}
+              name="platform"
+              label="Platform"
+              required
+              options={["Udemy AI Lab", "Internal Training", "Other"]}
+              disabled={readOnly("platform")}
+            />
+          )}
+          {show("status") && (
+            <FormSelectField
+              control={form.control}
+              name="status"
+              label="Status"
+              required
+              options={["Not Started", "In Progress", "Completed"]}
+              disabled={readOnly("status")}
+            />
+          )}
+          {show("progress") && (
+            <FormInputField
+              control={form.control}
+              name="progress"
+              label="Completion %"
+              type="number"
+              min="0"
+              max="100"
+              required
+              disabled={readOnly("progress")}
+            />
+          )}
+          {show("hours") && (
+            <FormInputField control={form.control} name="hours" label="Hours" type="number" min="0" step="0.5" required disabled={readOnly("hours")} />
+          )}
+          {show("completionDate") && (
+            <FormInputField control={form.control} name="completionDate" label="Completion Date" type="date" disabled={readOnly("completionDate")} />
+          )}
 
           <div className="flex justify-end gap-2 sm:col-span-2">
             <Button type="button" variant="secondary" disabled={isSaving} onClick={() => onOpenChange(false)}>

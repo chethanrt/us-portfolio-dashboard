@@ -3,7 +3,7 @@
     "id": "USR000",
     "username": "admin",
     "password": "Admin@123",
-    "role": "Super Admin",
+    "roleId": "super-admin",
     "employeeId": "",
     "status": "Active"
   },
@@ -11,7 +11,7 @@
     "id": "USR001",
     "username": "niraj.narkhede",
     "password": "Welcome@123",
-    "role": "Director",
+    "roleId": "director",
     "employeeId": "EMP001",
     "status": "Active"
   },
@@ -19,7 +19,7 @@
     "id": "USR002",
     "username": "sony.panchakshari",
     "password": "Welcome@123",
-    "role": "Delivery Manager",
+    "roleId": "delivery-manager",
     "employeeId": "EMP002",
     "status": "Active"
   },
@@ -27,7 +27,7 @@
     "id": "USR003",
     "username": "avinash.sreeramula",
     "password": "Welcome@123",
-    "role": "Engineering Manager",
+    "roleId": "engineering-manager",
     "employeeId": "EMP003",
     "status": "Active"
   },
@@ -35,7 +35,7 @@
     "id": "USR004",
     "username": "benjamin.samodar",
     "password": "Welcome@123",
-    "role": "Tech Lead",
+    "roleId": "tech-lead",
     "employeeId": "EMP004",
     "status": "Active"
   },
@@ -43,7 +43,7 @@
     "id": "USR005",
     "username": "nikitha.r",
     "password": "Welcome@123",
-    "role": "Developer",
+    "roleId": "developer",
     "employeeId": "EMP005",
     "status": "Active"
   },
@@ -51,7 +51,7 @@
     "id": "USR006",
     "username": "ravi.dodwad",
     "password": "Welcome@123",
-    "role": "Senior Developer",
+    "roleId": "senior-developer",
     "employeeId": "EMP006",
     "status": "Active"
   },
@@ -59,7 +59,7 @@
     "id": "USR007",
     "username": "pradeep.katigari",
     "password": "Welcome@123",
-    "role": "Senior Developer",
+    "roleId": "senior-developer",
     "employeeId": "EMP007",
     "status": "Active"
   },
@@ -67,7 +67,7 @@
     "id": "USR008",
     "username": "praveen.hb",
     "password": "Welcome@123",
-    "role": "Tech Lead",
+    "roleId": "tech-lead",
     "employeeId": "EMP008",
     "status": "Active"
   },
@@ -75,7 +75,7 @@
     "id": "USR009",
     "username": "jerin.pinhero",
     "password": "Welcome@123",
-    "role": "Developer",
+    "roleId": "developer",
     "employeeId": "EMP009",
     "status": "Active"
   },
@@ -83,7 +83,7 @@
     "id": "USR010",
     "username": "vani.cherukuri",
     "password": "Welcome@123",
-    "role": "Developer",
+    "roleId": "developer",
     "employeeId": "EMP010",
     "status": "Active"
   },
@@ -91,7 +91,7 @@
     "id": "USR011",
     "username": "arun.p",
     "password": "Welcome@123",
-    "role": "Senior Developer",
+    "roleId": "senior-developer",
     "employeeId": "EMP011",
     "status": "Active"
   },
@@ -99,7 +99,7 @@
     "id": "USR012",
     "username": "avadhkumar.patel",
     "password": "Welcome@123",
-    "role": "Tech Lead",
+    "roleId": "tech-lead",
     "employeeId": "EMP012",
     "status": "Active"
   },
@@ -107,7 +107,7 @@
     "id": "USR013",
     "username": "prathamesh.herlekar",
     "password": "Welcome@123",
-    "role": "Developer",
+    "roleId": "developer",
     "employeeId": "EMP013",
     "status": "Active"
   },
@@ -115,7 +115,7 @@
     "id": "USR014",
     "username": "marco.pinto",
     "password": "Welcome@123",
-    "role": "Senior Developer",
+    "roleId": "senior-developer",
     "employeeId": "EMP014",
     "status": "Active"
   },
@@ -123,7 +123,7 @@
     "id": "USR015",
     "username": "rahul.pawar",
     "password": "Welcome@123",
-    "role": "Developer",
+    "roleId": "developer",
     "employeeId": "EMP015",
     "status": "Active"
   },
@@ -131,7 +131,7 @@
     "id": "USR016",
     "username": "ankush.kulkarni",
     "password": "Welcome@123",
-    "role": "Senior Tech Lead",
+    "roleId": "senior-tech-lead",
     "employeeId": "EMP016",
     "status": "Active"
   },
@@ -139,7 +139,7 @@
     "id": "USR017",
     "username": "chethan.t",
     "password": "Welcome@123",
-    "role": "Senior Tech Lead",
+    "roleId": "senior-tech-lead",
     "employeeId": "EMP017",
     "status": "Active"
   },
@@ -147,7 +147,7 @@
     "id": "USR018",
     "username": "avantika.krishnan",
     "password": "Welcome@123",
-    "role": "Developer",
+    "roleId": "developer",
     "employeeId": "EMP018",
     "status": "Active"
   },
@@ -155,7 +155,7 @@
     "id": "USR019",
     "username": "priyanshu.yadav",
     "password": "Welcome@123",
-    "role": "Developer",
+    "roleId": "developer",
     "employeeId": "EMP019",
     "status": "Active"
   },
@@ -163,7 +163,7 @@
     "id": "USR020",
     "username": "nailesh.agrawal",
     "password": "Welcome@123",
-    "role": "Tech Lead",
+    "roleId": "tech-lead",
     "employeeId": "EMP020",
     "status": "Active"
   },
@@ -171,7 +171,7 @@
     "id": "USR021",
     "username": "shreya.n",
     "password": "Welcome@123",
-    "role": "Developer",
+    "roleId": "developer",
     "employeeId": "EMP021",
     "status": "Active"
   },
@@ -179,7 +179,7 @@
     "id": "USR022",
     "username": "suganya.pandian",
     "password": "Welcome@123",
-    "role": "Engineering Manager",
+    "roleId": "engineering-manager",
     "employeeId": "EMP022",
     "status": "Active"
   },
@@ -187,7 +187,7 @@
     "id": "USR023",
     "username": "achche.kumar",
     "password": "Welcome@123",
-    "role": "Developer",
+    "roleId": "developer",
     "employeeId": "EMP023",
     "status": "Active"
   },
@@ -195,7 +195,7 @@
     "id": "USR024",
     "username": "teju.kc",
     "password": "Welcome@123",
-    "role": "Developer",
+    "roleId": "developer",
     "employeeId": "EMP024",
     "status": "Active"
   },
@@ -203,7 +203,7 @@
     "id": "USR025",
     "username": "praneet.kaisare",
     "password": "Welcome@123",
-    "role": "Developer",
+    "roleId": "developer",
     "employeeId": "EMP025",
     "status": "Active"
   },
@@ -211,7 +211,7 @@
     "id": "USR026",
     "username": "s.kumar",
     "password": "Welcome@123",
-    "role": "Developer",
+    "roleId": "developer",
     "employeeId": "EMP026",
     "status": "Active"
   },
@@ -219,7 +219,7 @@
     "id": "USR027",
     "username": "syed.hassim",
     "password": "Welcome@123",
-    "role": "Developer",
+    "roleId": "developer",
     "employeeId": "EMP027",
     "status": "Active"
   },
@@ -227,7 +227,7 @@
     "id": "USR028",
     "username": "andres.arias",
     "password": "Welcome@123",
-    "role": "Developer",
+    "roleId": "developer",
     "employeeId": "EMP028",
     "status": "Active"
   },
@@ -235,7 +235,7 @@
     "id": "USR029",
     "username": "eliana.caraballo",
     "password": "Welcome@123",
-    "role": "Developer",
+    "roleId": "developer",
     "employeeId": "EMP029",
     "status": "Active"
   },
@@ -243,7 +243,7 @@
     "id": "USR030",
     "username": "eylen.arias",
     "password": "Welcome@123",
-    "role": "Developer",
+    "roleId": "developer",
     "employeeId": "EMP030",
     "status": "Active"
   },
@@ -251,7 +251,7 @@
     "id": "USR031",
     "username": "gustavo.herrera",
     "password": "Welcome@123",
-    "role": "Developer",
+    "roleId": "developer",
     "employeeId": "EMP031",
     "status": "Active"
   },
@@ -259,7 +259,7 @@
     "id": "USR032",
     "username": "luis.begazo",
     "password": "Welcome@123",
-    "role": "Developer",
+    "roleId": "developer",
     "employeeId": "EMP032",
     "status": "Active"
   },
@@ -267,7 +267,7 @@
     "id": "USR033",
     "username": "vanderlei.vinicius",
     "password": "Welcome@123",
-    "role": "Developer",
+    "roleId": "developer",
     "employeeId": "EMP033",
     "status": "Active"
   },
@@ -275,7 +275,7 @@
     "id": "USR034",
     "username": "joaquim.jose",
     "password": "Welcome@123",
-    "role": "Developer",
+    "roleId": "developer",
     "employeeId": "EMP034",
     "status": "Active"
   }
