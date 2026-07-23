@@ -43,8 +43,7 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
   const { details, isLoading } = useEmployeeDetails(employee);
   const { currentUser } = useAuth();
   // Field-level security: hidden fields are omitted from the drawer.
-  const { canViewField, role } = usePermission();
-  const { canViewField, canView } = usePermission();
+  const { canViewField, role, canView } = usePermission();
   const show = (field: string) => canViewField("people", field);
 
   // Task Board integration (docs/11 People integration).
