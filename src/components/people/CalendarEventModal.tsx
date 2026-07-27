@@ -20,6 +20,8 @@ function InfoRow({ label, value }: InfoRowProps) {
 
 interface CalendarEventModalProps {
   event: CalendarEvent | null;
+  /** Shown as an extra row when the event is displayed outside its owner's own calendar (team view). */
+  employeeName?: string;
   onClose: () => void;
   canEdit: boolean;
   canDelete: boolean;
@@ -30,6 +32,7 @@ interface CalendarEventModalProps {
 /** Read-only event details with permission-gated Edit/Delete actions. */
 export function CalendarEventModal({
   event,
+  employeeName,
   onClose,
   canEdit,
   canDelete,
@@ -57,6 +60,7 @@ export function CalendarEventModal({
         {event.description && <p className="text-sm">{event.description}</p>}
 
         <div className="space-y-2 rounded-lg border p-3">
+          {employeeName && <InfoRow label="Employee" value={employeeName} />}
           <InfoRow label="Organizer" value={event.organizer} />
           <InfoRow label="Date" value={format(start, "MMM d, yyyy")} />
           <InfoRow label="Time" value={`${format(start, "h:mm a")} – ${format(end, "h:mm a")}`} />

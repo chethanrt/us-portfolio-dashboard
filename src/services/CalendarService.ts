@@ -45,6 +45,13 @@ class CalendarService {
     return all.filter((event) => event.employeeId === employeeId);
   }
 
+  /** Combined events for a team/portfolio calendar view. */
+  async getByEmployees(employeeIds: string[]): Promise<CalendarEvent[]> {
+    const all = await this.getAll();
+    const ids = new Set(employeeIds);
+    return all.filter((event) => ids.has(event.employeeId));
+  }
+
   async create(input: Omit<CalendarEvent, "id">): Promise<CalendarEvent> {
     const all = this.load();
     const created: CalendarEvent = { ...input, id: this.nextId(all) };

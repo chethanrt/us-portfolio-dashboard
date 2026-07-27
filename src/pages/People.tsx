@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus, Users } from "lucide-react";
+import { CalendarDays, LayoutGrid, Plus, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
   ALL_FILTER,
@@ -14,6 +14,7 @@ import { EmployeeCard } from "@/components/people/EmployeeCard";
 import { EmployeeFormDialog } from "@/components/people/EmployeeFormDialog";
 import { EmployeeProfileDrawer } from "@/components/people/EmployeeProfileDrawer";
 import { OffboardEmployeeDialog } from "@/components/people/OffboardEmployeeDialog";
+import { TeamCalendar } from "@/components/people/TeamCalendar";
 import { Button } from "@/components/ui/button";
 import { ALL_ROLES } from "@/context/AuthContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,6 +41,7 @@ export default function People() {
   const [technologyFilter, setTechnologyFilter] = useState(ALL_FILTER);
   const [projectFilter, setProjectFilter] = useState(ALL_FILTER);
 
+  const [pageView, setPageView] = useState<"directory" | "calendar">("directory");
   const [viewing, setViewing] = useState<EmployeeWithStats | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<EmployeeWithStats | null>(null);
@@ -138,16 +140,27 @@ export default function People() {
           ownDataOnly ? "Your profile and statistics" : `${visibleEmployees.length} team members across the portfolio`
         }
         actions={
-          canCreate("people") ? (
-            <Button
-              onClick={() => {
-                setEditing(null);
-                setFormOpen(true);
-              }}
-            >
-              <Plus /> Add Employee
-            </Button>
-          ) : undefined
+          <div className="flex items-center gap-2">
+            {!ownDataOnly && (
+              <Button
+                variant={pageView === "calendar" ? "default" : "outline"}
+                onClick={() => setPageView((v) => (v === "calendar" ? "directory" : "calendar"))}
+              >
+                {pageView === "calendar" ? <LayoutGrid /> : <CalendarDays />}
+                {pageView === "calendar" ? "Directory" : "Calendar"}
+              </Button>
+            )}
+            {canCreate("people") && (
+              <Button
+                onClick={() => {
+                  setEditing(null);
+                  setFormOpen(true);
+                }}
+              >
+                <Plus /> Add Employee
+              </Button>
+            )}
+          </div>
         }
       />
 
@@ -172,7 +185,9 @@ export default function People() {
         </FilterBar>
       )}
 
-      {filteredEmployees.length === 0 ? (
+      {pageView === "calendar" ? (
+        <TeamCalendar employees={filteredEmployees} />
+      ) : filteredEmployees.length === 0 ? (
         <EmptyState
           icon={Users}
           title="No People to Show"

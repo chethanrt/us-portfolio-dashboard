@@ -17,6 +17,7 @@ const MAX_RANGE_DAYS = 31;
 
 const eventSchema = z
   .object({
+    employeeId: z.string().min(1, REQUIRED),
     title: z.string().trim().min(3, "Title must be at least 3 characters.").max(100),
     description: z.string().trim().max(500),
     eventType: z.string().min(1, REQUIRED),
@@ -42,7 +43,7 @@ const eventSchema = z
 
 type EventFormValues = z.infer<typeof eventSchema>;
 
-const EMPTY_VALUES: EventFormValues = {
+const EMPTY_VALUES: Omit<EventFormValues, "employeeId"> = {
   title: "",
   description: "",
   eventType: "Meeting",
@@ -67,8 +68,10 @@ interface CalendarEventFormDialogProps {
   onOpenChange: (open: boolean) => void;
   /** When set, the dialog is in Edit mode. */
   event: CalendarEvent | null;
-  /** Whose calendar this event belongs to. */
+  /** Whose calendar this event belongs to (default/fixed target). */
   targetEmployeeId: string;
+  /** When set, shows an Employee picker instead of a fixed target (team calendar view). */
+  employeeOptions?: { id: string; name: string }[];
   /** Current signed-in user — becomes organizer/createdBy on new events. */
   currentEmployeeId: string;
   currentEmployeeName: string;
@@ -83,6 +86,7 @@ export function CalendarEventFormDialog({
   onOpenChange,
   event,
   targetEmployeeId,
+  employeeOptions,
   currentEmployeeId,
   currentEmployeeName,
   initialSlot,
@@ -93,7 +97,7 @@ export function CalendarEventFormDialog({
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
-    defaultValues: EMPTY_VALUES,
+    defaultValues: { ...EMPTY_VALUES, employeeId: targetEmployeeId },
   });
 
   useEffect(() => {
@@ -103,6 +107,7 @@ export function CalendarEventFormDialog({
       const start = new Date(event.start);
       const end = new Date(event.end);
       form.reset({
+        employeeId: event.employeeId,
         title: event.title,
         description: event.description,
         eventType: event.eventType,
@@ -116,15 +121,16 @@ export function CalendarEventFormDialog({
     } else if (initialSlot) {
       form.reset({
         ...EMPTY_VALUES,
+        employeeId: targetEmployeeId,
         date: format(initialSlot.start, "yyyy-MM-dd"),
         endDate: format(initialSlot.start, "yyyy-MM-dd"),
         startTime: format(initialSlot.start, "HH:mm"),
         endTime: format(initialSlot.end, "HH:mm"),
       });
     } else {
-      form.reset(EMPTY_VALUES);
+      form.reset({ ...EMPTY_VALUES, employeeId: targetEmployeeId });
     }
-  }, [open, event, initialSlot, form]);
+  }, [open, event, initialSlot, targetEmployeeId, form]);
 
   const handleSubmit = form.handleSubmit(async (values) => {
     setIsSaving(true);
@@ -133,7 +139,7 @@ export function CalendarEventFormDialog({
       const payloads = days.map((day) => {
         const dayStr = format(day, "yyyy-MM-dd");
         return {
-          employeeId: targetEmployeeId,
+          employeeId: values.employeeId,
           title: values.title.trim(),
           description: values.description.trim(),
           eventType: values.eventType as CalendarEventType,
@@ -167,6 +173,18 @@ export function CalendarEventFormDialog({
     >
       <Form {...form}>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
+          {employeeOptions && employeeOptions.length > 0 && (
+            <div className="sm:col-span-2">
+              <FormSelectField
+                control={form.control}
+                name="employeeId"
+                label="Employee"
+                options={employeeOptions.map((e) => ({ value: e.id, label: e.name }))}
+                disabled={isEdit}
+                required
+              />
+            </div>
+          )}
           <div className="sm:col-span-2">
             <FormInputField control={form.control} name="title" label="Title" placeholder="e.g. Knowledge Transfer" required />
           </div>
