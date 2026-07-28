@@ -112,6 +112,12 @@ class CalendarService {
     return all.filter((event) => ids.has(event.employeeId));
   }
 
+  /** Every sibling event created together for the same block (team calendar "add person" flow). */
+  async getByGroup(groupId: string): Promise<CalendarEvent[]> {
+    const all = await this.getAll();
+    return all.filter((event) => event.blockGroupId === groupId);
+  }
+
   async create(input: Omit<CalendarEvent, "id">): Promise<CalendarEvent> {
     const all = this.load();
     const created: CalendarEvent = { ...input, id: this.nextId(all) };

@@ -134,6 +134,9 @@ export function CalendarEventFormDialog({
     try {
       const days = eachDayOfInterval({ start: parseISO(values.date), end: parseISO(values.endDate) });
       const targets = isEdit && event ? [event.employeeId] : targetEmployeeIds;
+      // Multiple people created together share one group id, so they can be found and
+      // grown later (the team calendar's "add person to this block" flow).
+      const blockGroupId = isEdit ? (event?.blockGroupId ?? null) : targets.length > 1 ? crypto.randomUUID() : null;
       const payloads = days.flatMap((day) => {
         const dayStr = format(day, "yyyy-MM-dd");
         return targets.map((employeeId) => ({
@@ -150,6 +153,7 @@ export function CalendarEventFormDialog({
           outlookEventId: event?.outlookEventId ?? null,
           createdBy: event?.createdBy ?? currentEmployeeId,
           linkedTaskId: event?.linkedTaskId ?? null,
+          blockGroupId,
         }));
       });
       await onSave(payloads);

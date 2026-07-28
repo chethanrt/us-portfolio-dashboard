@@ -239,6 +239,8 @@ export interface CalendarEvent {
   createdBy: string;
   /** Task Board task mirrored from this event, when eventType is "Calendar Block for Task". */
   linkedTaskId?: string | null;
+  /** Shared id across sibling events created together for multiple people (team calendar). */
+  blockGroupId?: string | null;
 }
 
 // ---------------------------------------------------------------------------

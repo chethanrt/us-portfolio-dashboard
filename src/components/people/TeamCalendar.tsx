@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import FullCalendar from "@fullcalendar/react";
 import type { EventClickArg, EventDropArg } from "@fullcalendar/core";
@@ -12,6 +12,7 @@ import { ConfirmationDialog, EmptyState, LoadingSkeleton, SearchBar } from "@/co
 import { useAuth } from "@/hooks/useAuth";
 import { useTeamCalendarEvents } from "@/hooks/useCalendarEvents";
 import { usePermission } from "@/security";
+import { calendarService } from "@/services";
 import type { CalendarEvent, Employee } from "@/types";
 import { getPersonColor } from "@/utils/calendarColors";
 import { canCreateCalendarEvent, canDeleteCalendarEvent, canEditCalendarEvent, canViewCalendar } from "@/utils/permissions";
@@ -93,6 +94,88 @@ export function TeamCalendar({ employees }: TeamCalendarProps) {
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [initialSlot, setInitialSlot] = useState<{ start: Date; end: Date } | null>(null);
   const [deletingEvent, setDeletingEvent] = useState<CalendarEvent | null>(null);
+  const [groupEvents, setGroupEvents] = useState<CalendarEvent[]>([]);
+
+  // Sibling events sharing the open event's block, fetched fresh so membership is
+  // correct even for people not currently in the top picker (docs: calendar v2).
+  useEffect(() => {
+    if (!selectedEvent) {
+      setGroupEvents([]);
+      return;
+    }
+    if (!selectedEvent.blockGroupId) {
+      setGroupEvents([selectedEvent]);
+      return;
+    }
+    let cancelled = false;
+    calendarService.getByGroup(selectedEvent.blockGroupId).then((list) => {
+      if (!cancelled) setGroupEvents(list);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedEvent]);
+
+  const groupMembers = useMemo(
+    () =>
+      groupEvents.map((e) => ({
+        eventId: e.id,
+        employeeId: e.employeeId,
+        employeeName: employeeById.get(e.employeeId)?.name ?? "Unknown",
+      })),
+    [groupEvents, employeeById]
+  );
+  const addableToGroup = useMemo(() => {
+    const memberIds = new Set(groupEvents.map((e) => e.employeeId));
+    return viewableEmployees.filter(
+      (e) => !memberIds.has(e.id) && canCreateCalendarEvent(roleId, e.id, currentUser?.id)
+    );
+  }, [viewableEmployees, groupEvents, roleId, currentUser]);
+
+  const handleAddMember = async (employeeId: string) => {
+    if (!selectedEvent) return;
+    const addedName = employeeById.get(employeeId)?.name ?? "Person";
+    try {
+      let groupId = selectedEvent.blockGroupId ?? null;
+      if (!groupId) {
+        groupId = crypto.randomUUID();
+        const withGroup = { ...selectedEvent, blockGroupId: groupId };
+        await updateEvent(selectedEvent.id, withGroup);
+        setSelectedEvent(withGroup);
+      }
+      const created = await createEvent({
+        employeeId,
+        title: selectedEvent.title,
+        description: selectedEvent.description,
+        eventType: selectedEvent.eventType,
+        start: selectedEvent.start,
+        end: selectedEvent.end,
+        timeZone: selectedEvent.timeZone,
+        organizer: selectedEvent.organizer,
+        attendees: selectedEvent.attendees,
+        location: selectedEvent.location,
+        outlookEventId: null,
+        createdBy: selectedEvent.createdBy,
+        linkedTaskId: null,
+        blockGroupId: groupId,
+      });
+      setGroupEvents((current) => [...current, created]);
+      setSelectedIds((current) => (current.includes(employeeId) ? current : [...current, employeeId]));
+      toast.success(`Added ${addedName} to this block.`);
+    } catch {
+      toast.error("Unable to add that person. Please try again.");
+    }
+  };
+
+  const handleRemoveMember = async (eventId: string) => {
+    try {
+      await deleteEvent(eventId);
+      setGroupEvents((current) => current.filter((e) => e.id !== eventId));
+      toast.success("Removed from this block.");
+    } catch {
+      toast.error("Unable to remove. Please try again.");
+    }
+  };
 
   const calendarEvents = useMemo(
     () =>
@@ -323,6 +406,10 @@ export function TeamCalendar({ employees }: TeamCalendarProps) {
       <CalendarEventModal
         event={selectedEvent}
         employeeName={selectedEventEmployeeName}
+        groupMembers={groupMembers}
+        addableEmployees={addableToGroup}
+        onAddMember={handleAddMember}
+        onRemoveMember={handleRemoveMember}
         onClose={() => setSelectedEvent(null)}
         canEdit={selectedCanEdit}
         canDelete={selectedCanDelete}
