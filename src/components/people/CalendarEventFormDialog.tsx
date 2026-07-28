@@ -149,6 +149,7 @@ export function CalendarEventFormDialog({
           location: values.location.trim(),
           outlookEventId: event?.outlookEventId ?? null,
           createdBy: event?.createdBy ?? currentEmployeeId,
+          linkedTaskId: event?.linkedTaskId ?? null,
         }));
       });
       await onSave(payloads);
@@ -161,6 +162,7 @@ export function CalendarEventFormDialog({
   });
 
   const isBulk = !isEdit && targetEmployeeIds.length > 1;
+  const isTaskBlock = form.watch("eventType") === "Calendar Block for Task";
 
   return (
     <Modal
@@ -187,6 +189,11 @@ export function CalendarEventFormDialog({
             placeholder="e.g. Magento Architecture Walkthrough"
           />
           <FormSelectField control={form.control} name="eventType" label="Event Type" options={CALENDAR_EVENT_TYPES} required />
+          {isTaskBlock && (
+            <p className="text-xs text-muted-foreground sm:col-span-2">
+              This will also create a matching task on the Task Board (status: To Do).
+            </p>
+          )}
           <FormInputField
             control={form.control}
             name="date"

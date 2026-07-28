@@ -237,6 +237,8 @@ export interface CalendarEvent {
   outlookEventId: string | null;
   /** Employee id of whoever created the event. */
   createdBy: string;
+  /** Task Board task mirrored from this event, when eventType is "Calendar Block for Task". */
+  linkedTaskId?: string | null;
 }
 
 // ---------------------------------------------------------------------------
