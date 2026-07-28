@@ -164,7 +164,7 @@ export default function People() {
         }
       />
 
-      {!ownDataOnly && (
+      {!ownDataOnly && pageView === "directory" && (
         <FilterBar>
           <SearchBar value={search} onChange={setSearch} placeholder="Search people…" className="w-full sm:w-64" />
           <FilterSelect placeholder="Roles" options={ALL_ROLES} value={roleFilter} onChange={setRoleFilter} className="sm:w-48" />
@@ -186,7 +186,7 @@ export default function People() {
       )}
 
       {pageView === "calendar" ? (
-        <TeamCalendar employees={filteredEmployees} />
+        <TeamCalendar employees={visibleEmployees} />
       ) : filteredEmployees.length === 0 ? (
         <EmptyState
           icon={Users}

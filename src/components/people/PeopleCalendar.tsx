@@ -257,7 +257,7 @@ export function PeopleCalendar({ employee }: PeopleCalendarProps) {
         open={formOpen}
         onOpenChange={setFormOpen}
         event={editingEvent}
-        targetEmployeeId={employee.id}
+        targetEmployeeIds={[employee.id]}
         currentEmployeeId={currentUser?.id ?? employee.id}
         currentEmployeeName={currentUser?.name ?? employee.name}
         initialSlot={initialSlot}

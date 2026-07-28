@@ -17,7 +17,6 @@ const MAX_RANGE_DAYS = 31;
 
 const eventSchema = z
   .object({
-    employeeId: z.string().min(1, REQUIRED),
     title: z.string().trim().min(3, "Title must be at least 3 characters.").max(100),
     description: z.string().trim().max(500),
     eventType: z.string().min(1, REQUIRED),
@@ -43,7 +42,7 @@ const eventSchema = z
 
 type EventFormValues = z.infer<typeof eventSchema>;
 
-const EMPTY_VALUES: Omit<EventFormValues, "employeeId"> = {
+const EMPTY_VALUES: EventFormValues = {
   title: "",
   description: "",
   eventType: "Meeting",
@@ -66,18 +65,18 @@ function parseAttendees(raw: string): CalendarEvent["attendees"] {
 interface CalendarEventFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** When set, the dialog is in Edit mode. */
+  /** When set, the dialog is in Edit mode — always applies to that one event's own owner. */
   event: CalendarEvent | null;
-  /** Whose calendar this event belongs to (default/fixed target). */
-  targetEmployeeId: string;
-  /** When set, shows an Employee picker instead of a fixed target (team calendar view). */
-  employeeOptions?: { id: string; name: string }[];
+  /** Whose calendar(s) a new event is created on. One entry blocks a single person; several block all of them at once. */
+  targetEmployeeIds: string[];
+  /** Display names matching targetEmployeeIds, for the confirmation copy. */
+  targetEmployeeNames?: string[];
   /** Current signed-in user — becomes organizer/createdBy on new events. */
   currentEmployeeId: string;
   currentEmployeeName: string;
   /** Pre-fills date/time when created via a slot click. */
   initialSlot?: { start: Date; end: Date } | null;
-  /** Called with one payload per day in the selected range (a single-day event is a 1-element array). */
+  /** Called with one payload per (day × target employee) combination. */
   onSave: (values: Omit<CalendarEvent, "id">[]) => Promise<void>;
 }
 
@@ -85,8 +84,8 @@ export function CalendarEventFormDialog({
   open,
   onOpenChange,
   event,
-  targetEmployeeId,
-  employeeOptions,
+  targetEmployeeIds,
+  targetEmployeeNames,
   currentEmployeeId,
   currentEmployeeName,
   initialSlot,
@@ -97,7 +96,7 @@ export function CalendarEventFormDialog({
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
-    defaultValues: { ...EMPTY_VALUES, employeeId: targetEmployeeId },
+    defaultValues: EMPTY_VALUES,
   });
 
   useEffect(() => {
@@ -107,7 +106,6 @@ export function CalendarEventFormDialog({
       const start = new Date(event.start);
       const end = new Date(event.end);
       form.reset({
-        employeeId: event.employeeId,
         title: event.title,
         description: event.description,
         eventType: event.eventType,
@@ -121,25 +119,25 @@ export function CalendarEventFormDialog({
     } else if (initialSlot) {
       form.reset({
         ...EMPTY_VALUES,
-        employeeId: targetEmployeeId,
         date: format(initialSlot.start, "yyyy-MM-dd"),
         endDate: format(initialSlot.start, "yyyy-MM-dd"),
         startTime: format(initialSlot.start, "HH:mm"),
         endTime: format(initialSlot.end, "HH:mm"),
       });
     } else {
-      form.reset({ ...EMPTY_VALUES, employeeId: targetEmployeeId });
+      form.reset(EMPTY_VALUES);
     }
-  }, [open, event, initialSlot, targetEmployeeId, form]);
+  }, [open, event, initialSlot, form]);
 
   const handleSubmit = form.handleSubmit(async (values) => {
     setIsSaving(true);
     try {
       const days = eachDayOfInterval({ start: parseISO(values.date), end: parseISO(values.endDate) });
-      const payloads = days.map((day) => {
+      const targets = isEdit && event ? [event.employeeId] : targetEmployeeIds;
+      const payloads = days.flatMap((day) => {
         const dayStr = format(day, "yyyy-MM-dd");
-        return {
-          employeeId: values.employeeId,
+        return targets.map((employeeId) => ({
+          employeeId,
           title: values.title.trim(),
           description: values.description.trim(),
           eventType: values.eventType as CalendarEventType,
@@ -151,7 +149,7 @@ export function CalendarEventFormDialog({
           location: values.location.trim(),
           outlookEventId: event?.outlookEventId ?? null,
           createdBy: event?.createdBy ?? currentEmployeeId,
-        };
+        }));
       });
       await onSave(payloads);
       onOpenChange(false);
@@ -162,29 +160,23 @@ export function CalendarEventFormDialog({
     }
   });
 
+  const isBulk = !isEdit && targetEmployeeIds.length > 1;
+
   return (
     <Modal
       open={open}
       onOpenChange={(next) => !isSaving && onOpenChange(next)}
-      title={isEdit ? "Edit Event" : "Create Event"}
+      title={isEdit ? "Edit Event" : isBulk ? `Block Time for ${targetEmployeeIds.length} People` : "Create Event"}
       description={
-        isEdit ? undefined : "Pick an End Date past the Start Date to block the same time range across several days."
+        isEdit
+          ? undefined
+          : isBulk
+            ? `Added to: ${targetEmployeeNames?.join(", ") ?? `${targetEmployeeIds.length} people`}. Pick an End Date past the Start Date to block the same range across several days.`
+            : "Pick an End Date past the Start Date to block the same time range across several days."
       }
     >
       <Form {...form}>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2" noValidate>
-          {employeeOptions && employeeOptions.length > 0 && (
-            <div className="sm:col-span-2">
-              <FormSelectField
-                control={form.control}
-                name="employeeId"
-                label="Employee"
-                options={employeeOptions.map((e) => ({ value: e.id, label: e.name }))}
-                disabled={isEdit}
-                required
-              />
-            </div>
-          )}
           <div className="sm:col-span-2">
             <FormInputField control={form.control} name="title" label="Title" placeholder="e.g. Knowledge Transfer" required />
           </div>
