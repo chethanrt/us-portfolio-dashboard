@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { CalendarDays, LayoutGrid, Plus, Users } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { CalendarDays, LayoutGrid, Network, Plus, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
   ALL_FILTER,
@@ -14,6 +14,7 @@ import { EmployeeCard } from "@/components/people/EmployeeCard";
 import { EmployeeFormDialog } from "@/components/people/EmployeeFormDialog";
 import { EmployeeProfileDrawer } from "@/components/people/EmployeeProfileDrawer";
 import { OffboardEmployeeDialog } from "@/components/people/OffboardEmployeeDialog";
+import { OrgChart } from "@/components/people/OrgChart";
 import { TeamCalendar } from "@/components/people/TeamCalendar";
 import { Button } from "@/components/ui/button";
 import { ALL_ROLES } from "@/context/AuthContext";
@@ -21,7 +22,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEmployees } from "@/hooks/useEmployees";
 import type { EmployeeWithStats } from "@/hooks/useEmployees";
 import { usePermission } from "@/security";
+import { userService } from "@/services";
 import type { Employee } from "@/types";
+
+type PageView = "directory" | "calendar" | "orgchart";
 
 export default function People() {
   const { employees, projects, isLoading, error, addEmployee, updateEmployee, offboardEmployee } =
@@ -29,6 +33,20 @@ export default function People() {
   const { currentUser } = useAuth();
   const { canCreate, canEditRow, canDeleteRow, isOwnDataScope } = usePermission();
   const ownDataOnly = isOwnDataScope("people");
+
+  // Employees without a login account (docs/10: People and User Management must stay in sync).
+  // Re-checked whenever the employee list changes so a newly added employee's
+  // auto-created account is reflected immediately.
+  const [linkedEmployeeIds, setLinkedEmployeeIds] = useState<Set<string> | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    userService.getAll().then((users) => {
+      if (!cancelled) setLinkedEmployeeIds(new Set(users.map((u) => u.employeeId).filter(Boolean)));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [employees]);
 
   // Own-data view scope: see only their own profile.
   const visibleEmployees = useMemo(
@@ -41,7 +59,7 @@ export default function People() {
   const [technologyFilter, setTechnologyFilter] = useState(ALL_FILTER);
   const [projectFilter, setProjectFilter] = useState(ALL_FILTER);
 
-  const [pageView, setPageView] = useState<"directory" | "calendar">("directory");
+  const [pageView, setPageView] = useState<PageView>("directory");
   const [viewing, setViewing] = useState<EmployeeWithStats | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<EmployeeWithStats | null>(null);
@@ -142,13 +160,29 @@ export default function People() {
         actions={
           <div className="flex items-center gap-2">
             {!ownDataOnly && (
-              <Button
-                variant={pageView === "calendar" ? "default" : "outline"}
-                onClick={() => setPageView((v) => (v === "calendar" ? "directory" : "calendar"))}
-              >
-                {pageView === "calendar" ? <LayoutGrid /> : <CalendarDays />}
-                {pageView === "calendar" ? "Directory" : "Calendar"}
-              </Button>
+              <div className="flex rounded-lg border p-0.5">
+                {(
+                  [
+                    { value: "directory", label: "Directory", icon: LayoutGrid },
+                    { value: "calendar", label: "Calendar", icon: CalendarDays },
+                    { value: "orgchart", label: "Org Chart", icon: Network },
+                  ] as const
+                ).map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setPageView(option.value)}
+                    className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                      pageView === option.value
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <option.icon className="size-4" />
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             )}
             {canCreate("people") && (
               <Button
@@ -187,6 +221,8 @@ export default function People() {
 
       {pageView === "calendar" ? (
         <TeamCalendar employees={visibleEmployees} />
+      ) : pageView === "orgchart" ? (
+        <OrgChart employees={visibleEmployees} onViewProfile={setViewing} />
       ) : filteredEmployees.length === 0 ? (
         <EmptyState
           icon={Users}
@@ -203,6 +239,7 @@ export default function People() {
               employee={employee}
               canEdit={canEditRow("people", employee.id)}
               canDelete={canDeleteRow("people", employee.id)}
+              hasAccount={linkedEmployeeIds ? linkedEmployeeIds.has(employee.id) : true}
               onViewProfile={setViewing}
               onEdit={(e) => {
                 setEditing(e);

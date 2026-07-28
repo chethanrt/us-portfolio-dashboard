@@ -1,10 +1,32 @@
 import employeesData from "@/data/employees.json";
 import type { Employee, EmployeeRole } from "@/types";
 import { simulateRequest } from "./BaseService";
+import { roleService } from "./RoleService";
+import { userService } from "./UserService";
 
 const seedEmployees = employeesData as Employee[];
 
 const STORAGE_KEY = "ai-portfolio-dashboard.employees";
+
+const DEFAULT_PASSWORD = "Welcome@123";
+
+/** firstname.lastname, deduplicated against existing usernames (e.g. "jane.doe", "jane.doe2"). */
+async function generateUsername(name: string): Promise<string> {
+  const base =
+    name
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z\s]/g, "")
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .join(".") || "user";
+  const existing = new Set((await userService.getAll()).map((u) => u.username.toLowerCase()));
+  if (!existing.has(base)) return base;
+  let suffix = 2;
+  while (existing.has(`${base}${suffix}`)) suffix += 1;
+  return `${base}${suffix}`;
+}
 
 /**
  * Employees support full CRUD, plus offboarding. Mutations persist to Local
@@ -51,10 +73,26 @@ class EmployeeService {
     return all.filter((employee) => employee.role === role);
   }
 
+  /**
+   * Creates the employee, then a matching login account (docs/10 People +
+   * User Management should never drift apart) with a generated username and
+   * the default password, in whatever role shares the employee's role name.
+   */
   async create(input: Omit<Employee, "id">): Promise<Employee> {
     const all = this.load();
     const created: Employee = { ...input, id: this.nextId(all) };
     this.persist([...all, created]);
+
+    const [username, roles] = await Promise.all([generateUsername(created.name), roleService.getAll()]);
+    const roleId = roles.find((r) => r.name === created.role)?.id ?? "developer";
+    await userService.create({
+      username,
+      password: DEFAULT_PASSWORD,
+      roleId,
+      employeeId: created.id,
+      status: "Active",
+    });
+
     return simulateRequest(created);
   }
 
@@ -91,6 +129,13 @@ class EmployeeService {
       return newManagerId ? { ...employee, managerId: newManagerId } : employee;
     });
     this.persist(updated);
+
+    // A departed employee shouldn't keep an active login; no-op if there wasn't one.
+    const account = (await userService.getAll()).find((u) => u.employeeId === id);
+    if (account && account.status === "Active") {
+      await userService.update(account.id, { ...account, status: "Inactive" });
+    }
+
     return simulateRequest(updated.find((employee) => employee.id === id)!);
   }
 }

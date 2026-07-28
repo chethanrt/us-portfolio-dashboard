@@ -13,12 +13,22 @@ interface EmployeeCardProps {
   canEdit: boolean;
   /** Whether the signed-in user can remove (offboard) this employee. */
   canDelete: boolean;
+  /** False flags a data-integrity gap: an active employee with no login account. */
+  hasAccount?: boolean;
   onViewProfile: (employee: EmployeeWithStats) => void;
   onEdit: (employee: EmployeeWithStats) => void;
   onRemove: (employee: EmployeeWithStats) => void;
 }
 
-export function EmployeeCard({ employee, canEdit, canDelete, onViewProfile, onEdit, onRemove }: EmployeeCardProps) {
+export function EmployeeCard({
+  employee,
+  canEdit,
+  canDelete,
+  hasAccount = true,
+  onViewProfile,
+  onEdit,
+  onRemove,
+}: EmployeeCardProps) {
   const isExEmployee = employee.status === "Ex-Employee";
   return (
     <Card className="flex flex-col shadow-sm transition-shadow hover:shadow-md">
@@ -41,6 +51,11 @@ export function EmployeeCard({ employee, canEdit, canDelete, onViewProfile, onEd
         <div className="flex flex-wrap items-center gap-1.5">
           <Badge variant="secondary">{employee.primarySkill}</Badge>
           {employee.secondarySkill && <Badge variant="outline">{employee.secondarySkill}</Badge>}
+          {!hasAccount && !isExEmployee && (
+            <Badge variant="destructive" title="No linked login account — add one in User Management">
+              No Login Account
+            </Badge>
+          )}
         </div>
         <p className="truncate text-sm text-muted-foreground" title={employee.currentProject}>
           Project: <span className="text-foreground">{employee.currentProject}</span>

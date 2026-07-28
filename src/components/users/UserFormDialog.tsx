@@ -59,6 +59,15 @@ export function UserFormDialog({ open, onOpenChange, user, users, employees, rol
   const [isSaving, setIsSaving] = useState(false);
   const isEdit = Boolean(user);
 
+  // Employees already linked to a different account can't be picked again —
+  // that's how People and User Management drift out of sync with each other.
+  const linkableEmployees = useMemo(() => {
+    const linkedElsewhere = new Set(
+      users.filter((u) => u.employeeId && u.employeeId !== user?.employeeId).map((u) => u.employeeId)
+    );
+    return employees.filter((e) => !linkedElsewhere.has(e.id));
+  }, [employees, users, user]);
+
   const schema = useMemo(() => {
     const taken = new Set(
       users.filter((u) => u.id !== user?.id).map((u) => u.username.toLowerCase())
@@ -155,7 +164,7 @@ export function UserFormDialog({ open, onOpenChange, user, users, employees, rol
             label="Linked Employee"
             options={[
               { value: NO_EMPLOYEE, label: "None (system account)" },
-              ...employees.map((e) => ({ value: e.id, label: e.name })),
+              ...linkableEmployees.map((e) => ({ value: e.id, label: e.name })),
             ]}
           />
 
