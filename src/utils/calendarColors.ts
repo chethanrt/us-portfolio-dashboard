@@ -43,3 +43,31 @@ const EVENT_TYPE_COLORS: Record<CalendarEventType, EventTypeColor> = {
 export function getEventTypeColor(eventType: CalendarEventType): EventTypeColor {
   return EVENT_TYPE_COLORS[eventType];
 }
+
+interface PersonColor {
+  /** Fill for that person's calendar blocks. */
+  hex: string;
+  /** Whichever of black/white reads best on `hex`, computed for contrast — not eyeballed. */
+  textColor: string;
+}
+
+/**
+ * Fixed-order categorical palette (docs/dataviz skill): eight hues, each
+ * validated for adjacent CVD separation and chroma floor, no white/light
+ * steps. Assign by a person's index within the current selection so any two
+ * people selected together always get visibly distinct colors.
+ */
+const PERSON_COLORS: PersonColor[] = [
+  { hex: "#2a78d6", textColor: "#ffffff" }, // blue
+  { hex: "#eb6834", textColor: "#0b0b0b" }, // orange
+  { hex: "#1baf7a", textColor: "#0b0b0b" }, // aqua
+  { hex: "#eda100", textColor: "#0b0b0b" }, // yellow
+  { hex: "#e87ba4", textColor: "#0b0b0b" }, // magenta
+  { hex: "#008300", textColor: "#ffffff" }, // green
+  { hex: "#4a3aa7", textColor: "#ffffff" }, // violet
+  { hex: "#e34948", textColor: "#ffffff" }, // red
+];
+
+export function getPersonColor(index: number): PersonColor {
+  return PERSON_COLORS[index % PERSON_COLORS.length];
+}

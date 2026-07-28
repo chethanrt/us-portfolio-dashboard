@@ -13,7 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTeamCalendarEvents } from "@/hooks/useCalendarEvents";
 import { usePermission } from "@/security";
 import type { CalendarEvent, Employee } from "@/types";
-import { getEventTypeColor } from "@/utils/calendarColors";
+import { getPersonColor } from "@/utils/calendarColors";
 import { canCreateCalendarEvent, canDeleteCalendarEvent, canEditCalendarEvent, canViewCalendar } from "@/utils/permissions";
 import { Badge } from "@/components/ui/badge";
 import { CalendarEventFormDialog } from "./CalendarEventFormDialog";
@@ -56,6 +56,11 @@ export function TeamCalendar({ employees }: TeamCalendarProps) {
     () => selectedIds.map((id) => employeeById.get(id)).filter((e): e is Employee => Boolean(e)),
     [selectedIds, employeeById]
   );
+  /** One color per selected person (fixed order = selection order), so any two selected together stay distinct. */
+  const colorByEmployeeId = useMemo(
+    () => new Map(selectedEmployees.map((e, index) => [e.id, getPersonColor(index)])),
+    [selectedEmployees]
+  );
 
   const searchResults = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -92,7 +97,7 @@ export function TeamCalendar({ employees }: TeamCalendarProps) {
   const calendarEvents = useMemo(
     () =>
       events.map((event) => {
-        const color = getEventTypeColor(event.eventType);
+        const color = colorByEmployeeId.get(event.employeeId) ?? getPersonColor(0);
         const editable = canEditCalendarEvent(roleId, event, currentUser?.id);
         const employeeName = employeeById.get(event.employeeId)?.name ?? "Unknown";
         return {
@@ -102,14 +107,14 @@ export function TeamCalendar({ employees }: TeamCalendarProps) {
           end: event.end,
           backgroundColor: color.hex,
           borderColor: color.hex,
-          textColor: "#ffffff",
+          textColor: color.textColor,
           editable,
           startEditable: editable,
           durationEditable: editable,
           extendedProps: { event },
         };
       }),
-    [events, roleId, currentUser, employeeById]
+    [events, roleId, currentUser, employeeById, colorByEmployeeId]
   );
 
   const getApi = () => calendarRef.current?.getApi();
@@ -237,7 +242,12 @@ export function TeamCalendar({ employees }: TeamCalendarProps) {
         {selectedEmployees.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {selectedEmployees.map((employee) => (
-              <Badge key={employee.id} variant="secondary" className="gap-1 py-1.5 pl-2.5 pr-1.5 text-sm">
+              <Badge key={employee.id} variant="secondary" className="gap-1.5 py-1.5 pl-2.5 pr-1.5 text-sm">
+                <span
+                  className="size-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: colorByEmployeeId.get(employee.id)?.hex }}
+                  aria-hidden="true"
+                />
                 {employee.name}
                 <button
                   type="button"
