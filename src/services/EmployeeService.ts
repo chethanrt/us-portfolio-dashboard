@@ -1,17 +1,40 @@
 import employeesData from "@/data/employees.json";
 import type { Employee, EmployeeRole } from "@/types";
 import { simulateRequest } from "./BaseService";
-import { activityService } from "./ActivityService";
-import { pocService } from "./POCService";
+import { roleService } from "./RoleService";
+import { userService } from "./UserService";
 
 const seedEmployees = employeesData as Employee[];
 
 const STORAGE_KEY = "ai-portfolio-dashboard.employees";
 
+const DEFAULT_PASSWORD = "Welcome@123";
+
+/** firstname.lastname, deduplicated against existing usernames (e.g. "jane.doe", "jane.doe2"). */
+async function generateUsername(name: string): Promise<string> {
+  const base =
+    name
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z\s]/g, "")
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .join(".") || "user";
+  const existing = new Set((await userService.getAll()).map((u) => u.username.toLowerCase()));
+  if (!existing.has(base)) return base;
+  let suffix = 2;
+  while (existing.has(`${base}${suffix}`)) suffix += 1;
+  return `${base}${suffix}`;
+}
+
 /**
- * Employees support full CRUD. Mutations persist to Local Storage
- * (JSON file remains the seed). Deletion is blocked while the employee
- * is referenced by activities or POCs to keep the JSON relations valid.
+ * Employees support full CRUD, plus offboarding. Mutations persist to Local
+ * Storage (JSON file remains the seed). Employees are never hard-deleted —
+ * removing one sets `status: "Ex-Employee"` instead, so their historical
+ * activities/POCs/learning records stay valid and their profile is still
+ * visible (per docs/01 §7); `offboard()` also reassigns anyone who reported
+ * to them so the manager hierarchy never points at a departed employee.
  */
 class EmployeeService {
   private load(): Employee[] {
@@ -50,10 +73,26 @@ class EmployeeService {
     return all.filter((employee) => employee.role === role);
   }
 
+  /**
+   * Creates the employee, then a matching login account (docs/10 People +
+   * User Management should never drift apart) with a generated username and
+   * the default password, in whatever role shares the employee's role name.
+   */
   async create(input: Omit<Employee, "id">): Promise<Employee> {
     const all = this.load();
     const created: Employee = { ...input, id: this.nextId(all) };
     this.persist([...all, created]);
+
+    const [username, roles] = await Promise.all([generateUsername(created.name), roleService.getAll()]);
+    const roleId = roles.find((r) => r.name === created.role)?.id ?? "developer";
+    await userService.create({
+      username,
+      password: DEFAULT_PASSWORD,
+      roleId,
+      employeeId: created.id,
+      status: "Active",
+    });
+
     return simulateRequest(created);
   }
 
@@ -67,17 +106,37 @@ class EmployeeService {
     return simulateRequest(updated);
   }
 
-  /** Throws if the employee is still referenced by activities or POCs. */
-  async delete(id: string): Promise<void> {
-    const [activities, pocs] = await Promise.all([
-      activityService.getByEmployee(id),
-      pocService.getByOwner(id),
-    ]);
-    if (activities.length > 0 || pocs.length > 0) {
-      throw new Error("REFERENCED");
+  /**
+   * Marks an employee as an Ex-Employee instead of deleting their record, and
+   * reassigns each direct report to the manager chosen for them in
+   * `reassignments` (map of reportId -> newManagerId). Throws if a direct
+   * report was left without a replacement manager.
+   */
+  async offboard(id: string, reassignments: Record<string, string>): Promise<Employee> {
+    const all = this.load();
+    if (!all.some((employee) => employee.id === id)) {
+      throw new Error(`Employee ${id} not found`);
     }
-    this.persist(this.load().filter((employee) => employee.id !== id));
-    await simulateRequest(undefined);
+    const directReports = all.filter((employee) => employee.managerId === id && employee.status !== "Ex-Employee");
+    const missing = directReports.find((report) => !reassignments[report.id]);
+    if (missing) {
+      throw new Error("REPORTS_UNASSIGNED");
+    }
+
+    const updated = all.map((employee) => {
+      if (employee.id === id) return { ...employee, status: "Ex-Employee" as const };
+      const newManagerId = reassignments[employee.id];
+      return newManagerId ? { ...employee, managerId: newManagerId } : employee;
+    });
+    this.persist(updated);
+
+    // A departed employee shouldn't keep an active login; no-op if there wasn't one.
+    const account = (await userService.getAll()).find((u) => u.employeeId === id);
+    if (account && account.status === "Active") {
+      await userService.update(account.id, { ...account, status: "Inactive" });
+    }
+
+    return simulateRequest(updated.find((employee) => employee.id === id)!);
   }
 }
 

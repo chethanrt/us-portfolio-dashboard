@@ -33,7 +33,7 @@ export type ProjectStage =
 
 export type ProjectStatus = "Active" | "On Hold" | "Completed" | "Planning";
 
-export type EmployeeStatus = "Active" | "Inactive";
+export type EmployeeStatus = "Active" | "Inactive" | "Ex-Employee";
 
 export type AITool =
   | "Claude"
@@ -91,6 +91,8 @@ export interface Employee {
   currentProject: string;
   profileImage: string;
   status: EmployeeStatus;
+  /** Employee id this person reports to; null at the top of the hierarchy. */
+  managerId: string | null;
 }
 
 /** projects.json */
@@ -190,6 +192,55 @@ export interface AppSettings {
     learning: LearningStatus[];
     poc: POCStatus[];
   };
+}
+
+/** calendarEvents.json */
+export type CalendarEventType =
+  | "Meeting"
+  | "Focus Time"
+  | "Training"
+  | "KT Session"
+  | "Leave"
+  | "Workshop"
+  | "Code Review"
+  | "Sprint Planning"
+  | "Retrospective"
+  | "Calendar Block for Task";
+
+export interface CalendarAttendee {
+  name: string;
+  email: string;
+}
+
+/**
+ * calendarEvents.json — shape mirrors a Microsoft Graph calendar event so a
+ * future Outlook/Graph integration can replace CalendarService's storage
+ * without any component changes. Phase 1 data is local only (no live Outlook
+ * sync); `outlookEventId` stays null until that integration exists.
+ */
+export interface CalendarEvent {
+  id: string;
+  /** Whose calendar this event is on. */
+  employeeId: string;
+  title: string;
+  description: string;
+  eventType: CalendarEventType;
+  /** ISO datetime. */
+  start: string;
+  /** ISO datetime. */
+  end: string;
+  timeZone: string;
+  /** Name of the event organizer. */
+  organizer: string;
+  attendees: CalendarAttendee[];
+  location: string;
+  outlookEventId: string | null;
+  /** Employee id of whoever created the event. */
+  createdBy: string;
+  /** Task Board task mirrored from this event, when eventType is "Calendar Block for Task". */
+  linkedTaskId?: string | null;
+  /** Shared id across sibling events created together for multiple people (team calendar). */
+  blockGroupId?: string | null;
 }
 
 // ---------------------------------------------------------------------------

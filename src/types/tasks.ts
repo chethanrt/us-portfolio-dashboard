@@ -57,6 +57,8 @@ export interface Task {
   aiTool: string;
   linkedActivityId: string;
   linkedPocId: string;
+  /** Source calendar event, when this task was created from a "Calendar Block for Task" block. */
+  linkedCalendarEventId?: string | null;
   comments: TaskComment[];
   attachments: TaskAttachment[];
   archived: boolean;

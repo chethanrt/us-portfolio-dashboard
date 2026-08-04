@@ -1,9 +1,8 @@
-import { useMemo, useState } from "react";
-import { Plus, Users } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { CalendarDays, LayoutGrid, Network, Plus, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
   ALL_FILTER,
-  ConfirmationDialog,
   EmptyState,
   FilterBar,
   FilterSelect,
@@ -14,20 +13,40 @@ import {
 import { EmployeeCard } from "@/components/people/EmployeeCard";
 import { EmployeeFormDialog } from "@/components/people/EmployeeFormDialog";
 import { EmployeeProfileDrawer } from "@/components/people/EmployeeProfileDrawer";
+import { OffboardEmployeeDialog } from "@/components/people/OffboardEmployeeDialog";
+import { OrgChart } from "@/components/people/OrgChart";
+import { TeamCalendar } from "@/components/people/TeamCalendar";
 import { Button } from "@/components/ui/button";
 import { ALL_ROLES } from "@/context/AuthContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useEmployees } from "@/hooks/useEmployees";
 import type { EmployeeWithStats } from "@/hooks/useEmployees";
 import { usePermission } from "@/security";
+import { userService } from "@/services";
 import type { Employee } from "@/types";
 
+type PageView = "directory" | "calendar" | "orgchart";
+
 export default function People() {
-  const { employees, projects, isLoading, error, addEmployee, updateEmployee, deleteEmployee } =
+  const { employees, projects, isLoading, error, addEmployee, updateEmployee, offboardEmployee } =
     useEmployees();
   const { currentUser } = useAuth();
   const { canCreate, canEditRow, canDeleteRow, isOwnDataScope } = usePermission();
   const ownDataOnly = isOwnDataScope("people");
+
+  // Employees without a login account (docs/10: People and User Management must stay in sync).
+  // Re-checked whenever the employee list changes so a newly added employee's
+  // auto-created account is reflected immediately.
+  const [linkedEmployeeIds, setLinkedEmployeeIds] = useState<Set<string> | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    userService.getAll().then((users) => {
+      if (!cancelled) setLinkedEmployeeIds(new Set(users.map((u) => u.employeeId).filter(Boolean)));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [employees]);
 
   // Own-data view scope: see only their own profile.
   const visibleEmployees = useMemo(
@@ -40,10 +59,24 @@ export default function People() {
   const [technologyFilter, setTechnologyFilter] = useState(ALL_FILTER);
   const [projectFilter, setProjectFilter] = useState(ALL_FILTER);
 
+  const [pageView, setPageView] = useState<PageView>("directory");
   const [viewing, setViewing] = useState<EmployeeWithStats | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<EmployeeWithStats | null>(null);
-  const [deleting, setDeleting] = useState<EmployeeWithStats | null>(null);
+  const [offboarding, setOffboarding] = useState<EmployeeWithStats | null>(null);
+
+  // People who'd be left reporting to a departed manager, and who's eligible to take over for them.
+  const directReports = useMemo(
+    () =>
+      offboarding
+        ? employees.filter((e) => e.managerId === offboarding.id && e.status !== "Ex-Employee")
+        : [],
+    [employees, offboarding]
+  );
+  const candidateManagers = useMemo(
+    () => (offboarding ? employees.filter((e) => e.id !== offboarding.id && e.status !== "Ex-Employee") : []),
+    [employees, offboarding]
+  );
 
   const technologyOptions = useMemo(
     () => [...new Set(visibleEmployees.map((e) => e.primarySkill))].sort(),
@@ -84,19 +117,18 @@ export default function People() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleting) return;
+  const handleOffboard = async (reassignments: Record<string, string>) => {
+    if (!offboarding) return;
     try {
-      await deleteEmployee(deleting.id);
-      toast.success("Employee deleted successfully.");
-    } catch (err) {
-      toast.error(
-        err instanceof Error && err.message === "REFERENCED"
-          ? "Cannot delete — this employee has linked activities or POCs."
-          : "Unable to delete. Please try again."
+      await offboardEmployee(offboarding.id, reassignments);
+      toast.success(
+        directReports.length > 0
+          ? `${offboarding.name} marked as Ex-Employee. ${directReports.length} report(s) reassigned.`
+          : `${offboarding.name} marked as Ex-Employee.`
       );
-    } finally {
-      setDeleting(null);
+    } catch {
+      toast.error("Unable to update. Please try again.");
+      throw new Error("offboard failed");
     }
   };
 
@@ -126,20 +158,47 @@ export default function People() {
           ownDataOnly ? "Your profile and statistics" : `${visibleEmployees.length} team members across the portfolio`
         }
         actions={
-          canCreate("people") ? (
-            <Button
-              onClick={() => {
-                setEditing(null);
-                setFormOpen(true);
-              }}
-            >
-              <Plus /> Add Employee
-            </Button>
-          ) : undefined
+          <div className="flex items-center gap-2">
+            {!ownDataOnly && (
+              <div className="flex rounded-lg border p-0.5">
+                {(
+                  [
+                    { value: "directory", label: "Directory", icon: LayoutGrid },
+                    { value: "calendar", label: "Calendar", icon: CalendarDays },
+                    { value: "orgchart", label: "Org Chart", icon: Network },
+                  ] as const
+                ).map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setPageView(option.value)}
+                    className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                      pageView === option.value
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <option.icon className="size-4" />
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {canCreate("people") && (
+              <Button
+                onClick={() => {
+                  setEditing(null);
+                  setFormOpen(true);
+                }}
+              >
+                <Plus /> Add Employee
+              </Button>
+            )}
+          </div>
         }
       />
 
-      {!ownDataOnly && (
+      {!ownDataOnly && pageView === "directory" && (
         <FilterBar>
           <SearchBar value={search} onChange={setSearch} placeholder="Search people…" className="w-full sm:w-64" />
           <FilterSelect placeholder="Roles" options={ALL_ROLES} value={roleFilter} onChange={setRoleFilter} className="sm:w-48" />
@@ -160,7 +219,11 @@ export default function People() {
         </FilterBar>
       )}
 
-      {filteredEmployees.length === 0 ? (
+      {pageView === "calendar" ? (
+        <TeamCalendar employees={visibleEmployees} />
+      ) : pageView === "orgchart" ? (
+        <OrgChart employees={visibleEmployees} onViewProfile={setViewing} />
+      ) : filteredEmployees.length === 0 ? (
         <EmptyState
           icon={Users}
           title="No People to Show"
@@ -176,18 +239,23 @@ export default function People() {
               employee={employee}
               canEdit={canEditRow("people", employee.id)}
               canDelete={canDeleteRow("people", employee.id)}
+              hasAccount={linkedEmployeeIds ? linkedEmployeeIds.has(employee.id) : true}
               onViewProfile={setViewing}
               onEdit={(e) => {
                 setEditing(e);
                 setFormOpen(true);
               }}
-              onDelete={setDeleting}
+              onRemove={setOffboarding}
             />
           ))}
         </div>
       )}
 
-      <EmployeeProfileDrawer employee={viewing} onClose={() => setViewing(null)} />
+      <EmployeeProfileDrawer
+        employee={viewing}
+        managerName={employees.find((e) => e.id === viewing?.managerId)?.name}
+        onClose={() => setViewing(null)}
+      />
 
       <EmployeeFormDialog
         open={formOpen}
@@ -198,15 +266,13 @@ export default function People() {
         onSave={handleSave}
       />
 
-      <ConfirmationDialog
-        open={Boolean(deleting)}
-        onOpenChange={(open) => !open && setDeleting(null)}
-        onConfirm={handleDelete}
-        message={
-          deleting
-            ? `Are you sure you want to delete ${deleting.name}? This cannot be undone.`
-            : "Are you sure you want to delete this record?"
-        }
+      <OffboardEmployeeDialog
+        open={Boolean(offboarding)}
+        onOpenChange={(open) => !open && setOffboarding(null)}
+        employee={offboarding}
+        directReports={directReports}
+        candidateManagers={candidateManagers}
+        onConfirm={handleOffboard}
       />
     </div>
   );
