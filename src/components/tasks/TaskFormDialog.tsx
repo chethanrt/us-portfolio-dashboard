@@ -149,7 +149,7 @@ export function TaskFormDialog({
   const handleSubmit = form.handleSubmit(async (values) => {
     setIsSaving(true);
     try {
-      const projectId = values.type === "Project" && values.projectId !== NONE ? values.projectId : null;
+      const projectId = values.projectId !== NONE ? values.projectId : null;
       const transition = taskWorkflowService.getTransitionChanges(workflow, values.status);
       await onSave({
         title: values.title.trim(),
@@ -207,13 +207,13 @@ export function TaskFormDialog({
           {show("type") && (
             <FormSelectField control={form.control} name="type" label="Task Type" required options={["Project", "Standalone"]} disabled={readOnly("type")} />
           )}
-          {show("projectId") && type === "Project" && (
+          {show("projectId") && (
             <FormSelectField
               control={form.control}
               name="projectId"
               label="Project"
-              required
-              options={[{ value: NONE, label: "Select project…" }, ...projects.map((p) => ({ value: p.id, label: p.name }))]}
+              required={type === "Project"}
+              options={[{ value: NONE, label: "No project" }, ...projects.map((p) => ({ value: p.id, label: p.name }))]}
               disabled={readOnly("projectId")}
             />
           )}

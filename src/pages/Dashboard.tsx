@@ -7,7 +7,6 @@ import { ProjectStatusChart } from "@/components/dashboard/ProjectStatusChart";
 import { RecentActivities } from "@/components/dashboard/RecentActivities";
 import { MyTasksWidget, TasksByStatusChart } from "@/components/dashboard/TaskWidgets";
 import { ToolUsageChart } from "@/components/dashboard/ToolUsageChart";
-import { TopContributors } from "@/components/dashboard/TopContributors";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useDashboardData } from "@/hooks/useDashboardData";
@@ -130,22 +129,17 @@ export default function Dashboard() {
         {canView("learning") && <LearningProgressWidget learning={data.learning} />}
       </div>
 
-      {/* Lists row — Top Contributors is hidden for the personal scope */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        {canView("activities") &&
-          (data.recentActivities.length > 0 ? (
-            <RecentActivities activities={data.recentActivities} />
-          ) : (
-            <EmptyState
-              icon={Brain}
-              title="No AI Activities Found"
-              description="Logged activities will appear here."
-            />
-          ))}
-        {data.scope !== "personal" && canView("people") && (
-          <TopContributors contributors={data.topContributors} />
-        )}
-      </div>
+      {/* Recent activities */}
+      {canView("activities") &&
+        (data.recentActivities.length > 0 ? (
+          <RecentActivities activities={data.recentActivities} />
+        ) : (
+          <EmptyState
+            icon={Brain}
+            title="No AI Activities Found"
+            description="Logged activities will appear here."
+          />
+        ))}
     </div>
   );
 }

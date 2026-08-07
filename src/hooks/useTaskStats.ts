@@ -10,6 +10,8 @@ export interface TaskDashboardData {
   my: MyTaskStats;
   recent: Task[];
   workflow: TaskWorkflowStatus[];
+  /** False for logins with no linked employee (e.g. a system admin account) — "my" falls back to org-wide stats. */
+  hasIdentity: boolean;
 }
 
 /** Task statistics for dashboard widgets, respecting the tasks view scope. */
@@ -47,6 +49,7 @@ export function useTaskStats() {
       my: taskStatisticsService.myTasks(tasks, currentUser?.id),
       recent: taskStatisticsService.recent(scoped, 4),
       workflow,
+      hasIdentity: Boolean(currentUser),
     };
   }, [tasks, workflow, permission, currentUser]);
 
