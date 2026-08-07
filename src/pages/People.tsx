@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, LayoutGrid, Network, Plus, Users } from "lucide-react";
+import { CalendarDays, LayoutGrid, Plus, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
   ALL_FILTER,
@@ -14,7 +14,6 @@ import { EmployeeCard } from "@/components/people/EmployeeCard";
 import { EmployeeFormDialog } from "@/components/people/EmployeeFormDialog";
 import { EmployeeProfileDrawer } from "@/components/people/EmployeeProfileDrawer";
 import { OffboardEmployeeDialog } from "@/components/people/OffboardEmployeeDialog";
-import { OrgChart } from "@/components/people/OrgChart";
 import { TeamCalendar } from "@/components/people/TeamCalendar";
 import { Button } from "@/components/ui/button";
 import { ALL_ROLES } from "@/context/AuthContext";
@@ -25,7 +24,7 @@ import { usePermission } from "@/security";
 import { userService } from "@/services";
 import type { Employee } from "@/types";
 
-type PageView = "directory" | "calendar" | "orgchart";
+type PageView = "directory" | "calendar";
 
 export default function People() {
   const { employees, projects, isLoading, error, addEmployee, updateEmployee, offboardEmployee } =
@@ -165,7 +164,6 @@ export default function People() {
                   [
                     { value: "directory", label: "Directory", icon: LayoutGrid },
                     { value: "calendar", label: "Calendar", icon: CalendarDays },
-                    { value: "orgchart", label: "Org Chart", icon: Network },
                   ] as const
                 ).map((option) => (
                   <button
@@ -221,8 +219,6 @@ export default function People() {
 
       {pageView === "calendar" ? (
         <TeamCalendar employees={visibleEmployees} />
-      ) : pageView === "orgchart" ? (
-        <OrgChart employees={visibleEmployees} onViewProfile={setViewing} />
       ) : filteredEmployees.length === 0 ? (
         <EmptyState
           icon={Users}

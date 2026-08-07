@@ -23,15 +23,18 @@ function StatTile({ value, label, alert }: { value: number; label: string; alert
  */
 export function MyTasksWidget({ data }: { data: TaskDashboardData }) {
   const navigate = useNavigate();
+  // Logins with no linked employee (e.g. a system admin account) have no personal task
+  // scope to show, so this widget and its shortcut fall back to the org-wide view.
+  const { hasIdentity } = data;
 
   return (
     <ChartCard
-      title="My Tasks"
+      title={hasIdentity ? "My Tasks" : "All Tasks"}
       description={`${data.overview.standalone.total} standalone · ${data.overview.project.total} project tasks in scope`}
     >
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <StatTile value={data.my.total} label="Assigned" />
+          <StatTile value={data.my.total} label={hasIdentity ? "Assigned" : "Total"} />
           <StatTile value={data.my.inProgress} label="In Progress" />
           <StatTile value={data.my.dueToday} label="Due Today" />
           <StatTile value={data.my.overdue} label="Overdue" alert />
@@ -55,7 +58,7 @@ export function MyTasksWidget({ data }: { data: TaskDashboardData }) {
           variant="outline"
           size="sm"
           className="w-full"
-          onClick={() => navigate("/tasks?view=My Tasks")}
+          onClick={() => navigate(hasIdentity ? "/tasks?view=My Tasks" : "/tasks")}
         >
           Open Task Board <ArrowRight />
         </Button>

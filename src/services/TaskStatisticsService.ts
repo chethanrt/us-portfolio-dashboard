@@ -94,8 +94,9 @@ class TaskStatisticsService {
     };
   }
 
+  /** Falls back to org-wide stats when there's no employeeId (e.g. a system login with no linked employee). */
   myTasks(tasks: Task[], employeeId: string | undefined): MyTaskStats {
-    const mine = active(tasks).filter((t) => t.assigneeId === employeeId);
+    const mine = employeeId ? active(tasks).filter((t) => t.assigneeId === employeeId) : active(tasks);
     const day = today();
     return {
       total: mine.length,
