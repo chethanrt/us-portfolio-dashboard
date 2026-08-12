@@ -17,16 +17,6 @@ import type { Employee, Project } from "@/types";
 
 const REQUIRED = "This field is required.";
 
-const TECHNOLOGIES = [
-  "Magento",
-  "Adobe Commerce",
-  "PHP",
-  "React",
-  "JavaScript",
-  "GraphQL",
-  "CMS",
-  "Marketing Automation",
-];
 const PROGRAMS = ["US Portfolio – Commerce", "US Portfolio – CMS", "US Portfolio – Marketing"];
 const STAGES = [
   "Discovery",
@@ -58,7 +48,7 @@ function buildProjectSchema(existing: Project[], editingId: string | null) {
         ),
       client: z.string().trim().min(1, REQUIRED).max(80, "Maximum 80 characters."),
       program: z.string().min(1, REQUIRED),
-      technology: z.string().min(1, REQUIRED),
+      technology: z.array(z.string()).min(1, "Please select at least one technology."),
       stage: z.string().min(1, REQUIRED),
       status: z.string().min(1, REQUIRED),
       manager: z.string().min(1, REQUIRED),
@@ -81,7 +71,7 @@ const EMPTY_VALUES: ProjectFormValues = {
   name: "",
   client: "",
   program: "",
-  technology: "",
+  technology: [],
   stage: "Discovery",
   status: "Planning",
   manager: "",
@@ -99,10 +89,20 @@ interface ProjectFormDialogProps {
   project: Project | null;
   projects: Project[];
   employees: Employee[];
+  /** Settings-managed technology list (Settings > Technical Skills). */
+  technicalSkills: string[];
   onSave: (values: Omit<Project, "id">) => Promise<void>;
 }
 
-export function ProjectFormDialog({ open, onOpenChange, project, projects, employees, onSave }: ProjectFormDialogProps) {
+export function ProjectFormDialog({
+  open,
+  onOpenChange,
+  project,
+  projects,
+  employees,
+  technicalSkills,
+  onSave,
+}: ProjectFormDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
   const isEdit = Boolean(project);
 
@@ -191,7 +191,14 @@ export function ProjectFormDialog({ open, onOpenChange, project, projects, emplo
             <FormSelectField control={form.control} name="program" label="Program" required options={PROGRAMS} disabled={readOnly("program")} />
           )}
           {show("technology") && (
-            <FormSelectField control={form.control} name="technology" label="Technology" required options={TECHNOLOGIES} disabled={readOnly("technology")} />
+            <FormCheckboxGroupField
+              control={form.control}
+              name="technology"
+              label="Technology"
+              required
+              options={technicalSkills.map((t) => ({ value: t, label: t }))}
+              disabled={readOnly("technology")}
+            />
           )}
           {show("stage") && (
             <FormSelectField control={form.control} name="stage" label="Project Stage" required options={STAGES} disabled={readOnly("stage")} />

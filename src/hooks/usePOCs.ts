@@ -5,6 +5,7 @@ import type { Employee, POC, Project } from "@/types";
 export interface POCRow extends POC {
   ownerName: string;
   projectName: string;
+  teamNames: string[];
 }
 
 /** Loads POCs with owner/project names and exposes CRUD. */
@@ -44,6 +45,7 @@ export function usePOCs() {
       ...poc,
       ownerName: employeeById.get(poc.ownerId) ?? "Unknown",
       projectName: projectById.get(poc.projectId) ?? "Unknown",
+      teamNames: poc.team.map((id) => employeeById.get(id) ?? "Unknown"),
     }));
   }, [pocs, employees, projects]);
 

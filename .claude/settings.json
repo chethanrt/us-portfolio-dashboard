@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -Command \"Stop-Process -Id 4992,36020 -Force -ErrorAction SilentlyContinue\")",
+      "Bash(netstat -ano)"
+    ]
+  }
+}

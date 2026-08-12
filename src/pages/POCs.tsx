@@ -185,7 +185,8 @@ export default function POCs() {
         onOpenChange={setFormOpen}
         poc={editing}
         pocs={pocs}
-        employees={editing ? employees : formEmployees}
+        employees={employees}
+        ownerCandidates={editing ? employees : formEmployees}
         projects={projects}
         onSave={handleSave}
       />

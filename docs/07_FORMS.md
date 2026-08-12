@@ -328,9 +328,10 @@ Secondary Skill
 
 ------------------------------------------------
 
-Current Project
+Projects
 
-Dropdown
+Multi-select checkbox list (an employee may belong to zero or more
+projects; kept in sync automatically with each project's team membership)
 
 ------------------------------------------------
 
@@ -556,6 +557,14 @@ Project *
 
 Owner *
 
+Restricted to Director, Delivery Manager, Engineering Manager, Senior Tech Lead, Tech Lead.
+
+------------------------------------------------
+
+Team
+
+Multi-select. Restricted to Senior Developer, Developer, Intern.
+
 ------------------------------------------------
 
 Category *
@@ -605,6 +614,28 @@ In Progress
 Completed
 
 On Hold
+
+------------------------------------------------
+
+Start Date *
+
+------------------------------------------------
+
+End Date *
+
+Must be on or after Start Date. Range capped at 120 days.
+
+------------------------------------------------
+
+Start Time *
+
+------------------------------------------------
+
+Hours per Day *
+
+0.5–12. Blocks the owner's and team's Team Calendar for this many hours,
+starting at Start Time, on every day from Start Date to End Date. Save is
+blocked if anyone involved already has a conflicting calendar event.
 
 ------------------------------------------------
 

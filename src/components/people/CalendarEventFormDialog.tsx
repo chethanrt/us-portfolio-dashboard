@@ -4,11 +4,10 @@ import { differenceInCalendarDays, eachDayOfInterval, format, parseISO } from "d
 import { Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { FormInputField, FormSelectField, FormTextareaField, Modal } from "@/components/common";
+import { FormCheckboxGroupField, FormInputField, FormSelectField, FormTextareaField, Modal } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import type { CalendarEvent, CalendarEventType } from "@/types";
-import { CALENDAR_EVENT_TYPES } from "@/utils/calendarColors";
+import type { CalendarEvent, CalendarEventType, Employee } from "@/types";
 
 const REQUIRED = "This field is required.";
 
@@ -20,6 +19,7 @@ const eventSchema = z
     title: z.string().trim().min(3, "Title must be at least 3 characters.").max(100),
     description: z.string().trim().max(500),
     eventType: z.string().min(1, REQUIRED),
+    memberIds: z.array(z.string()).min(1, "Select at least one person to block."),
     date: z.string().min(1, REQUIRED),
     endDate: z.string().min(1, REQUIRED),
     startTime: z.string().min(1, REQUIRED),
@@ -45,7 +45,8 @@ type EventFormValues = z.infer<typeof eventSchema>;
 const EMPTY_VALUES: EventFormValues = {
   title: "",
   description: "",
-  eventType: "Meeting",
+  eventType: "",
+  memberIds: [],
   date: format(new Date(), "yyyy-MM-dd"),
   endDate: format(new Date(), "yyyy-MM-dd"),
   startTime: "09:00",
@@ -67,16 +68,20 @@ interface CalendarEventFormDialogProps {
   onOpenChange: (open: boolean) => void;
   /** When set, the dialog is in Edit mode — always applies to that one event's own owner. */
   event: CalendarEvent | null;
-  /** Whose calendar(s) a new event is created on. One entry blocks a single person; several block all of them at once. */
-  targetEmployeeIds: string[];
-  /** Display names matching targetEmployeeIds, for the confirmation copy. */
-  targetEmployeeNames?: string[];
+  /**
+   * Everyone this dialog is allowed to block time for — independent of whatever the
+   * page is currently filtered/searched to. Exactly one candidate (e.g. a single
+   * person's own calendar tab) skips the picker and blocks them directly.
+   */
+  blockableEmployees: Employee[];
   /** Current signed-in user — becomes organizer/createdBy on new events. */
   currentEmployeeId: string;
   currentEmployeeName: string;
   /** Pre-fills date/time when created via a slot click. */
   initialSlot?: { start: Date; end: Date } | null;
-  /** Called with one payload per (day × target employee) combination. */
+  /** Settings-managed event type list (Settings > Calendar Event Types). */
+  eventTypes: string[];
+  /** Called with one payload per (day × blocked person) combination. */
   onSave: (values: Omit<CalendarEvent, "id">[]) => Promise<void>;
 }
 
@@ -84,15 +89,18 @@ export function CalendarEventFormDialog({
   open,
   onOpenChange,
   event,
-  targetEmployeeIds,
-  targetEmployeeNames,
+  blockableEmployees,
   currentEmployeeId,
   currentEmployeeName,
   initialSlot,
+  eventTypes,
   onSave,
 }: CalendarEventFormDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
   const isEdit = Boolean(event);
+  // A real choice only exists in create mode with more than one blockable person —
+  // otherwise there's nothing to pick, so the field is skipped entirely.
+  const showMemberPicker = !isEdit && blockableEmployees.length > 1;
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
@@ -109,6 +117,7 @@ export function CalendarEventFormDialog({
         title: event.title,
         description: event.description,
         eventType: event.eventType,
+        memberIds: [event.employeeId],
         date: format(start, "yyyy-MM-dd"),
         endDate: format(start, "yyyy-MM-dd"),
         startTime: format(start, "HH:mm"),
@@ -116,25 +125,30 @@ export function CalendarEventFormDialog({
         location: event.location,
         attendees: event.attendees.map((a) => a.email).join(", "),
       });
-    } else if (initialSlot) {
+    } else {
+      // Start empty when there's a real choice to make; auto-pick the only candidate otherwise.
+      const memberIds = blockableEmployees.length === 1 ? [blockableEmployees[0].id] : [];
       form.reset({
         ...EMPTY_VALUES,
-        date: format(initialSlot.start, "yyyy-MM-dd"),
-        endDate: format(initialSlot.start, "yyyy-MM-dd"),
-        startTime: format(initialSlot.start, "HH:mm"),
-        endTime: format(initialSlot.end, "HH:mm"),
+        memberIds,
+        ...(initialSlot
+          ? {
+              date: format(initialSlot.start, "yyyy-MM-dd"),
+              endDate: format(initialSlot.start, "yyyy-MM-dd"),
+              startTime: format(initialSlot.start, "HH:mm"),
+              endTime: format(initialSlot.end, "HH:mm"),
+            }
+          : {}),
       });
-    } else {
-      form.reset(EMPTY_VALUES);
     }
-  }, [open, event, initialSlot, form]);
+  }, [open, event, initialSlot, blockableEmployees, form]);
 
   const handleSubmit = form.handleSubmit(async (values) => {
     setIsSaving(true);
     try {
       const days = eachDayOfInterval({ start: parseISO(values.date), end: parseISO(values.endDate) });
-      const targets = isEdit && event ? [event.employeeId] : targetEmployeeIds;
-      // Multiple people created together share one group id, so they can be found and
+      const targets = isEdit && event ? [event.employeeId] : values.memberIds;
+      // Multiple people blocked together share one group id, so they can be found and
       // grown later (the team calendar's "add person to this block" flow).
       const blockGroupId = isEdit ? (event?.blockGroupId ?? null) : targets.length > 1 ? crypto.randomUUID() : null;
       const payloads = days.flatMap((day) => {
@@ -165,20 +179,17 @@ export function CalendarEventFormDialog({
     }
   });
 
-  const isBulk = !isEdit && targetEmployeeIds.length > 1;
   const isTaskBlock = form.watch("eventType") === "Calendar Block for Task";
 
   return (
     <Modal
       open={open}
       onOpenChange={(next) => !isSaving && onOpenChange(next)}
-      title={isEdit ? "Edit Event" : isBulk ? `Block Time for ${targetEmployeeIds.length} People` : "Create Event"}
+      title={isEdit ? "Edit Blocked Time" : "Block Calendar"}
       description={
         isEdit
           ? undefined
-          : isBulk
-            ? `Added to: ${targetEmployeeNames?.join(", ") ?? `${targetEmployeeIds.length} people`}. Pick an End Date past the Start Date to block the same range across several days.`
-            : "Pick an End Date past the Start Date to block the same time range across several days."
+          : "Choose who to block, then pick an End Date past the Start Date to block the same range across several days."
       }
     >
       <Form {...form}>
@@ -192,11 +203,20 @@ export function CalendarEventFormDialog({
             label="Description"
             placeholder="e.g. Magento Architecture Walkthrough"
           />
-          <FormSelectField control={form.control} name="eventType" label="Event Type" options={CALENDAR_EVENT_TYPES} required />
+          <FormSelectField control={form.control} name="eventType" label="Event Type" options={eventTypes} required />
           {isTaskBlock && (
             <p className="text-xs text-muted-foreground sm:col-span-2">
               This will also create a matching task on the Task Board (status: To Do).
             </p>
+          )}
+          {showMemberPicker && (
+            <FormCheckboxGroupField
+              control={form.control}
+              name="memberIds"
+              label="Block For"
+              required
+              options={blockableEmployees.map((e) => ({ value: e.id, label: `${e.name} (${e.role})` }))}
+            />
           )}
           <FormInputField
             control={form.control}

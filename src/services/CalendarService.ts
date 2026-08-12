@@ -165,6 +165,17 @@ class CalendarService {
     await simulateRequest(undefined);
   }
 
+  /** Deletes every sibling event sharing a blockGroupId (e.g. a POC's calendar blocks). */
+  async deleteByGroup(groupId: string): Promise<void> {
+    const all = this.load();
+    const toDelete = all.filter((event) => event.blockGroupId === groupId);
+    await Promise.all(
+      toDelete.filter((event) => event.linkedTaskId).map((event) => taskService.delete(event.linkedTaskId as string))
+    );
+    this.persist(all.filter((event) => event.blockGroupId !== groupId));
+    await simulateRequest(undefined);
+  }
+
   /**
    * Re-fetches events for an employee. Phase 1 just re-reads local storage;
    * this is the method a live Outlook integration would replace with an

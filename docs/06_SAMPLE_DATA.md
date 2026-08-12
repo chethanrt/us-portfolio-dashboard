@@ -123,7 +123,7 @@ Each employee should include
 - Team
 - Primary Skill
 - Secondary Skill
-- Current Project
+- Projects (zero or more)
 - Status
 
 Generate realistic names.

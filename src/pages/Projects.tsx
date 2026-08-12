@@ -43,27 +43,24 @@ export default function Projects() {
   const [deleting, setDeleting] = useState<Project | null>(null);
   const [statusOptions, setStatusOptions] = useState<string[]>([]);
   const [stageOptions, setStageOptions] = useState<string[]>([]);
+  const [technicalSkills, setTechnicalSkills] = useState<string[]>([]);
 
   useEffect(() => {
     settingsService.getSettings().then((settings) => {
       setStatusOptions(settings.statusValues.project);
       setStageOptions(settings.projectStages);
+      setTechnicalSkills(settings.technicalSkills);
     });
   }, []);
-
-  const technologyOptions = useMemo(
-    () => [...new Set(projects.map((p) => p.technology))].sort(),
-    [projects]
-  );
 
   const filteredProjects = useMemo(() => {
     const query = search.trim().toLowerCase();
     return projects.filter((project) => {
       if (statusFilter !== ALL_FILTER && project.status !== statusFilter) return false;
       if (stageFilter !== ALL_FILTER && project.stage !== stageFilter) return false;
-      if (technologyFilter !== ALL_FILTER && project.technology !== technologyFilter) return false;
+      if (technologyFilter !== ALL_FILTER && !project.technology.includes(technologyFilter)) return false;
       if (!query) return true;
-      return [project.name, project.client, project.technology, project.manager, project.techLead]
+      return [project.name, project.client, ...project.technology, project.manager, project.techLead]
         .some((field) => field.toLowerCase().includes(query));
     });
   }, [projects, search, statusFilter, stageFilter, technologyFilter]);
@@ -152,7 +149,7 @@ export default function Projects() {
         />
         <FilterSelect placeholder="Status" options={statusOptions} value={statusFilter} onChange={setStatusFilter} />
         <FilterSelect placeholder="Stage" options={stageOptions} value={stageFilter} onChange={setStageFilter} />
-        <FilterSelect placeholder="Technology" options={technologyOptions} value={technologyFilter} onChange={setTechnologyFilter} />
+        <FilterSelect placeholder="Technology" options={technicalSkills} value={technologyFilter} onChange={setTechnologyFilter} />
       </FilterBar>
 
       {filteredProjects.length === 0 ? (
@@ -195,6 +192,7 @@ export default function Projects() {
         project={editing}
         projects={projects}
         employees={employees}
+        technicalSkills={technicalSkills}
         onSave={handleSave}
       />
 

@@ -101,7 +101,12 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
           {show("secondarySkill") && (
             <InfoRow label="Secondary Technology" value={employee.secondarySkill || "—"} />
           )}
-          {show("currentProject") && <InfoRow label="Current Project" value={employee.currentProject} />}
+          {show("projects") && (
+            <InfoRow
+              label={employee.projects.length === 1 ? "Project" : "Projects"}
+              value={employee.projects.length > 0 ? employee.projects.join(", ") : "—"}
+            />
+          )}
           {show("managerId") && <InfoRow label="Reports To" value={managerName ?? "—"} />}
           {show("status") && (
             <div className="flex justify-between gap-4 text-sm">

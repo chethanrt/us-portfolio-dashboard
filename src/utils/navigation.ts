@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  CalendarDays,
   FolderKanban,
   GraduationCap,
   KanbanSquare,
@@ -28,6 +29,7 @@ export const NAV_ITEMS: NavItem[] = [
   { title: "Projects", path: "/projects", icon: FolderKanban, module: "projects" },
   { title: "Task Board", path: "/tasks", icon: KanbanSquare, module: "tasks" },
   { title: "People", path: "/people", icon: Users, module: "people" },
+  { title: "Calendar", path: "/calendar", icon: CalendarDays, module: "people" },
   { title: "Skill Matrix", path: "/skills", icon: LayoutGrid, module: "skills" },
   { title: "Learning", path: "/learning", icon: GraduationCap, module: "learning" },
   { title: "POCs", path: "/pocs", icon: Lightbulb, module: "pocs" },

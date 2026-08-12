@@ -24,6 +24,7 @@ export function SettingsSection({ label, description, values, readOnly, onChange
   const handleSave = async (value: string) => {
     try {
       const next = editing ? values.map((v) => (v === editing ? value : v)) : [...values, value];
+      next.sort((a, b) => a.localeCompare(b));
       await onChange(next);
       toast.success("Settings updated successfully.");
     } catch {

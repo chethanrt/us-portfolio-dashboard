@@ -75,7 +75,7 @@ export function ProjectDetailsDrawer({ project, employeesById, onClose }: Projec
     >
       {/* Project information — fields respect field-level security */}
       <div className="space-y-2">
-        {show("technology") && <InfoRow label="Technology" value={project.technology} />}
+        {show("technology") && <InfoRow label="Technology" value={project.technology.join(", ")} />}
         {show("stage") && <InfoRow label="Current Stage" value={project.stage} />}
         {show("manager") && <InfoRow label="Manager" value={project.manager} />}
         {show("techLead") && <InfoRow label="Tech Lead" value={project.techLead} />}

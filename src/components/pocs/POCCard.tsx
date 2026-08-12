@@ -1,5 +1,5 @@
 import { Clock, ExternalLink, FolderKanban, GitBranch, Pencil, Trash2 } from "lucide-react";
-import { StatusBadge } from "@/components/common";
+import { AvatarGroup, StatusBadge } from "@/components/common";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -66,14 +66,22 @@ export function POCCard({ poc, canEdit, canDelete, onViewDetails, onEdit, onDele
           </Avatar>
           <span className="truncate text-sm">{poc.ownerName}</span>
         </div>
+        {canViewField("pocs", "team") && poc.teamNames.length > 0 && (
+          <div className="flex items-center gap-2">
+            <AvatarGroup names={poc.teamNames} />
+            <span className="text-xs text-muted-foreground">
+              {poc.teamNames.length} team member{poc.teamNames.length === 1 ? "" : "s"}
+            </span>
+          </div>
+        )}
       </CardContent>
 
-      <CardFooter className="flex items-center justify-between">
+      <CardFooter className="flex flex-wrap items-center justify-between gap-2">
         <Button variant="outline" size="sm" onClick={() => onViewDetails(poc)}>
           View Details
         </Button>
         {(canEdit || canDelete) && (
-          <div className="flex gap-1">
+          <div className="ml-auto flex gap-1">
             {canEdit && (
               <Button variant="ghost" size="icon" aria-label={`Edit ${poc.title}`} onClick={() => onEdit(poc)}>
                 <Pencil className="size-4" />

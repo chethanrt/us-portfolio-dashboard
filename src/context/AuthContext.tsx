@@ -1,21 +1,9 @@
 import { createContext, useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { employeeService, userService } from "@/services";
-import type { Employee, EmployeeRole, User } from "@/types";
+import type { Employee, User } from "@/types";
 
 const SESSION_STORAGE_KEY = "ai-portfolio-dashboard.session";
-
-/** Employee job roles (used by employee forms and filters — domain data). */
-export const ALL_ROLES: EmployeeRole[] = [
-  "Director",
-  "Delivery Manager",
-  "Engineering Manager",
-  "Senior Tech Lead",
-  "Tech Lead",
-  "Senior Developer",
-  "Developer",
-  "Intern",
-];
 
 export interface AuthContextValue {
   /** The logged-in account, or null when signed out. */

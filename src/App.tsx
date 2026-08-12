@@ -17,6 +17,7 @@ const Projects = lazy(() => import("@/pages/Projects"));
 const TaskBoard = lazy(() => import("@/pages/TaskBoard"));
 const Activities = lazy(() => import("@/pages/Activities"));
 const People = lazy(() => import("@/pages/People"));
+const CalendarPage = lazy(() => import("@/pages/Calendar"));
 const SkillMatrix = lazy(() => import("@/pages/SkillMatrix"));
 const Learning = lazy(() => import("@/pages/Learning"));
 const POCs = lazy(() => import("@/pages/POCs"));
@@ -32,6 +33,7 @@ const PROTECTED_ROUTES: { path: string; module: ModuleId; Page: LazyExoticCompon
   { path: "/tasks", module: "tasks", Page: TaskBoard },
   { path: "/activities", module: "activities", Page: Activities },
   { path: "/people", module: "people", Page: People },
+  { path: "/calendar", module: "people", Page: CalendarPage },
   { path: "/skills", module: "skills", Page: SkillMatrix },
   { path: "/learning", module: "learning", Page: Learning },
   { path: "/pocs", module: "pocs", Page: POCs },

@@ -8,9 +8,11 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import { format } from "date-fns";
 import { CalendarClock, X } from "lucide-react";
 import { toast } from "sonner";
-import { ConfirmationDialog, EmptyState, LoadingSkeleton, SearchBar } from "@/components/common";
+import { ConfirmationDialog, EmptyState, LoadingSkeleton, MultiSelectDropdown } from "@/components/common";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useTeamCalendarEvents } from "@/hooks/useCalendarEvents";
+import { useSettings } from "@/hooks/useSettings";
 import { usePermission } from "@/security";
 import { calendarService } from "@/services";
 import type { CalendarEvent, Employee } from "@/types";
@@ -20,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { CalendarEventFormDialog } from "./CalendarEventFormDialog";
 import { CalendarEventModal } from "./CalendarEventModal";
 import type { CalendarViewOption } from "./CalendarToolbar";
-import { CalendarToolbar } from "./CalendarToolbar";
+import { CalendarToolbar, ROLLING_WEEK_VIEWS } from "./CalendarToolbar";
 
 interface TeamCalendarProps {
   /** Every employee in the current user's data scope, to search and pick from. */
@@ -32,12 +34,9 @@ function toLocalIso(date: Date): string {
   return format(date, "yyyy-MM-dd'T'HH:mm:ss");
 }
 
-const MAX_SEARCH_RESULTS = 8;
-
 /**
- * People-picker + merged calendar (docs: calendar v2). Search and select a
- * handful of people, see their events on one shared timeline, and block time
- * on all of their calendars at once.
+ * Merged calendar (docs: calendar v2). Shows everyone's blocked time by
+ * default; the filter dropdown narrows it down to specific people.
  */
 export function TeamCalendar({ employees }: TeamCalendarProps) {
   const { currentUser } = useAuth();
@@ -45,14 +44,18 @@ export function TeamCalendar({ employees }: TeamCalendarProps) {
   const roleId = role?.id;
   const calendarRef = useRef<FullCalendar>(null);
 
-  const [query, setQuery] = useState("");
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  // Empty means "everyone" — the dropdown only ever holds an explicit subset.
+  const [filterIds, setFilterIds] = useState<string[]>([]);
 
   const viewableEmployees = useMemo(
     () => employees.filter((e) => canViewCalendar(roleId, e.id, currentUser?.id)),
     [employees, roleId, currentUser]
   );
   const employeeById = useMemo(() => new Map(viewableEmployees.map((e) => [e.id, e])), [viewableEmployees]);
+  const selectedIds = useMemo(
+    () => (filterIds.length > 0 ? filterIds : viewableEmployees.map((e) => e.id)),
+    [filterIds, viewableEmployees]
+  );
   const selectedEmployees = useMemo(
     () => selectedIds.map((id) => employeeById.get(id)).filter((e): e is Employee => Boolean(e)),
     [selectedIds, employeeById]
@@ -63,31 +66,18 @@ export function TeamCalendar({ employees }: TeamCalendarProps) {
     [selectedEmployees]
   );
 
-  const searchResults = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return [];
-    return viewableEmployees
-      .filter((e) => !selectedIds.includes(e.id))
-      .filter((e) => [e.name, e.role, e.team].some((field) => field.toLowerCase().includes(q)))
-      .slice(0, MAX_SEARCH_RESULTS);
-  }, [viewableEmployees, selectedIds, query]);
-
-  const selectEmployee = (id: string) => {
-    setSelectedIds((current) => (current.includes(id) ? current : [...current, id]));
-    setQuery("");
-  };
-  const removeEmployee = (id: string) => {
-    setSelectedIds((current) => current.filter((existing) => existing !== id));
-  };
-
-  const createEmployees = useMemo(
-    () => selectedEmployees.filter((e) => canCreateCalendarEvent(roleId, e.id, currentUser?.id)),
-    [selectedEmployees, roleId, currentUser]
+  // Who can be blocked, independent of the view filter above — the Block Calendar
+  // form has its own people-picker rather than targeting whoever is currently shown.
+  const blockableEmployees = useMemo(
+    () => viewableEmployees.filter((e) => canCreateCalendarEvent(roleId, e.id, currentUser?.id)),
+    [viewableEmployees, roleId, currentUser]
   );
 
   const { events, isLoading, error, createEvent, updateEvent, deleteEvent } = useTeamCalendarEvents(selectedIds);
+  const { settings } = useSettings();
+  const eventTypes = settings?.eventTypes ?? [];
 
-  const [view, setView] = useState<CalendarViewOption>("timeGridWeek");
+  const [view, setView] = useState<CalendarViewOption>("timeGridRollingWeek");
   const [title, setTitle] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -160,7 +150,8 @@ export function TeamCalendar({ employees }: TeamCalendarProps) {
         blockGroupId: groupId,
       });
       setGroupEvents((current) => [...current, created]);
-      setSelectedIds((current) => (current.includes(employeeId) ? current : [...current, employeeId]));
+      // Only needs to touch the filter when one is active — "everyone" already includes the new member.
+      setFilterIds((current) => (current.length === 0 || current.includes(employeeId) ? current : [...current, employeeId]));
       toast.success(`Added ${addedName} to this block.`);
     } catch {
       toast.error("Unable to add that person. Please try again.");
@@ -214,7 +205,7 @@ export function TeamCalendar({ employees }: TeamCalendarProps) {
   };
 
   const handleDateClick = (arg: DateClickArg) => {
-    if (createEmployees.length === 0) return;
+    if (blockableEmployees.length === 0) return;
     const start = arg.date;
     const end = new Date(start.getTime() + 60 * 60 * 1000);
     openCreateDialog({ start, end });
@@ -301,28 +292,15 @@ export function TeamCalendar({ employees }: TeamCalendarProps) {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <div className="relative max-w-sm">
-          <SearchBar value={query} onChange={setQuery} placeholder="Search people to add…" />
-          {searchResults.length > 0 && (
-            <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border bg-card shadow-md">
-              {searchResults.map((candidate) => (
-                <button
-                  key={candidate.id}
-                  type="button"
-                  onClick={() => selectEmployee(candidate.id)}
-                  className="flex w-full flex-col items-start px-3 py-2 text-left text-sm hover:bg-muted"
-                >
-                  <span className="font-medium">{candidate.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {candidate.role} · {candidate.team}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <MultiSelectDropdown
+          options={viewableEmployees.map((e) => ({ value: e.id, label: e.name, description: `${e.role} · ${e.team}` }))}
+          selectedIds={filterIds}
+          onChange={setFilterIds}
+          allLabel="All People"
+          searchPlaceholder="Search people…"
+        />
 
-        {selectedEmployees.length > 0 && (
+        {filterIds.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {selectedEmployees.map((employee) => (
               <Badge key={employee.id} variant="secondary" className="gap-1.5 py-1.5 pl-2.5 pr-1.5 text-sm">
@@ -335,7 +313,7 @@ export function TeamCalendar({ employees }: TeamCalendarProps) {
                 <button
                   type="button"
                   aria-label={`Remove ${employee.name}`}
-                  onClick={() => removeEmployee(employee.id)}
+                  onClick={() => setFilterIds((current) => current.filter((id) => id !== employee.id))}
                   className="rounded-full p-0.5 hover:bg-background/60"
                 >
                   <X className="size-3" />
@@ -346,11 +324,11 @@ export function TeamCalendar({ employees }: TeamCalendarProps) {
         )}
       </div>
 
-      {selectedEmployees.length === 0 ? (
+      {viewableEmployees.length === 0 ? (
         <EmptyState
           icon={CalendarClock}
-          title="No People Selected"
-          description="Search for people above and select a few to see their calendars together."
+          title="Calendar Access Restricted"
+          description="You don't have permission to view anyone's calendar."
         />
       ) : isLoading ? (
         <LoadingSkeleton variant="list" count={4} />
@@ -365,7 +343,7 @@ export function TeamCalendar({ employees }: TeamCalendarProps) {
             onPrev={() => getApi()?.prev()}
             onNext={() => getApi()?.next()}
             onToday={() => getApi()?.today()}
-            canCreate={createEmployees.length > 0}
+            canCreate={blockableEmployees.length > 0}
             onCreate={() => openCreateDialog(null)}
           />
 
@@ -374,22 +352,25 @@ export function TeamCalendar({ employees }: TeamCalendarProps) {
               icon={CalendarClock}
               title="No Calendar Events Found"
               description={
-                createEmployees.length > 0
-                  ? "Click a time slot below to block that time on everyone selected."
+                blockableEmployees.length > 0
+                  ? "Use Block Calendar above to block time."
                   : "No events are scheduled for the people selected."
               }
             />
           )}
 
-          <div className="rounded-xl border p-2 [&_.fc]:text-sm">
+          {/* Stays mounted (just visually hidden) when empty, so Today/Prev/Next and the
+              date-range title keep working — only the grid itself is hidden per the ask. */}
+          <div className={cn("rounded-xl border p-2 [&_.fc]:text-sm", events.length === 0 && "hidden")}>
             <FullCalendar
               ref={calendarRef}
               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+              views={ROLLING_WEEK_VIEWS}
               initialView={view}
               headerToolbar={false}
               height={720}
               scrollTime="07:00:00"
-              selectable={createEmployees.length > 0}
+              selectable={blockableEmployees.length > 0}
               editable
               dayMaxEvents
               events={calendarEvents}
@@ -429,11 +410,11 @@ export function TeamCalendar({ employees }: TeamCalendarProps) {
         open={formOpen}
         onOpenChange={setFormOpen}
         event={editingEvent}
-        targetEmployeeIds={createEmployees.map((e) => e.id)}
-        targetEmployeeNames={createEmployees.map((e) => e.name)}
+        blockableEmployees={blockableEmployees}
         currentEmployeeId={currentUser?.id ?? ""}
         currentEmployeeName={currentUser?.name ?? ""}
         initialSlot={initialSlot}
+        eventTypes={eventTypes}
         onSave={handleSave}
       />
 
