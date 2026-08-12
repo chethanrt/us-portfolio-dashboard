@@ -415,11 +415,41 @@ Category
 
 Status
 
+Start Date
+
+End Date
+
+Start Time
+
+Hours per Day
+
 Rules
 
 Title
 
 Unique within project
+
+Owner
+
+Restricted to Director, Delivery Manager, Engineering Manager, Senior Tech
+Lead, Tech Lead
+
+Team
+
+Optional. Restricted to Senior Developer, Developer, Intern
+
+End Date
+
+Must be on or after Start Date; range capped at 120 days
+
+Hours per Day
+
+Between 0.5 and 12
+
+Schedule conflict
+
+Hard block — save is refused if the Owner or any Team member already has an
+overlapping Team Calendar event for the given date range/time/hours
 
 Repository URL
 

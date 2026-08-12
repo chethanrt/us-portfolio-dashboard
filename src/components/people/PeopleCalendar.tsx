@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { ConfirmationDialog, EmptyState, LoadingSkeleton } from "@/components/common";
 import { useAuth } from "@/hooks/useAuth";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
+import { useSettings } from "@/hooks/useSettings";
 import { usePermission } from "@/security";
 import type { CalendarEvent, Employee } from "@/types";
 import { getEventTypeColor } from "@/utils/calendarColors";
@@ -23,7 +24,7 @@ import {
 import { CalendarEventFormDialog } from "./CalendarEventFormDialog";
 import { CalendarEventModal } from "./CalendarEventModal";
 import type { CalendarViewOption } from "./CalendarToolbar";
-import { CalendarToolbar } from "./CalendarToolbar";
+import { CalendarToolbar, ROLLING_WEEK_VIEWS } from "./CalendarToolbar";
 
 interface PeopleCalendarProps {
   employee: Employee;
@@ -40,9 +41,11 @@ export function PeopleCalendar({ employee }: PeopleCalendarProps) {
   const { role } = usePermission();
   const roleId = role?.id;
   const { events, isLoading, error, createEvent, updateEvent, deleteEvent } = useCalendarEvents(employee);
+  const { settings } = useSettings();
+  const eventTypes = settings?.eventTypes ?? [];
   const calendarRef = useRef<FullCalendar>(null);
 
-  const [view, setView] = useState<CalendarViewOption>("timeGridWeek");
+  const [view, setView] = useState<CalendarViewOption>("timeGridRollingWeek");
   const [title, setTitle] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -220,6 +223,7 @@ export function PeopleCalendar({ employee }: PeopleCalendarProps) {
         <FullCalendar
           ref={calendarRef}
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+          views={ROLLING_WEEK_VIEWS}
           initialView={view}
           headerToolbar={false}
           height={600}
@@ -257,10 +261,11 @@ export function PeopleCalendar({ employee }: PeopleCalendarProps) {
         open={formOpen}
         onOpenChange={setFormOpen}
         event={editingEvent}
-        targetEmployeeIds={[employee.id]}
+        blockableEmployees={[employee]}
         currentEmployeeId={currentUser?.id ?? employee.id}
         currentEmployeeName={currentUser?.name ?? employee.name}
         initialSlot={initialSlot}
+        eventTypes={eventTypes}
         onSave={handleSave}
       />
 

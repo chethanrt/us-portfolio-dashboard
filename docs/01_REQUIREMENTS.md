@@ -175,7 +175,7 @@ Professional Information
 
 - Primary Technology
 - Secondary Technology
-- Current Project
+- Projects (one or more)
 
 Statistics
 

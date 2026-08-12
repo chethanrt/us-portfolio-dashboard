@@ -93,7 +93,7 @@
       { "key": "team", "label": "Team" },
       { "key": "primarySkill", "label": "Primary Skill" },
       { "key": "secondarySkill", "label": "Secondary Skill" },
-      { "key": "currentProject", "label": "Current Project" },
+      { "key": "projects", "label": "Projects" },
       { "key": "status", "label": "Status" },
       { "key": "managerId", "label": "Reports To" }
     ]
@@ -135,13 +135,18 @@
       { "key": "title", "label": "Title" },
       { "key": "projectId", "label": "Project" },
       { "key": "ownerId", "label": "Owner" },
+      { "key": "team", "label": "Team" },
       { "key": "category", "label": "Category" },
       { "key": "status", "label": "Status" },
       { "key": "description", "label": "Description" },
       { "key": "businessValue", "label": "Business Value" },
       { "key": "hoursSaved", "label": "Hours Saved" },
       { "key": "repo", "label": "Repository URL" },
-      { "key": "demo", "label": "Demo URL" }
+      { "key": "demo", "label": "Demo URL" },
+      { "key": "startDate", "label": "Start Date" },
+      { "key": "endDate", "label": "End Date" },
+      { "key": "startTime", "label": "Start Time" },
+      { "key": "hoursPerDay", "label": "Hours per Day" }
     ]
   },
   {

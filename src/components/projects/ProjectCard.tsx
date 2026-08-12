@@ -63,7 +63,7 @@ export function ProjectCard({
             <div className="flex items-center gap-1.5">
               <Wrench className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
               <dt className="sr-only">Technology</dt>
-              <dd className="truncate">{project.technology}</dd>
+              <dd className="truncate">{project.technology.join(", ")}</dd>
             </div>
           )}
           {canViewField("projects", "manager") && (
@@ -83,14 +83,14 @@ export function ProjectCard({
         </dl>
       </CardContent>
 
-      <CardFooter className="flex items-center justify-between">
+      <CardFooter className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <AvatarGroup names={memberNames} />
           <span className="text-xs text-muted-foreground">
             {memberNames.length} member{memberNames.length === 1 ? "" : "s"}
           </span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="ml-auto flex items-center gap-1">
           <Button variant="outline" size="sm" onClick={() => onViewDetails(project)}>
             View Details
           </Button>

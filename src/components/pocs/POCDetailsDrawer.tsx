@@ -1,3 +1,4 @@
+import { format, parseISO } from "date-fns";
 import { ExternalLink, GitBranch } from "lucide-react";
 import { Drawer, StatusBadge } from "@/components/common";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type { POCRow } from "@/hooks/usePOCs";
 import { usePermission } from "@/security";
-import { getInitials } from "@/utils/format";
+import { formatDate, getInitials } from "@/utils/format";
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
@@ -15,6 +16,10 @@ function InfoRow({ label, value }: { label: string; value: string }) {
       <span className="text-right font-medium">{value}</span>
     </div>
   );
+}
+
+function formatTime(value: string): string {
+  return value ? format(parseISO(`2000-01-01T${value}:00`), "h:mm a") : "—";
 }
 
 interface POCDetailsDrawerProps {
@@ -58,6 +63,28 @@ export function POCDetailsDrawer({ poc, onClose }: POCDetailsDrawerProps) {
       </div>
       <Separator />
 
+      {/* Team */}
+      {show("team") && poc.teamNames.length > 0 && (
+        <>
+          <section className="space-y-2">
+            <h4 className="text-sm font-semibold">Team ({poc.teamNames.length})</h4>
+            <div className="flex flex-wrap gap-2">
+              {poc.teamNames.map((name) => (
+                <div key={name} className="flex items-center gap-2 rounded-full border py-1 pl-1 pr-2.5">
+                  <Avatar className="size-6">
+                    <AvatarFallback className="bg-primary/10 text-[10px] font-semibold text-primary">
+                      {getInitials(name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-xs font-medium">{name}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+          <Separator />
+        </>
+      )}
+
       {/* Overview — fields respect field-level security */}
       {show("description") && (
         <section className="space-y-2">
@@ -77,6 +104,12 @@ export function POCDetailsDrawer({ poc, onClose }: POCDetailsDrawerProps) {
       <div className="space-y-2">
         {show("projectId") && <InfoRow label="Project" value={poc.projectName} />}
         {show("category") && <InfoRow label="Category" value={poc.category} />}
+        {show("startDate") && <InfoRow label="Start Date" value={formatDate(poc.startDate)} />}
+        {show("endDate") && <InfoRow label="End Date" value={formatDate(poc.endDate)} />}
+        {show("startTime") && <InfoRow label="Start Time" value={formatTime(poc.startTime)} />}
+        {show("hoursPerDay") && (
+          <InfoRow label="Hours per Day" value={poc.hoursPerDay > 0 ? `${poc.hoursPerDay}h` : "—"} />
+        )}
         {show("hoursSaved") && (
           <InfoRow label="Hours Saved" value={poc.hoursSaved > 0 ? `${poc.hoursSaved}h` : "—"} />
         )}

@@ -8,7 +8,7 @@
     "team": "Leadership",
     "primarySkill": "Engineering Leadership",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": null
@@ -22,7 +22,7 @@
     "team": "Leadership",
     "primarySkill": "Delivery Management",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP001"
@@ -36,7 +36,7 @@
     "team": "Leadership",
     "primarySkill": "Engineering Management",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP001"
@@ -50,7 +50,7 @@
     "team": "Marketing & Communication",
     "primarySkill": "Marketing & Communication",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP002"
@@ -64,7 +64,7 @@
     "team": "Marketing & Communication",
     "primarySkill": "Digital Marketing",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP002"
@@ -78,7 +78,7 @@
     "team": "Marketing & Communication",
     "primarySkill": "Marketing & Communication",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP002"
@@ -92,7 +92,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP002"
@@ -106,7 +106,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP002"
@@ -120,7 +120,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP008"
@@ -134,7 +134,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP002"
@@ -148,7 +148,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP002"
@@ -162,7 +162,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP002"
@@ -176,7 +176,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP012"
@@ -190,7 +190,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP002"
@@ -204,7 +204,7 @@
     "team": "Quality Assurance",
     "primarySkill": "Quality Assurance",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP002"
@@ -218,7 +218,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP003"
@@ -232,7 +232,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP003"
@@ -246,7 +246,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP017"
@@ -260,7 +260,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP017"
@@ -274,7 +274,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP003"
@@ -288,7 +288,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP003"
@@ -302,7 +302,7 @@
     "team": "Software Engineering",
     "primarySkill": "Project Management",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP003"
@@ -316,7 +316,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP022"
@@ -330,7 +330,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP022"
@@ -344,7 +344,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP022"
@@ -358,7 +358,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP022"
@@ -372,7 +372,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP003"
@@ -386,7 +386,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP003"
@@ -400,7 +400,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP003"
@@ -414,7 +414,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP003"
@@ -428,7 +428,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP003"
@@ -442,7 +442,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP003"
@@ -456,7 +456,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP003"
@@ -470,7 +470,7 @@
     "team": "Software Engineering",
     "primarySkill": "Software Engineering",
     "secondarySkill": "",
-    "currentProject": "US Portfolio",
+    "projects": [],
     "profileImage": "",
     "status": "Active",
     "managerId": "EMP003"

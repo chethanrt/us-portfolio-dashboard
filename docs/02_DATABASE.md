@@ -56,7 +56,7 @@ Structure
 "team":"",
 "primarySkill":"",
 "secondarySkill":"",
-"currentProject":"",
+"projects":[],
 "profileImage":"",
 "status":"Active",
 "managerId":null
@@ -70,6 +70,13 @@ managerId is the id of the employee this person reports to, or null at the
 top of the hierarchy (e.g. Director). Nobody's managerId may point at an
 Ex-Employee — offboarding an employee reassigns their direct reports first.
 
+projects is an array of project names (free text, matches projects.json's
+name field — not a foreign key) an employee is currently assigned to. It is
+kept in sync automatically with each project's members list: adding someone
+to a Project's team assigns the project to them here too, and removing them
+from the team removes it. It can also be edited directly from the People
+form for assignments that don't go through a formal project team.
+
 Example
 
 {
@@ -81,7 +88,7 @@ Example
 "team":"Magento",
 "primarySkill":"Magento",
 "secondarySkill":"React",
-"currentProject":"Project Phoenix",
+"projects":["Project Phoenix"],
 "profileImage":"john.png",
 "status":"Active",
 "managerId":"EMP004"
@@ -243,6 +250,7 @@ Structure
 "id":"",
 "title":"",
 "ownerId":"",
+"team":[],
 "projectId":"",
 "category":"",
 "description":"",
@@ -250,7 +258,12 @@ Structure
 "businessValue":"",
 "hoursSaved":0,
 "repo":"",
-"demo":""
+"demo":"",
+"startDate":"",
+"endDate":"",
+"startTime":"",
+"hoursPerDay":0,
+"blockGroupId":null
 }
 
 Example
@@ -259,6 +272,7 @@ Example
 "id":"POC001",
 "title":"AI Documentation Generator",
 "ownerId":"EMP001",
+"team":["EMP005","EMP009"],
 "projectId":"P001",
 "category":"Documentation",
 "description":"Generate project documentation using Claude",
@@ -266,7 +280,12 @@ Example
 "businessValue":"Reduced documentation effort",
 "hoursSaved":42,
 "repo":"https://github...",
-"demo":"https://..."
+"demo":"https://...",
+"startDate":"2026-01-05",
+"endDate":"2026-01-16",
+"startTime":"09:00",
+"hoursPerDay":2,
+"blockGroupId":"a1b2c3d4-..."
 }
 
 ---

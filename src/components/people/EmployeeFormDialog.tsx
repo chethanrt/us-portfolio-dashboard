@@ -3,10 +3,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { FormInputField, FormSelectField, Modal } from "@/components/common";
+import { FormCheckboxGroupField, FormInputField, FormSelectField, Modal } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { ALL_ROLES } from "@/context/AuthContext";
 import { usePermission } from "@/security";
 import type { Employee, Project } from "@/types";
 
@@ -43,7 +42,7 @@ function buildEmployeeSchema(takenEmails: Set<string>) {
     team: z.string().min(1, REQUIRED),
     primarySkill: z.string().trim().min(1, REQUIRED),
     secondarySkill: z.string().trim(),
-    currentProject: z.string().min(1, REQUIRED),
+    projects: z.array(z.string()),
     status: z.string().min(1, REQUIRED),
     managerId: z.string(),
   });
@@ -59,7 +58,7 @@ const EMPTY_VALUES: EmployeeFormValues = {
   team: "",
   primarySkill: "",
   secondarySkill: "",
-  currentProject: "US Portfolio",
+  projects: [],
   status: "Active",
   managerId: NO_MANAGER,
 };
@@ -71,6 +70,8 @@ interface EmployeeFormDialogProps {
   employee: Employee | null;
   employees: Employee[];
   projects: Project[];
+  /** Settings-managed role list (Settings > Roles). */
+  roles: string[];
   onSave: (values: Omit<Employee, "id">) => Promise<void>;
 }
 
@@ -80,6 +81,7 @@ export function EmployeeFormDialog({
   employee,
   employees,
   projects,
+  roles,
   onSave,
 }: EmployeeFormDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
@@ -115,7 +117,7 @@ export function EmployeeFormDialog({
               team: employee.team,
               primarySkill: employee.primarySkill,
               secondarySkill: employee.secondarySkill,
-              currentProject: employee.currentProject,
+              projects: employee.projects,
               status: employee.status,
               managerId: employee.managerId ?? NO_MANAGER,
             }
@@ -151,7 +153,7 @@ export function EmployeeFormDialog({
         team: values.team,
         primarySkill: values.primarySkill.trim(),
         secondarySkill: values.secondarySkill.trim(),
-        currentProject: values.currentProject,
+        projects: values.projects,
         profileImage: employee?.profileImage ?? "",
         status: values.status as Employee["status"],
         managerId: values.managerId === NO_MANAGER ? null : values.managerId,
@@ -164,7 +166,10 @@ export function EmployeeFormDialog({
     }
   });
 
-  const projectOptions = ["US Portfolio", ...projects.map((p) => p.name)];
+  const projectOptions = [...new Set(projects.map((p) => p.name))].map((name) => ({
+    value: name,
+    label: name,
+  }));
 
   return (
     <Modal
@@ -194,7 +199,7 @@ export function EmployeeFormDialog({
             />
           )}
           {show("role") && (
-            <FormSelectField control={form.control} name="role" label="Role" options={ALL_ROLES} required disabled={readOnly("role")} />
+            <FormSelectField control={form.control} name="role" label="Role" options={roles} required disabled={readOnly("role")} />
           )}
           {show("experience") && (
             <FormInputField
@@ -249,14 +254,13 @@ export function EmployeeFormDialog({
               disabled={readOnly("secondarySkill")}
             />
           )}
-          {show("currentProject") && (
-            <FormSelectField
+          {show("projects") && (
+            <FormCheckboxGroupField
               control={form.control}
-              name="currentProject"
-              label="Current Project"
+              name="projects"
+              label="Projects"
               options={projectOptions}
-              required
-              disabled={readOnly("currentProject")}
+              disabled={readOnly("projects")}
             />
           )}
 

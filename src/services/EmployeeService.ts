@@ -10,6 +10,20 @@ const STORAGE_KEY = "ai-portfolio-dashboard.employees";
 
 const DEFAULT_PASSWORD = "Welcome@123";
 
+type LegacyEmployee = Employee & { currentProject?: string };
+
+/**
+ * Migrates the pre-multi-project shape (`currentProject: string`) into
+ * `projects: string[]`, dropping the old "US Portfolio" placeholder along
+ * the way (the org name, not a real project — never a valid assignment).
+ */
+function normalizeEmployee(raw: LegacyEmployee): Employee {
+  if (Array.isArray(raw.projects)) return raw as Employee;
+  const { currentProject, ...rest } = raw;
+  const projects = currentProject && currentProject !== "US Portfolio" ? [currentProject] : [];
+  return { ...rest, projects } as Employee;
+}
+
 /** firstname.lastname, deduplicated against existing usernames (e.g. "jane.doe", "jane.doe2"). */
 async function generateUsername(name: string): Promise<string> {
   const base =
@@ -40,11 +54,11 @@ class EmployeeService {
   private load(): Employee[] {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return JSON.parse(stored) as Employee[];
+      if (stored) return (JSON.parse(stored) as LegacyEmployee[]).map(normalizeEmployee);
     } catch {
       // fall through to seed data on corrupt storage
     }
-    return seedEmployees;
+    return seedEmployees.map(normalizeEmployee);
   }
 
   private persist(employees: Employee[]): void {
@@ -137,6 +151,48 @@ class EmployeeService {
     }
 
     return simulateRequest(updated.find((employee) => employee.id === id)!);
+  }
+
+  /**
+   * Keeps each employee's `projects` list in sync with one project's team
+   * membership: adds the project name for newly added members, removes it
+   * for members dropped from the team. Employees who were never part of
+   * `previousMemberIds` (e.g. tagged manually from the People form without
+   * formal team membership) are left untouched. Called by ProjectService on
+   * create/update.
+   */
+  async syncProjectMembership(
+    projectName: string,
+    memberIds: string[],
+    previousMemberIds: string[] = []
+  ): Promise<void> {
+    const all = this.load();
+    const memberSet = new Set(memberIds);
+    const previousSet = new Set(previousMemberIds);
+    const updated = all.map((employee) => {
+      const isMember = memberSet.has(employee.id);
+      const wasMember = previousSet.has(employee.id);
+      const hasProject = employee.projects.includes(projectName);
+      if (isMember && !hasProject) {
+        return { ...employee, projects: [...employee.projects, projectName] };
+      }
+      if (!isMember && wasMember && hasProject) {
+        return { ...employee, projects: employee.projects.filter((name) => name !== projectName) };
+      }
+      return employee;
+    });
+    this.persist(updated);
+  }
+
+  /** Removes a project name from every employee's `projects` list (project deleted or renamed). */
+  async removeProjectEverywhere(projectName: string): Promise<void> {
+    const all = this.load();
+    const updated = all.map((employee) =>
+      employee.projects.includes(projectName)
+        ? { ...employee, projects: employee.projects.filter((name) => name !== projectName) }
+        : employee
+    );
+    this.persist(updated);
   }
 }
 

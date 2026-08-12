@@ -88,7 +88,8 @@ export interface Employee {
   team: string;
   primarySkill: string;
   secondarySkill: string;
-  currentProject: string;
+  /** Project names (free text, matches Project.name) this employee is assigned to; kept in sync with each Project's `members` list. */
+  projects: string[];
   profileImage: string;
   status: EmployeeStatus;
   /** Employee id this person reports to; null at the top of the hierarchy. */
@@ -103,7 +104,7 @@ export interface Project {
   program: string;
   manager: string;
   techLead: string;
-  technology: string;
+  technology: string[];
   stage: ProjectStage;
   status: ProjectStatus;
   aiAdoption: number;
@@ -164,6 +165,8 @@ export interface POC {
   id: string;
   title: string;
   ownerId: string;
+  /** Employee ids working on this POC alongside the owner (team-eligible roles only). */
+  team: string[];
   projectId: string;
   category: POCCategory;
   description: string;
@@ -172,6 +175,15 @@ export interface POC {
   hoursSaved: number;
   repo: string;
   demo: string;
+  /** yyyy-MM-dd */
+  startDate: string;
+  /** yyyy-MM-dd */
+  endDate: string;
+  /** HH:mm */
+  startTime: string;
+  hoursPerDay: number;
+  /** Shared id across the calendar-block events created for this POC's owner + team. */
+  blockGroupId: string | null;
 }
 
 /** settings.json — application master data */
@@ -186,6 +198,7 @@ export interface AppSettings {
   activityTypes: ActivityCategory[];
   pocCategories: POCCategory[];
   impactLevels: ImpactLevel[];
+  eventTypes: CalendarEventType[];
   statusValues: {
     project: ProjectStatus[];
     employee: EmployeeStatus[];
@@ -205,7 +218,8 @@ export type CalendarEventType =
   | "Code Review"
   | "Sprint Planning"
   | "Retrospective"
-  | "Calendar Block for Task";
+  | "Calendar Block for Task"
+  | "POC";
 
 export interface CalendarAttendee {
   name: string;
@@ -239,6 +253,8 @@ export interface CalendarEvent {
   createdBy: string;
   /** Task Board task mirrored from this event, when eventType is "Calendar Block for Task". */
   linkedTaskId?: string | null;
+  /** POC this event was blocked for, when eventType is "POC". */
+  linkedPocId?: string | null;
   /** Shared id across sibling events created together for multiple people (team calendar). */
   blockGroupId?: string | null;
 }

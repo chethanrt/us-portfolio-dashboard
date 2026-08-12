@@ -1,29 +1,29 @@
 {
   "roles": [
-    "Director",
     "Delivery Manager",
-    "Engineering Manager",
-    "Senior Tech Lead",
-    "Tech Lead",
-    "Senior Developer",
     "Developer",
-    "Intern"
+    "Director",
+    "Engineering Manager",
+    "Intern",
+    "Senior Developer",
+    "Senior Tech Lead",
+    "Tech Lead"
   ],
   "technicalSkills": [
-    "Magento",
-    "PHP",
-    "React",
-    "JavaScript",
-    "GraphQL",
-    "MySQL",
     "Docker",
-    "Git"
+    "Git",
+    "GraphQL",
+    "JavaScript",
+    "Magento",
+    "MySQL",
+    "PHP",
+    "React"
   ],
   "aiSkills": [
-    "Claude",
     "ChatGPT",
-    "GitHub Copilot",
+    "Claude",
     "Cursor",
+    "GitHub Copilot",
     "Prompt Engineering"
   ],
   "skillLevels": [
@@ -33,55 +33,68 @@
     "Expert"
   ],
   "projectStages": [
-    "Discovery",
-    "Requirement Gathering",
-    "Estimation",
-    "Development",
-    "Testing",
-    "Documentation",
     "Deployment",
-    "Support"
+    "Development",
+    "Discovery",
+    "Documentation",
+    "Estimation",
+    "Requirement Gathering",
+    "Support",
+    "Testing"
   ],
   "aiTools": [
-    "Claude",
     "ChatGPT",
-    "GitHub Copilot",
-    "Gemini",
+    "Claude",
     "Cursor",
-    "Perplexity",
-    "Other"
+    "Gemini",
+    "GitHub Copilot",
+    "Other",
+    "Perplexity"
   ],
   "learningPlatforms": [
-    "Udemy AI Lab",
     "Internal Training",
-    "Other"
+    "Other",
+    "Udemy AI Lab"
   ],
   "activityTypes": [
+    "CMS Research",
+    "Code Review",
     "Development",
     "Documentation",
     "Estimation",
-    "Code Review",
-    "Testing",
-    "CMS Research",
-    "Marketing",
-    "POC",
     "Innovation",
     "Learning",
-    "Other"
+    "Marketing",
+    "Other",
+    "POC",
+    "Testing"
   ],
   "pocCategories": [
     "Automation",
-    "Documentation",
     "CMS",
-    "Marketing",
-    "Testing",
     "Development",
-    "Estimation"
+    "Documentation",
+    "Estimation",
+    "Marketing",
+    "Testing"
   ],
   "impactLevels": [
     "Low",
     "Medium",
     "High"
+  ],
+  "eventTypes": [
+    "Calendar Block for Task",
+    "Code Review",
+    "Focus Time",
+    "KT Session",
+    "Leave",
+    "Meeting",
+    "POC",
+    "Retrospective",
+    "Sprint Planning",
+    "Training",
+    "Workshop"
   ],
   "statusValues": {
     "project": [

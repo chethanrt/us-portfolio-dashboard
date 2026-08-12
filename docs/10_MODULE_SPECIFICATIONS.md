@@ -432,7 +432,7 @@ Statistics
 
 Profile
 
-Current Project
+Projects (one or more, auto-synced with Project team membership)
 
 Role
 
@@ -647,6 +647,10 @@ Demo
 Repository
 
 Hours Saved
+
+Team scheduling (role-restricted Owner and Team, date range + daily hours)
+
+Team Calendar sync (owner + team blocked automatically, kept in sync on edit/delete)
 
 ---
 

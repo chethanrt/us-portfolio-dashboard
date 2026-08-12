@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, LayoutGrid, Plus, Users } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
   ALL_FILTER,
@@ -14,21 +14,20 @@ import { EmployeeCard } from "@/components/people/EmployeeCard";
 import { EmployeeFormDialog } from "@/components/people/EmployeeFormDialog";
 import { EmployeeProfileDrawer } from "@/components/people/EmployeeProfileDrawer";
 import { OffboardEmployeeDialog } from "@/components/people/OffboardEmployeeDialog";
-import { TeamCalendar } from "@/components/people/TeamCalendar";
 import { Button } from "@/components/ui/button";
-import { ALL_ROLES } from "@/context/AuthContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useEmployees } from "@/hooks/useEmployees";
 import type { EmployeeWithStats } from "@/hooks/useEmployees";
+import { useSettings } from "@/hooks/useSettings";
 import { usePermission } from "@/security";
 import { userService } from "@/services";
 import type { Employee } from "@/types";
 
-type PageView = "directory" | "calendar";
-
 export default function People() {
   const { employees, projects, isLoading, error, addEmployee, updateEmployee, offboardEmployee } =
     useEmployees();
+  const { settings } = useSettings();
+  const roles = settings?.roles ?? [];
   const { currentUser } = useAuth();
   const { canCreate, canEditRow, canDeleteRow, isOwnDataScope } = usePermission();
   const ownDataOnly = isOwnDataScope("people");
@@ -58,7 +57,6 @@ export default function People() {
   const [technologyFilter, setTechnologyFilter] = useState(ALL_FILTER);
   const [projectFilter, setProjectFilter] = useState(ALL_FILTER);
 
-  const [pageView, setPageView] = useState<PageView>("directory");
   const [viewing, setViewing] = useState<EmployeeWithStats | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<EmployeeWithStats | null>(null);
@@ -87,7 +85,7 @@ export default function People() {
     return visibleEmployees.filter((employee) => {
       if (roleFilter !== ALL_FILTER && employee.role !== roleFilter) return false;
       if (technologyFilter !== ALL_FILTER && employee.primarySkill !== technologyFilter) return false;
-      if (projectFilter !== ALL_FILTER && employee.currentProject !== projectFilter) return false;
+      if (projectFilter !== ALL_FILTER && !employee.projects.includes(projectFilter)) return false;
       if (!query) return true;
       return [employee.name, employee.role, employee.primarySkill, employee.secondarySkill, employee.team]
         .some((field) => field.toLowerCase().includes(query));
@@ -157,49 +155,23 @@ export default function People() {
           ownDataOnly ? "Your profile and statistics" : `${visibleEmployees.length} team members across the portfolio`
         }
         actions={
-          <div className="flex items-center gap-2">
-            {!ownDataOnly && (
-              <div className="flex rounded-lg border p-0.5">
-                {(
-                  [
-                    { value: "directory", label: "Directory", icon: LayoutGrid },
-                    { value: "calendar", label: "Calendar", icon: CalendarDays },
-                  ] as const
-                ).map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setPageView(option.value)}
-                    className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                      pageView === option.value
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <option.icon className="size-4" />
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            )}
-            {canCreate("people") && (
-              <Button
-                onClick={() => {
-                  setEditing(null);
-                  setFormOpen(true);
-                }}
-              >
-                <Plus /> Add Employee
-              </Button>
-            )}
-          </div>
+          canCreate("people") ? (
+            <Button
+              onClick={() => {
+                setEditing(null);
+                setFormOpen(true);
+              }}
+            >
+              <Plus /> Add Employee
+            </Button>
+          ) : undefined
         }
       />
 
-      {!ownDataOnly && pageView === "directory" && (
+      {!ownDataOnly && (
         <FilterBar>
           <SearchBar value={search} onChange={setSearch} placeholder="Search people…" className="w-full sm:w-64" />
-          <FilterSelect placeholder="Roles" options={ALL_ROLES} value={roleFilter} onChange={setRoleFilter} className="sm:w-48" />
+          <FilterSelect placeholder="Roles" options={roles} value={roleFilter} onChange={setRoleFilter} className="sm:w-48" />
           <FilterSelect
             placeholder="Technologies"
             options={technologyOptions}
@@ -209,7 +181,7 @@ export default function People() {
           />
           <FilterSelect
             placeholder="Projects"
-            options={["US Portfolio", ...projects.map((p) => p.name)]}
+            options={[...new Set(projects.map((p) => p.name))]}
             value={projectFilter}
             onChange={setProjectFilter}
             className="sm:w-44"
@@ -217,9 +189,7 @@ export default function People() {
         </FilterBar>
       )}
 
-      {pageView === "calendar" ? (
-        <TeamCalendar employees={visibleEmployees} />
-      ) : filteredEmployees.length === 0 ? (
+      {filteredEmployees.length === 0 ? (
         <EmptyState
           icon={Users}
           title="No People to Show"
@@ -259,6 +229,7 @@ export default function People() {
         employee={editing}
         employees={employees}
         projects={projects}
+        roles={roles}
         onSave={handleSave}
       />
 
