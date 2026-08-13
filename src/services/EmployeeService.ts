@@ -1,28 +1,9 @@
-import employeesData from "@/data/employees.json";
 import type { Employee, EmployeeRole } from "@/types";
-import { simulateRequest } from "./BaseService";
+import { apiRequest } from "./BaseService";
 import { roleService } from "./RoleService";
 import { userService } from "./UserService";
 
-const seedEmployees = employeesData as Employee[];
-
-const STORAGE_KEY = "ai-portfolio-dashboard.employees";
-
 const DEFAULT_PASSWORD = "Welcome@123";
-
-type LegacyEmployee = Employee & { currentProject?: string };
-
-/**
- * Migrates the pre-multi-project shape (`currentProject: string`) into
- * `projects: string[]`, dropping the old "US Portfolio" placeholder along
- * the way (the org name, not a real project — never a valid assignment).
- */
-function normalizeEmployee(raw: LegacyEmployee): Employee {
-  if (Array.isArray(raw.projects)) return raw as Employee;
-  const { currentProject, ...rest } = raw;
-  const projects = currentProject && currentProject !== "US Portfolio" ? [currentProject] : [];
-  return { ...rest, projects } as Employee;
-}
 
 /** firstname.lastname, deduplicated against existing usernames (e.g. "jane.doe", "jane.doe2"). */
 async function generateUsername(name: string): Promise<string> {
@@ -43,38 +24,15 @@ async function generateUsername(name: string): Promise<string> {
 }
 
 /**
- * Employees support full CRUD, plus offboarding. Mutations persist to Local
- * Storage (JSON file remains the seed). Employees are never hard-deleted —
- * removing one sets `status: "Ex-Employee"` instead, so their historical
- * activities/POCs/learning records stay valid and their profile is still
- * visible (per docs/01 §7); `offboard()` also reassigns anyone who reported
+ * Employees support full CRUD, plus offboarding. Employees are never
+ * hard-deleted — removing one sets `status: "Ex-Employee"` instead, so
+ * their historical activities/POCs/learning records stay valid and their
+ * profile is still visible; `offboard()` also reassigns anyone who reported
  * to them so the manager hierarchy never points at a departed employee.
  */
 class EmployeeService {
-  private load(): Employee[] {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return (JSON.parse(stored) as LegacyEmployee[]).map(normalizeEmployee);
-    } catch {
-      // fall through to seed data on corrupt storage
-    }
-    return seedEmployees.map(normalizeEmployee);
-  }
-
-  private persist(employees: Employee[]): void {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(employees));
-  }
-
-  private nextId(employees: Employee[]): string {
-    const maxNumber = employees.reduce((max, employee) => {
-      const number = Number(employee.id.replace("EMP", ""));
-      return Number.isFinite(number) && number > max ? number : max;
-    }, 0);
-    return `EMP${String(maxNumber + 1).padStart(3, "0")}`;
-  }
-
   getAll(): Promise<Employee[]> {
-    return simulateRequest(this.load());
+    return apiRequest<Employee[]>("/api/employees");
   }
 
   async getById(id: string): Promise<Employee | undefined> {
@@ -88,14 +46,15 @@ class EmployeeService {
   }
 
   /**
-   * Creates the employee, then a matching login account (docs/10 People +
-   * User Management should never drift apart) with a generated username and
-   * the default password, in whatever role shares the employee's role name.
+   * Creates the employee, then a matching login account (People + User
+   * Management should never drift apart) with a generated username and the
+   * default password, in whatever role shares the employee's role name.
    */
   async create(input: Omit<Employee, "id">): Promise<Employee> {
-    const all = this.load();
-    const created: Employee = { ...input, id: this.nextId(all) };
-    this.persist([...all, created]);
+    const created = await apiRequest<Employee>("/api/employees", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
 
     const [username, roles] = await Promise.all([generateUsername(created.name), roleService.getAll()]);
     const roleId = roles.find((r) => r.name === created.role)?.id ?? "developer";
@@ -107,17 +66,14 @@ class EmployeeService {
       status: "Active",
     });
 
-    return simulateRequest(created);
+    return created;
   }
 
-  async update(id: string, input: Omit<Employee, "id">): Promise<Employee> {
-    const all = this.load();
-    const index = all.findIndex((employee) => employee.id === id);
-    if (index === -1) throw new Error(`Employee ${id} not found`);
-    const updated: Employee = { ...input, id };
-    all[index] = updated;
-    this.persist(all);
-    return simulateRequest(updated);
+  update(id: string, input: Omit<Employee, "id">): Promise<Employee> {
+    return apiRequest<Employee>(`/api/employees/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(input),
+    });
   }
 
   /**
@@ -127,22 +83,23 @@ class EmployeeService {
    * report was left without a replacement manager.
    */
   async offboard(id: string, reassignments: Record<string, string>): Promise<Employee> {
-    const all = this.load();
-    if (!all.some((employee) => employee.id === id)) {
-      throw new Error(`Employee ${id} not found`);
-    }
+    const all = await this.getAll();
+    const target = all.find((employee) => employee.id === id);
+    if (!target) throw new Error(`Employee ${id} not found`);
+
     const directReports = all.filter((employee) => employee.managerId === id && employee.status !== "Ex-Employee");
     const missing = directReports.find((report) => !reassignments[report.id]);
-    if (missing) {
-      throw new Error("REPORTS_UNASSIGNED");
-    }
+    if (missing) throw new Error("REPORTS_UNASSIGNED");
 
-    const updated = all.map((employee) => {
-      if (employee.id === id) return { ...employee, status: "Ex-Employee" as const };
-      const newManagerId = reassignments[employee.id];
-      return newManagerId ? { ...employee, managerId: newManagerId } : employee;
-    });
-    this.persist(updated);
+    await Promise.all(
+      Object.entries(reassignments).map(([reportId, newManagerId]) => {
+        const report = all.find((employee) => employee.id === reportId);
+        if (!report) return Promise.resolve();
+        return this.update(reportId, { ...report, managerId: newManagerId });
+      })
+    );
+
+    const updatedTarget = await this.update(id, { ...target, status: "Ex-Employee" });
 
     // A departed employee shouldn't keep an active login; no-op if there wasn't one.
     const account = (await userService.getAll()).find((u) => u.employeeId === id);
@@ -150,7 +107,7 @@ class EmployeeService {
       await userService.update(account.id, { ...account, status: "Inactive" });
     }
 
-    return simulateRequest(updated.find((employee) => employee.id === id)!);
+    return updatedTarget;
   }
 
   /**
@@ -161,38 +118,31 @@ class EmployeeService {
    * formal team membership) are left untouched. Called by ProjectService on
    * create/update.
    */
-  async syncProjectMembership(
-    projectName: string,
-    memberIds: string[],
-    previousMemberIds: string[] = []
-  ): Promise<void> {
-    const all = this.load();
+  async syncProjectMembership(projectName: string, memberIds: string[], previousMemberIds: string[] = []): Promise<void> {
+    const all = await this.getAll();
     const memberSet = new Set(memberIds);
     const previousSet = new Set(previousMemberIds);
-    const updated = all.map((employee) => {
+    const updates: Employee[] = [];
+    for (const employee of all) {
       const isMember = memberSet.has(employee.id);
       const wasMember = previousSet.has(employee.id);
       const hasProject = employee.projects.includes(projectName);
       if (isMember && !hasProject) {
-        return { ...employee, projects: [...employee.projects, projectName] };
+        updates.push({ ...employee, projects: [...employee.projects, projectName] });
+      } else if (!isMember && wasMember && hasProject) {
+        updates.push({ ...employee, projects: employee.projects.filter((name) => name !== projectName) });
       }
-      if (!isMember && wasMember && hasProject) {
-        return { ...employee, projects: employee.projects.filter((name) => name !== projectName) };
-      }
-      return employee;
-    });
-    this.persist(updated);
+    }
+    await Promise.all(updates.map((employee) => this.update(employee.id, employee)));
   }
 
   /** Removes a project name from every employee's `projects` list (project deleted or renamed). */
   async removeProjectEverywhere(projectName: string): Promise<void> {
-    const all = this.load();
-    const updated = all.map((employee) =>
-      employee.projects.includes(projectName)
-        ? { ...employee, projects: employee.projects.filter((name) => name !== projectName) }
-        : employee
-    );
-    this.persist(updated);
+    const all = await this.getAll();
+    const updates = all
+      .filter((employee) => employee.projects.includes(projectName))
+      .map((employee) => ({ ...employee, projects: employee.projects.filter((name) => name !== projectName) }));
+    await Promise.all(updates.map((employee) => this.update(employee.id, employee)));
   }
 }
 

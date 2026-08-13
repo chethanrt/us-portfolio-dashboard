@@ -1,11 +1,6 @@
-import calendarEventsData from "@/data/calendarEvents.json";
 import type { CalendarEvent } from "@/types";
-import { simulateRequest } from "./BaseService";
+import { apiRequest } from "./BaseService";
 import { taskService } from "./TaskService";
-
-const seedCalendarEvents = calendarEventsData as CalendarEvent[];
-
-const STORAGE_KEY = "ai-portfolio-dashboard.calendarEvents";
 
 const TASK_BLOCK_TYPE = "Calendar Block for Task";
 
@@ -63,41 +58,23 @@ function taskInputFor(event: CalendarEvent) {
 }
 
 /**
- * Calendar events support full CRUD, persisted to Local Storage like the
- * other services (docs/04 + PROJECT_RULES); the JSON file remains the seed
- * data. The event shape mirrors a Microsoft Graph calendar event so a future
- * Outlook/Graph integration only needs to replace this class's internals —
- * `outlookEventId`/`refresh()` are the seam for that swap.
+ * Calendar events support full CRUD. The event shape mirrors a Microsoft
+ * Graph calendar event so a future Outlook/Graph integration only needs to
+ * replace this class's internals — `outlookEventId`/`refresh()` are the
+ * seam for that swap.
  *
  * "Calendar Block for Task" events are mirrored 1:1 onto the Task Board: the
- * event carries `linkedTaskId`, the task carries `linkedCalendarEventId`, and
- * this class keeps both in sync on create/update/delete.
+ * event carries `linkedTaskId`, the task carries `linkedCalendarEventId`,
+ * and this class keeps both in sync on create/update/delete. Because the
+ * event's own id is now minted server-side (not known up front the way the
+ * old client-side max+1 id was), create() does an extra round trip: create
+ * the event, then the mirrored task (which needs the event's real id), then
+ * patch the event with the task's id — same end state as before, just one
+ * more request to get there.
  */
 class CalendarService {
-  private load(): CalendarEvent[] {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return JSON.parse(stored) as CalendarEvent[];
-    } catch {
-      // fall through to seed data on corrupt storage
-    }
-    return seedCalendarEvents;
-  }
-
-  private persist(events: CalendarEvent[]): void {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-  }
-
-  private nextId(events: CalendarEvent[]): string {
-    const maxNumber = events.reduce((max, event) => {
-      const number = Number(event.id.replace("CAL", ""));
-      return Number.isFinite(number) && number > max ? number : max;
-    }, 0);
-    return `CAL${String(maxNumber + 1).padStart(3, "0")}`;
-  }
-
   getAll(): Promise<CalendarEvent[]> {
-    return simulateRequest(this.load());
+    return apiRequest<CalendarEvent[]>("/api/calendar-events");
   }
 
   async getByEmployee(employeeId: string): Promise<CalendarEvent[]> {
@@ -119,22 +96,23 @@ class CalendarService {
   }
 
   async create(input: Omit<CalendarEvent, "id">): Promise<CalendarEvent> {
-    const all = this.load();
-    const created: CalendarEvent = { ...input, id: this.nextId(all) };
+    let created = await apiRequest<CalendarEvent>("/api/calendar-events", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
 
     if (created.eventType === TASK_BLOCK_TYPE) {
       const task = await taskService.create(taskInputFor(created));
-      created.linkedTaskId = task.id;
+      created = await apiRequest<CalendarEvent>(`/api/calendar-events/${created.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ linkedTaskId: task.id }),
+      });
     }
 
-    this.persist([...all, created]);
-    return simulateRequest(created);
+    return created;
   }
 
   async update(id: string, input: Omit<CalendarEvent, "id">): Promise<CalendarEvent> {
-    const all = this.load();
-    const index = all.findIndex((event) => event.id === id);
-    if (index === -1) throw new Error(`Calendar event ${id} not found`);
     const updated: CalendarEvent = { ...input, id };
 
     if (updated.eventType === TASK_BLOCK_TYPE) {
@@ -150,36 +128,33 @@ class CalendarService {
       updated.linkedTaskId = null;
     }
 
-    all[index] = updated;
-    this.persist(all);
-    return simulateRequest(updated);
+    return apiRequest<CalendarEvent>(`/api/calendar-events/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(updated),
+    });
   }
 
   async delete(id: string): Promise<void> {
-    const all = this.load();
+    const all = await this.getAll();
     const existing = all.find((event) => event.id === id);
     if (existing?.linkedTaskId) {
       await taskService.delete(existing.linkedTaskId);
     }
-    this.persist(all.filter((event) => event.id !== id));
-    await simulateRequest(undefined);
+    await apiRequest<void>(`/api/calendar-events/${id}`, { method: "DELETE" });
   }
 
   /** Deletes every sibling event sharing a blockGroupId (e.g. a POC's calendar blocks). */
   async deleteByGroup(groupId: string): Promise<void> {
-    const all = this.load();
-    const toDelete = all.filter((event) => event.blockGroupId === groupId);
+    const toDelete = await this.getByGroup(groupId);
     await Promise.all(
       toDelete.filter((event) => event.linkedTaskId).map((event) => taskService.delete(event.linkedTaskId as string))
     );
-    this.persist(all.filter((event) => event.blockGroupId !== groupId));
-    await simulateRequest(undefined);
+    await apiRequest<void>(`/api/calendar-events/by-group/${groupId}`, { method: "DELETE" });
   }
 
   /**
-   * Re-fetches events for an employee. Phase 1 just re-reads local storage;
-   * this is the method a live Outlook integration would replace with an
-   * actual Graph delta/range fetch.
+   * Re-fetches events for an employee. This is the method a live Outlook
+   * integration would replace with an actual Graph delta/range fetch.
    */
   refresh(employeeId: string): Promise<CalendarEvent[]> {
     return this.getByEmployee(employeeId);

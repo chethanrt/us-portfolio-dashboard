@@ -1,12 +1,10 @@
-import skillsData from "@/data/skills.json";
 import type { SkillRecord } from "@/types";
-import { simulateRequest } from "./BaseService";
+import { apiRequest } from "./BaseService";
 
-const skills = skillsData as SkillRecord[];
-
+/** Read-only — no create/update/delete exists anywhere in the app today. */
 class SkillService {
   getAll(): Promise<SkillRecord[]> {
-    return simulateRequest(skills);
+    return apiRequest<SkillRecord[]>("/api/skills");
   }
 
   async getByEmployee(employeeId: string): Promise<SkillRecord | undefined> {
