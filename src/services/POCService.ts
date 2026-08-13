@@ -1,28 +1,10 @@
 import { addHours, eachDayOfInterval, format, parseISO } from "date-fns";
-import pocsData from "@/data/pocs.json";
 import type { CalendarEvent, Employee, POC } from "@/types";
-import { simulateRequest } from "./BaseService";
+import { apiRequest } from "./BaseService";
 import { calendarService } from "./CalendarService";
 import { employeeService } from "./EmployeeService";
 
-const seedPocs = pocsData as POC[];
-
-const STORAGE_KEY = "ai-portfolio-dashboard.pocs";
-
 const POC_EVENT_TYPE = "POC";
-
-/** Coerces a POC saved before team/scheduling fields existed into safe defaults. */
-function normalizePOC(raw: Record<string, unknown>): POC {
-  return {
-    ...raw,
-    team: Array.isArray(raw.team) ? raw.team : [],
-    startDate: typeof raw.startDate === "string" ? raw.startDate : "",
-    endDate: typeof raw.endDate === "string" ? raw.endDate : "",
-    startTime: typeof raw.startTime === "string" ? raw.startTime : "",
-    hoursPerDay: typeof raw.hoursPerDay === "number" ? raw.hoursPerDay : 0,
-    blockGroupId: typeof raw.blockGroupId === "string" ? raw.blockGroupId : null,
-  } as POC;
-}
 
 function sameIds(a: string[], b: string[]): boolean {
   if (a.length !== b.length) return false;
@@ -141,40 +123,16 @@ function buildCalendarEventsFor(poc: POC, employees: Employee[]): Omit<CalendarE
 }
 
 /**
- * POCs support full CRUD. Mutations persist to Local Storage; the JSON file
- * remains the seed data.
- *
- * Owner + team calendars are blocked automatically: every POC's schedule is
- * mirrored onto the Team Calendar as "POC" events sharing one `blockGroupId`,
- * kept in sync on update (re-synced whenever team/schedule fields change) and
- * removed on delete — mirroring how "Calendar Block for Task" events mirror
- * onto the Task Board, but inverted (POC is the "one", events are the "many").
+ * POCs support full CRUD. Owner + team calendars are blocked automatically:
+ * every POC's schedule is mirrored onto the Team Calendar as "POC" events
+ * sharing one `blockGroupId`, kept in sync on update (re-synced whenever
+ * team/schedule fields change) and removed on delete — mirroring how
+ * "Calendar Block for Task" events mirror onto the Task Board, but inverted
+ * (POC is the "one", events are the "many").
  */
 class POCService {
-  private load(): POC[] {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return (JSON.parse(stored) as Record<string, unknown>[]).map(normalizePOC);
-    } catch {
-      // fall through to seed data on corrupt storage
-    }
-    return seedPocs.map((poc) => normalizePOC(poc as unknown as Record<string, unknown>));
-  }
-
-  private persist(pocs: POC[]): void {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(pocs));
-  }
-
-  private nextId(pocs: POC[]): string {
-    const maxNumber = pocs.reduce((max, poc) => {
-      const number = Number(poc.id.replace("POC", ""));
-      return Number.isFinite(number) && number > max ? number : max;
-    }, 0);
-    return `POC${String(maxNumber + 1).padStart(3, "0")}`;
-  }
-
   getAll(): Promise<POC[]> {
-    return simulateRequest(this.load());
+    return apiRequest<POC[]>("/api/pocs");
   }
 
   async getById(id: string): Promise<POC | undefined> {
@@ -188,26 +146,29 @@ class POCService {
   }
 
   async create(input: Omit<POC, "id">): Promise<POC> {
-    const all = this.load();
-    const created: POC = { ...input, id: this.nextId(all), blockGroupId: crypto.randomUUID() };
+    const created = await apiRequest<POC>("/api/pocs", {
+      method: "POST",
+      body: JSON.stringify({ ...input, blockGroupId: crypto.randomUUID() }),
+    });
 
     const employees = await employeeService.getAll();
     for (const event of buildCalendarEventsFor(created, employees)) {
       await calendarService.create(event);
     }
 
-    this.persist([created, ...all]);
-    return simulateRequest(created);
+    return created;
   }
 
   async update(id: string, input: Omit<POC, "id">): Promise<POC> {
-    const all = this.load();
-    const index = all.findIndex((poc) => poc.id === id);
-    if (index === -1) throw new Error(`POC ${id} not found`);
-    const previous = all[index];
+    const previous = await this.getById(id);
+    if (!previous) throw new Error(`POC ${id} not found`);
     // Legacy POCs saved before this feature existed may have no group yet.
     const blockGroupId = previous.blockGroupId ?? crypto.randomUUID();
-    const updated: POC = { ...input, id, blockGroupId };
+
+    const updated = await apiRequest<POC>(`/api/pocs/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({ ...input, blockGroupId }),
+    });
 
     if (scheduleChanged(previous, updated)) {
       if (previous.blockGroupId) {
@@ -219,19 +180,15 @@ class POCService {
       }
     }
 
-    all[index] = updated;
-    this.persist(all);
-    return simulateRequest(updated);
+    return updated;
   }
 
   async delete(id: string): Promise<void> {
-    const all = this.load();
-    const existing = all.find((poc) => poc.id === id);
+    const existing = await this.getById(id);
     if (existing?.blockGroupId) {
       await calendarService.deleteByGroup(existing.blockGroupId);
     }
-    this.persist(all.filter((poc) => poc.id !== id));
-    await simulateRequest(undefined);
+    await apiRequest<void>(`/api/pocs/${id}`, { method: "DELETE" });
   }
 }
 

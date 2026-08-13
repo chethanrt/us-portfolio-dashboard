@@ -1,22 +1,19 @@
-import taskCategoriesData from "@/data/taskCategories.json";
-import taskWorkflowData from "@/data/taskWorkflow.json";
 import type { TaskCategory, TaskWorkflowStatus } from "@/types";
-import { simulateRequest } from "./BaseService";
-
-const workflow = (taskWorkflowData as TaskWorkflowStatus[]).slice().sort((a, b) => a.order - b.order);
-const categories = taskCategoriesData as TaskCategory[];
+import { apiRequest } from "./BaseService";
 
 /**
- * Task Board configuration (docs/11): workflow columns and categories are
- * loaded from JSON, never hardcoded. Also owns status-transition helpers.
+ * Task Board configuration: workflow columns and categories, seeded from
+ * the original JSON files into the task_workflow_statuses/task_categories
+ * tables. Also owns status-transition helpers.
  */
 class TaskWorkflowService {
-  getWorkflow(): Promise<TaskWorkflowStatus[]> {
-    return simulateRequest(workflow);
+  async getWorkflow(): Promise<TaskWorkflowStatus[]> {
+    const statuses = await apiRequest<TaskWorkflowStatus[]>("/api/task-workflow");
+    return statuses.slice().sort((a, b) => a.order - b.order);
   }
 
   getCategories(): Promise<TaskCategory[]> {
-    return simulateRequest(categories);
+    return apiRequest<TaskCategory[]>("/api/task-categories");
   }
 
   /** The status new tasks enter (Quick Task, duplicates): "To Do" by config order. */
