@@ -1,5 +1,6 @@
-import express from "express";
+import cookieParser from "cookie-parser";
 import cors from "cors";
+import express from "express";
 import { getDb } from "./db/client.ts";
 import { createEmployeesRouter } from "./routes/employees.ts";
 import { createProjectsRouter } from "./routes/projects.ts";
@@ -17,31 +18,41 @@ import { createPermissionOverridesRouter } from "./routes/permissionOverrides.ts
 import { createResourcesRouter } from "./routes/resources.ts";
 import { createSettingsRouter } from "./routes/settings.ts";
 import { createAuditLogRouter } from "./routes/auditLog.ts";
+import { requireAuth } from "./security/requireAuth.ts";
 
 const PORT = 4000;
 
 const db = getDb();
 const app = express();
 
-app.use(cors());
+// origin: true reflects whatever Origin the request actually came from
+// (needed for credentialed/cookie requests — a wildcard "*" origin doesn't
+// work once credentials are involved) — fine for a same-network dev/VM
+// setup; tighten to an explicit allow-list if this ever faces a wider network.
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 
-app.use("/api/employees", createEmployeesRouter(db));
-app.use("/api/projects", createProjectsRouter(db));
-app.use("/api/activities", createActivitiesRouter(db));
-app.use("/api/learning", createLearningRouter(db));
-app.use("/api/pocs", createPocsRouter(db));
-app.use("/api/calendar-events", createCalendarEventsRouter(db));
-app.use("/api/tasks", createTasksRouter(db));
-app.use("/api/task-categories", createTaskCategoriesRouter(db));
-app.use("/api/task-workflow", createTaskWorkflowRouter(db));
+// /api/users owns its own auth boundary internally (POST /authenticate has
+// to be reachable *without* a session — see server/routes/users.ts) —
+// every other router requires a valid session for all of its routes.
 app.use("/api/users", createUsersRouter(db));
-app.use("/api/roles", createRolesRouter(db));
-app.use("/api/permissions", createPermissionsRouter(db));
-app.use("/api/permission-overrides", createPermissionOverridesRouter(db));
-app.use("/api/resources", createResourcesRouter(db));
-app.use("/api/settings", createSettingsRouter(db));
-app.use("/api/audit-log", createAuditLogRouter(db));
+
+app.use("/api/employees", requireAuth(db), createEmployeesRouter(db));
+app.use("/api/projects", requireAuth(db), createProjectsRouter(db));
+app.use("/api/activities", requireAuth(db), createActivitiesRouter(db));
+app.use("/api/learning", requireAuth(db), createLearningRouter(db));
+app.use("/api/pocs", requireAuth(db), createPocsRouter(db));
+app.use("/api/calendar-events", requireAuth(db), createCalendarEventsRouter(db));
+app.use("/api/tasks", requireAuth(db), createTasksRouter(db));
+app.use("/api/task-categories", requireAuth(db), createTaskCategoriesRouter(db));
+app.use("/api/task-workflow", requireAuth(db), createTaskWorkflowRouter(db));
+app.use("/api/roles", requireAuth(db), createRolesRouter(db));
+app.use("/api/permissions", requireAuth(db), createPermissionsRouter(db));
+app.use("/api/permission-overrides", requireAuth(db), createPermissionOverridesRouter(db));
+app.use("/api/resources", requireAuth(db), createResourcesRouter(db));
+app.use("/api/settings", requireAuth(db), createSettingsRouter(db));
+app.use("/api/audit-log", requireAuth(db), createAuditLogRouter(db));
 
 // Catch-all so any unhandled route error returns a real message instead of a
 // bare 500 with no body (Express's default) — apiRequest on the frontend

@@ -3,6 +3,7 @@ import type Database from "better-sqlite3";
 import { createCrudRouter } from "./_crud.ts";
 import { buildRowMapper, jsonArrayField, nullableField } from "./_fields.ts";
 import { nextCalendarEventId } from "../db/ids.ts";
+import { requirePermission } from "../security/permissions.ts";
 
 const { fromRow, toRow } = buildRowMapper([
   { js: "employeeId", db: "employee_id" },
@@ -28,7 +29,7 @@ export function createCalendarEventsRouter(db: Database.Database) {
 
   // Registered before the generic "/:id" route so "by-group" isn't parsed as an id.
   // Mirrors CalendarService.deleteByGroup — deletes every sibling event sharing a blockGroupId.
-  router.delete("/by-group/:groupId", (req, res) => {
+  router.delete("/by-group/:groupId", requirePermission(db, "people", "delete"), (req, res) => {
     db.prepare("DELETE FROM calendar_events WHERE block_group_id = ?").run(req.params.groupId);
     res.status(204).end();
   });
@@ -37,7 +38,8 @@ export function createCalendarEventsRouter(db: Database.Database) {
     createCrudRouter({
       db,
       table: "calendar_events",
-      module: "Calendar",
+      module: "people",
+      auditLabel: "Calendar",
       fromRow,
       toRow,
       generateId: nextCalendarEventId,
