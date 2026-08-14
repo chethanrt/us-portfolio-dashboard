@@ -1,13 +1,11 @@
 import { format, subDays } from "date-fns";
-import type { Activity, Employee, LearningRecord, POC, Project, SkillRecord, Task } from "@/types";
-import { SKILL_COLUMNS } from "./skills";
+import type { Activity, Employee, LearningRecord, POC, Project, Task } from "@/types";
 
 export interface ReportSources {
   employees: Employee[];
   projects: Project[];
   activities: Activity[];
   learning: LearningRecord[];
-  skills: SkillRecord[];
   pocs: POC[];
   tasks: Task[];
 }
@@ -36,7 +34,6 @@ export const REPORT_TYPES = [
   "Project Summary",
   "AI Activities",
   "Learning Progress",
-  "Skill Matrix",
   "POCs",
   "Team Performance",
   "Task Workload",
@@ -224,32 +221,6 @@ function learningReport(sources: ReportSources): ReportResult {
   };
 }
 
-function skillMatrixReport(sources: ReportSources): ReportResult {
-  const levels = ["Beginner", "Intermediate", "Advanced", "Expert"] as const;
-  const rows = SKILL_COLUMNS.map(({ key, label }) => {
-    const counts = { Beginner: 0, Intermediate: 0, Advanced: 0, Expert: 0 };
-    for (const record of sources.skills) counts[record[key]] += 1;
-    return { skill: label, ...counts };
-  });
-  const totals = levels.map((level) => rows.reduce((sum, row) => sum + Number(row[level]), 0));
-  return {
-    metrics: [
-      { label: "Employees Rated", value: sources.skills.length },
-      { label: "Expert Ratings", value: totals[3] },
-      { label: "Advanced Ratings", value: totals[2] },
-      { label: "Beginner Ratings", value: totals[0] },
-    ],
-    columns: [
-      { key: "skill", label: "Skill" },
-      { key: "Beginner", label: "Beginner" },
-      { key: "Intermediate", label: "Intermediate" },
-      { key: "Advanced", label: "Advanced" },
-      { key: "Expert", label: "Expert" },
-    ],
-    rows,
-  };
-}
-
 function pocsReport(sources: ReportSources, projectId: string): ReportResult {
   const pocs = sources.pocs.filter((p) => projectId === "all" || p.projectId === projectId);
   const employeeById = new Map(sources.employees.map((e) => [e.id, e.name]));
@@ -422,8 +393,6 @@ export function computeReport(type: ReportType, sources: ReportSources, filters:
       return activitiesReport(sources, filters.rangeDays, filters.projectId);
     case "Learning Progress":
       return learningReport(sources);
-    case "Skill Matrix":
-      return skillMatrixReport(sources);
     case "POCs":
       return pocsReport(sources, filters.projectId);
     case "Team Performance":
@@ -445,7 +414,6 @@ export function scopeSourcesToEmployee(sources: ReportSources, employeeId: strin
     projects: sources.projects.filter((p) => p.members.includes(employeeId)),
     activities: sources.activities.filter((a) => a.employeeId === employeeId),
     learning: sources.learning.filter((l) => l.employeeId === employeeId),
-    skills: sources.skills.filter((s) => s.employeeId === employeeId),
     pocs: sources.pocs.filter((p) => p.ownerId === employeeId),
     tasks: sources.tasks.filter((t) => t.assigneeId === employeeId || t.reporterId === employeeId),
   };

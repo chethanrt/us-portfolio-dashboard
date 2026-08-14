@@ -5,6 +5,7 @@ const EDITABLE_KEYS = [
   "roles",
   "technicalSkills",
   "aiSkills",
+  "skills",
   "aiTools",
   "projectStages",
   "activityTypes",

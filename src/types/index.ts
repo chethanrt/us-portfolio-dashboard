@@ -13,15 +13,15 @@ export type EmployeeRole =
   | "Director"
   | "Delivery Manager"
   | "Engineering Manager"
+  | "Project Manager"
   | "Senior Tech Lead"
   | "Tech Lead"
   | "Senior Developer"
   | "Developer"
   | "Intern";
 
-export type SkillLevel = "Beginner" | "Intermediate" | "Advanced" | "Expert";
-
 export type ProjectStage =
+  | "Planning"
   | "Discovery"
   | "Requirement Gathering"
   | "Estimation"
@@ -31,7 +31,7 @@ export type ProjectStage =
   | "Deployment"
   | "Support";
 
-export type ProjectStatus = "Active" | "On Hold" | "Completed" | "Planning";
+export type ProjectStatus = "Active" | "On Hold" | "Completed";
 
 export type EmployeeStatus = "Active" | "Inactive" | "Ex-Employee";
 
@@ -86,8 +86,8 @@ export interface Employee {
   role: EmployeeRole;
   experience: number;
   team: string;
-  primarySkill: string;
-  secondarySkill: string;
+  /** Selected from the Settings-managed `skills` list; anyone can pick as many as apply on their own profile. */
+  skills: string[];
   /** Project names (free text, matches Project.name) this employee is assigned to; kept in sync with each Project's `members` list. */
   projects: string[];
   profileImage: string;
@@ -104,6 +104,8 @@ export interface Project {
   program: string;
   manager: string;
   techLead: string;
+  /** Optional, like manager/techLead — employees with role "Project Manager". */
+  projectManager: string;
   technology: string[];
   stage: ProjectStage;
   status: ProjectStatus;
@@ -127,24 +129,6 @@ export interface Activity {
   hoursSaved: number;
   impact: ImpactLevel;
   attachment: string;
-}
-
-/** skills.json — one record per employee, flat skill-name keys per docs/02 */
-export interface SkillRecord {
-  employeeId: string;
-  Magento: SkillLevel;
-  PHP: SkillLevel;
-  React: SkillLevel;
-  JavaScript: SkillLevel;
-  GraphQL: SkillLevel;
-  MySQL: SkillLevel;
-  Docker: SkillLevel;
-  Git: SkillLevel;
-  Claude: SkillLevel;
-  ChatGPT: SkillLevel;
-  GitHubCopilot: SkillLevel;
-  Cursor: SkillLevel;
-  PromptEngineering: SkillLevel;
 }
 
 /** learning.json */
@@ -191,7 +175,8 @@ export interface AppSettings {
   roles: EmployeeRole[];
   technicalSkills: string[];
   aiSkills: string[];
-  skillLevels: SkillLevel[];
+  /** Options for Employee.skills — distinct from technicalSkills/aiSkills, which back Project.technology. */
+  skills: string[];
   projectStages: ProjectStage[];
   aiTools: AITool[];
   learningPlatforms: LearningPlatform[];
@@ -255,6 +240,8 @@ export interface CalendarEvent {
   linkedTaskId?: string | null;
   /** POC this event was blocked for, when eventType is "POC". */
   linkedPocId?: string | null;
+  /** Project this event was auto-blocked for, when created by a Project team assignment. */
+  linkedProjectId?: string | null;
   /** Shared id across sibling events created together for multiple people (team calendar). */
   blockGroupId?: string | null;
 }

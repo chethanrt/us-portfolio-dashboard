@@ -9,6 +9,7 @@ const { fromRow, toRow } = buildRowMapper([
   { js: "program", db: "program" },
   { js: "manager", db: "manager" },
   { js: "techLead", db: "tech_lead" },
+  { js: "projectManager", db: "project_manager" },
   { js: "technology", db: "technology_json", ...jsonArrayField },
   { js: "stage", db: "stage" },
   { js: "status", db: "status" },

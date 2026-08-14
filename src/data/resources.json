@@ -24,6 +24,7 @@
       { "key": "status", "label": "Status" },
       { "key": "manager", "label": "Engineering Manager" },
       { "key": "techLead", "label": "Tech Lead" },
+      { "key": "projectManager", "label": "Project Manager" },
       { "key": "startDate", "label": "Start Date" },
       { "key": "endDate", "label": "End Date" },
       { "key": "aiAdoption", "label": "AI Adoption" },
@@ -91,8 +92,7 @@
       { "key": "role", "label": "Role" },
       { "key": "experience", "label": "Experience" },
       { "key": "team", "label": "Team" },
-      { "key": "primarySkill", "label": "Primary Skill" },
-      { "key": "secondarySkill", "label": "Secondary Skill" },
+      { "key": "skills", "label": "Skills" },
       { "key": "projects", "label": "Projects" },
       { "key": "status", "label": "Status" },
       { "key": "managerId", "label": "Reports To" }
@@ -102,7 +102,7 @@
     "id": "skills",
     "label": "Skill Matrix",
     "path": "/skills",
-    "description": "Technical and AI skill levels across the team.",
+    "description": "Skills employees have selected on their People profile.",
     "actions": ["view", "export"],
     "scopable": true,
     "fields": []

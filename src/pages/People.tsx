@@ -28,6 +28,7 @@ export default function People() {
     useEmployees();
   const { settings } = useSettings();
   const roles = settings?.roles ?? [];
+  const skillOptions = settings?.skills ?? [];
   const { currentUser } = useAuth();
   const { canCreate, canEditRow, canDeleteRow, isOwnDataScope } = usePermission();
   const ownDataOnly = isOwnDataScope("people");
@@ -54,7 +55,7 @@ export default function People() {
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState(ALL_FILTER);
-  const [technologyFilter, setTechnologyFilter] = useState(ALL_FILTER);
+  const [skillFilter, setSkillFilter] = useState(ALL_FILTER);
   const [projectFilter, setProjectFilter] = useState(ALL_FILTER);
 
   const [viewing, setViewing] = useState<EmployeeWithStats | null>(null);
@@ -75,27 +76,23 @@ export default function People() {
     [employees, offboarding]
   );
 
-  const technologyOptions = useMemo(
-    () => [...new Set(visibleEmployees.map((e) => e.primarySkill))].sort(),
-    [visibleEmployees]
-  );
-
   const filteredEmployees = useMemo(() => {
     const query = search.trim().toLowerCase();
     return visibleEmployees.filter((employee) => {
       if (roleFilter !== ALL_FILTER && employee.role !== roleFilter) return false;
-      if (technologyFilter !== ALL_FILTER && employee.primarySkill !== technologyFilter) return false;
+      if (skillFilter !== ALL_FILTER && !employee.skills.includes(skillFilter)) return false;
       if (projectFilter !== ALL_FILTER && !employee.projects.includes(projectFilter)) return false;
       if (!query) return true;
-      return [employee.name, employee.role, employee.primarySkill, employee.secondarySkill, employee.team]
-        .some((field) => field.toLowerCase().includes(query));
+      return [employee.name, employee.role, employee.team, ...employee.skills].some((field) =>
+        field.toLowerCase().includes(query)
+      );
     });
-  }, [visibleEmployees, search, roleFilter, technologyFilter, projectFilter]);
+  }, [visibleEmployees, search, roleFilter, skillFilter, projectFilter]);
 
   const clearFilters = () => {
     setSearch("");
     setRoleFilter(ALL_FILTER);
-    setTechnologyFilter(ALL_FILTER);
+    setSkillFilter(ALL_FILTER);
     setProjectFilter(ALL_FILTER);
   };
 
@@ -173,10 +170,10 @@ export default function People() {
           <SearchBar value={search} onChange={setSearch} placeholder="Search people…" className="w-full sm:w-64" />
           <FilterSelect placeholder="Roles" options={roles} value={roleFilter} onChange={setRoleFilter} className="sm:w-48" />
           <FilterSelect
-            placeholder="Technologies"
-            options={technologyOptions}
-            value={technologyFilter}
-            onChange={setTechnologyFilter}
+            placeholder="Skills"
+            options={skillOptions}
+            value={skillFilter}
+            onChange={setSkillFilter}
             className="sm:w-44"
           />
           <FilterSelect
@@ -230,6 +227,7 @@ export default function People() {
         employees={employees}
         projects={projects}
         roles={roles}
+        skillOptions={skillOptions}
         onSave={handleSave}
       />
 

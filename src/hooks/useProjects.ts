@@ -32,13 +32,13 @@ export function useProjects() {
 
   const employeesById = useMemo(() => new Map(employees.map((e) => [e.id, e])), [employees]);
 
-  const addProject = useCallback(async (input: Omit<Project, "id">) => {
-    const created = await projectService.create(input);
+  const addProject = useCallback(async (input: Omit<Project, "id">, actingEmployeeId: string) => {
+    const created = await projectService.create(input, actingEmployeeId);
     setProjects((current) => [...current, created]);
   }, []);
 
-  const updateProject = useCallback(async (id: string, input: Omit<Project, "id">) => {
-    const updated = await projectService.update(id, input);
+  const updateProject = useCallback(async (id: string, input: Omit<Project, "id">, actingEmployeeId: string) => {
+    const updated = await projectService.update(id, input, actingEmployeeId);
     setProjects((current) => current.map((p) => (p.id === id ? updated : p)));
   }, []);
 

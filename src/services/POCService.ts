@@ -3,6 +3,7 @@ import type { CalendarEvent, Employee, POC } from "@/types";
 import { apiRequest } from "./BaseService";
 import { calendarService } from "./CalendarService";
 import { employeeService } from "./EmployeeService";
+import { taskService } from "./TaskService";
 
 const POC_EVENT_TYPE = "POC";
 
@@ -123,12 +124,66 @@ function buildCalendarEventsFor(poc: POC, employees: Employee[]): Omit<CalendarE
 }
 
 /**
+ * Builds the Task Board entry for one owner/team member of a POC. Separate
+ * from the calendar mirroring above (deliberately — the calendar block stays
+ * labeled "POC", not "Calendar Block for Task", so this direct link reuses
+ * Task's existing `linkedPocId` field rather than piggybacking on
+ * CalendarService's task-mirroring mechanism).
+ */
+function pocTaskInputFor(poc: POC, assigneeId: string) {
+  const days = eachDayOfInterval({ start: parseISO(poc.startDate), end: parseISO(poc.endDate) }).length;
+  return {
+    title: `POC: ${poc.title}`,
+    description: poc.description,
+    type: "Project" as const,
+    category: "Innovation",
+    projectId: poc.projectId,
+    assigneeId,
+    reporterId: poc.ownerId,
+    createdBy: poc.ownerId,
+    lastModifiedBy: poc.ownerId,
+    priority: "Medium" as const,
+    status: "To Do",
+    estimateHours: Math.round(poc.hoursPerDay * days * 10) / 10,
+    actualHours: 0,
+    percentComplete: 0,
+    startDate: poc.startDate,
+    dueDate: poc.endDate,
+    completedDate: "",
+    displayOrder: 0,
+    labels: ["POC"],
+    aiTool: "",
+    linkedActivityId: "",
+    linkedPocId: poc.id,
+    comments: [],
+    attachments: [],
+    archived: false,
+  };
+}
+
+/** One To Do task per owner/team member of the POC. */
+async function createPocTasks(poc: POC): Promise<void> {
+  const targetIds = [...new Set([poc.ownerId, ...poc.team])];
+  await Promise.all(targetIds.map((assigneeId) => taskService.create(pocTaskInputFor(poc, assigneeId))));
+}
+
+/** Removes every task linked to this POC. */
+async function removePocTasks(pocId: string): Promise<void> {
+  const all = await taskService.getAll();
+  const matches = all.filter((task) => task.linkedPocId === pocId);
+  await Promise.all(matches.map((task) => taskService.delete(task.id)));
+}
+
+/**
  * POCs support full CRUD. Owner + team calendars are blocked automatically:
  * every POC's schedule is mirrored onto the Team Calendar as "POC" events
  * sharing one `blockGroupId`, kept in sync on update (re-synced whenever
  * team/schedule fields change) and removed on delete — mirroring how
  * "Calendar Block for Task" events mirror onto the Task Board, but inverted
- * (POC is the "one", events are the "many").
+ * (POC is the "one", events are the "many"). Owner + team also each get a
+ * linked "To Do" task, added/removed/re-synced in lockstep with the
+ * calendar blocks (same `scheduleChanged` trigger, since that already
+ * covers "owner or team changed").
  */
 class POCService {
   getAll(): Promise<POC[]> {
@@ -155,6 +210,7 @@ class POCService {
     for (const event of buildCalendarEventsFor(created, employees)) {
       await calendarService.create(event);
     }
+    await createPocTasks(created);
 
     return created;
   }
@@ -178,6 +234,8 @@ class POCService {
       for (const event of buildCalendarEventsFor(updated, employees)) {
         await calendarService.create(event);
       }
+      await removePocTasks(id);
+      await createPocTasks(updated);
     }
 
     return updated;
@@ -188,6 +246,7 @@ class POCService {
     if (existing?.blockGroupId) {
       await calendarService.deleteByGroup(existing.blockGroupId);
     }
+    await removePocTasks(id);
     await apiRequest<void>(`/api/pocs/${id}`, { method: "DELETE" });
   }
 }

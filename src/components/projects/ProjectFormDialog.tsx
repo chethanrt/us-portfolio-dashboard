@@ -19,6 +19,7 @@ const REQUIRED = "This field is required.";
 
 const PROGRAMS = ["US Portfolio – Commerce", "US Portfolio – CMS", "US Portfolio – Marketing"];
 const STAGES = [
+  "Planning",
   "Discovery",
   "Requirement Gathering",
   "Estimation",
@@ -28,7 +29,7 @@ const STAGES = [
   "Deployment",
   "Support",
 ];
-const STATUSES = ["Planning", "Active", "On Hold", "Completed"];
+const STATUSES = ["Active", "On Hold", "Completed"];
 
 function buildProjectSchema(existing: Project[], editingId: string | null) {
   return z
@@ -51,8 +52,9 @@ function buildProjectSchema(existing: Project[], editingId: string | null) {
       technology: z.array(z.string()).min(1, "Please select at least one technology."),
       stage: z.string().min(1, REQUIRED),
       status: z.string().min(1, REQUIRED),
-      manager: z.string().min(1, REQUIRED),
-      techLead: z.string().min(1, REQUIRED),
+      manager: z.string(),
+      techLead: z.string(),
+      projectManager: z.string(),
       startDate: z.string().min(1, "Start Date cannot be empty."),
       endDate: z.string(),
       aiAdoption: z.number().min(0).max(100),
@@ -72,10 +74,11 @@ const EMPTY_VALUES: ProjectFormValues = {
   client: "",
   program: "",
   technology: [],
-  stage: "Discovery",
-  status: "Planning",
+  stage: "Planning",
+  status: "Active",
   manager: "",
   techLead: "",
+  projectManager: "",
   startDate: "",
   endDate: "",
   aiAdoption: 0,
@@ -131,6 +134,7 @@ export function ProjectFormDialog({
               status: project.status,
               manager: project.manager,
               techLead: project.techLead,
+              projectManager: project.projectManager,
               startDate: project.startDate,
               endDate: project.endDate,
               aiAdoption: project.aiAdoption,
@@ -141,11 +145,12 @@ export function ProjectFormDialog({
     }
   }, [open, project, form]);
 
-  // docs/08 business rules: EM and Tech Lead come from matching roles.
+  // docs/08 business rules: EM, Tech Lead and PM come from matching roles.
   const managerOptions = employees.filter((e) => e.role === "Engineering Manager").map((e) => e.name);
   const techLeadOptions = employees
     .filter((e) => e.role === "Tech Lead" || e.role === "Senior Tech Lead")
     .map((e) => e.name);
+  const projectManagerOptions = employees.filter((e) => e.role === "Project Manager").map((e) => e.name);
 
   const handleSubmit = form.handleSubmit(async (values) => {
     setIsSaving(true);
@@ -159,6 +164,7 @@ export function ProjectFormDialog({
         status: values.status as Project["status"],
         manager: values.manager,
         techLead: values.techLead,
+        projectManager: values.projectManager,
         startDate: values.startDate,
         endDate: values.endDate,
         aiAdoption: values.aiAdoption,
@@ -211,13 +217,21 @@ export function ProjectFormDialog({
               control={form.control}
               name="manager"
               label="Engineering Manager"
-              required
               options={managerOptions}
               disabled={readOnly("manager")}
             />
           )}
           {show("techLead") && (
-            <FormSelectField control={form.control} name="techLead" label="Tech Lead" required options={techLeadOptions} disabled={readOnly("techLead")} />
+            <FormSelectField control={form.control} name="techLead" label="Tech Lead" options={techLeadOptions} disabled={readOnly("techLead")} />
+          )}
+          {show("projectManager") && (
+            <FormSelectField
+              control={form.control}
+              name="projectManager"
+              label="Project Manager"
+              options={projectManagerOptions}
+              disabled={readOnly("projectManager")}
+            />
           )}
           {show("startDate") && (
             <FormInputField control={form.control} name="startDate" label="Start Date" type="date" required disabled={readOnly("startDate")} />

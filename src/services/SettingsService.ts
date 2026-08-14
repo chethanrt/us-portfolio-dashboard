@@ -6,6 +6,7 @@ export type EditableSettingsKey =
   | "roles"
   | "technicalSkills"
   | "aiSkills"
+  | "skills"
   | "aiTools"
   | "projectStages"
   | "activityTypes"

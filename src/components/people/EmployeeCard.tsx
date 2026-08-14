@@ -49,8 +49,11 @@ export function EmployeeCard({
 
       <CardContent className="flex-1 space-y-3">
         <div className="flex flex-wrap items-center gap-1.5">
-          <Badge variant="secondary">{employee.primarySkill}</Badge>
-          {employee.secondarySkill && <Badge variant="outline">{employee.secondarySkill}</Badge>}
+          {employee.skills.map((skill) => (
+            <Badge key={skill} variant="secondary">
+              {skill}
+            </Badge>
+          ))}
           {!hasAccount && !isExEmployee && (
             <Badge variant="destructive" title="No linked login account — add one in User Management">
               No Login Account

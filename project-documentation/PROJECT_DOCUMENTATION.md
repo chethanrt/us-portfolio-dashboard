@@ -127,11 +127,10 @@ interface Employee {
   id: string;                    // "EMP001"
   name: string;
   email: string;
-  role: EmployeeRole;            // one of 8 fixed job titles (see §4.9)
+  role: EmployeeRole;            // one of 9 fixed job titles (see §4.9)
   experience: number;            // years
   team: string;                  // free text, e.g. "Software Engineering"
-  primarySkill: string;
-  secondarySkill: string;
+  skills: string[];               // multi-select from Settings > Skills; anyone can edit their own
   projects: string[];             // project names (free text, not foreign keys); synced with each Project's members list
   profileImage: string;
   status: "Active" | "Inactive" | "Ex-Employee";
@@ -149,11 +148,12 @@ interface Project {
   name: string;
   client: string;
   program: string;
-  manager: string;               // Engineering Manager's name (free text)
-  techLead: string;               // free text
+  manager: string;               // Engineering Manager's name (free text, optional)
+  techLead: string;               // free text, optional
+  projectManager: string;        // Project Manager's name (free text, optional)
   technology: string[];          // multi-select, sourced from Settings > Technical Skills
-  stage: ProjectStage;           // 8-stage delivery pipeline (see §4.9)
-  status: "Active" | "On Hold" | "Completed" | "Planning";
+  stage: ProjectStage;           // 9-stage delivery pipeline, incl. Planning (see §4.9)
+  status: "Active" | "On Hold" | "Completed";
   aiAdoption: number;            // 0-100
   members: string[];             // Employee ids
   startDate: string;             // yyyy-MM-dd
@@ -181,22 +181,15 @@ interface Activity {
 }
 ```
 
-### 4.4 SkillRecord (`skills.json`)
-One record per employee, flat per-skill columns (not a name/value list):
-```ts
-interface SkillRecord {
-  employeeId: string;
-  Magento: SkillLevel; PHP: SkillLevel; React: SkillLevel; JavaScript: SkillLevel;
-  GraphQL: SkillLevel; MySQL: SkillLevel; Docker: SkillLevel; Git: SkillLevel;
-  Claude: SkillLevel; ChatGPT: SkillLevel; GitHubCopilot: SkillLevel;
-  Cursor: SkillLevel; PromptEngineering: SkillLevel;
-}
-// SkillLevel = "Beginner" | "Intermediate" | "Advanced" | "Expert"
-```
-> Note: this struct's 13 skill columns are **hardcoded** — they do not read
-> from Settings' "Technical Skills"/"AI Skills" lists at runtime (a known gap;
-> those two Settings lists are otherwise only consumed by Project's Technology
-> field and Settings itself).
+### 4.4 (removed) — Skill Matrix / SkillRecord
+
+The old per-employee proficiency-level Skill Matrix (`SkillRecord`: 13
+hardcoded skill columns, each a `SkillLevel` of Beginner/Intermediate/
+Advanced/Expert, backed by `skills.json`/the `skills` table) was removed —
+it was always empty with no UI to populate it. The `/skills` page ("Skill
+Matrix") now instead lists every employee's `Employee.skills` (§4.1) with a
+skill filter, backed by the Settings-managed `skills` list, not a separate
+entity.
 
 ### 4.5 LearningRecord (`learning.json`)
 ```ts
@@ -248,6 +241,7 @@ interface CalendarEvent {
   createdBy: string;              // Employee id
   linkedTaskId?: string | null;   // set when eventType === "Calendar Block for Task"
   linkedPocId?: string | null;    // set when eventType === "POC"
+  linkedProjectId?: string | null; // set when this block was auto-created by a Project team assignment
   blockGroupId?: string | null;   // shared id across sibling events blocked together
 }
 ```
@@ -291,7 +285,7 @@ including stale cached data from before a field existed.
 | `roles` | Employee.role, Owner/Team pickers everywhere | ✅ |
 | `technicalSkills` | Project.technology (multi-select) | ✅ |
 | `aiSkills` | (label only, not yet wired to a form) | ✅ |
-| `skillLevels` | Skill Matrix badges | ❌ (fixed progression) |
+| `skills` | Employee.skills (multi-select) | ✅ |
 | `projectStages` | Project.stage, Activity.projectStage | ✅ |
 | `aiTools` | Activity.tool | ✅ |
 | `learningPlatforms` | LearningRecord.platform | ✅ |
@@ -379,9 +373,10 @@ Chain: **User → Role (roleId) → Permission entry (permissions.json) → one
   each field defaults to `{visible: true, editable: true}` unless explicitly
   overridden (e.g. Intern's `pocs.hoursSaved` is `{visible: false}`).
 
-`src/data/roles.json` — 9 fixed, `isSystem: true` roles (cannot be deleted or
-renamed): `super-admin, director, delivery-manager, engineering-manager,
-senior-tech-lead, tech-lead, senior-developer, developer, intern`.
+`src/data/roles.json` — 10 fixed, `isSystem: true` roles (cannot be deleted
+or renamed): `super-admin, director, delivery-manager, engineering-manager,
+project-manager, senior-tech-lead, tech-lead, senior-developer, developer,
+intern`.
 
 `src/data/resources.json` — the registry of all 12 modules: label, path,
 supported actions, and the full list of protectable fields per module (used
@@ -392,13 +387,13 @@ to render the Roles & Permissions editor UI).
 | Module | super-admin | director | delivery-mgr | eng-mgr | sr-tech-lead | tech-lead | sr-developer | developer | intern |
 |---|---|---|---|---|---|---|---|---|---|
 | dashboard | view (all) | view (all) | view (all) | view (all) | view (all) | view (**team**) | view (own) | view (own) | view (own) |
-| projects | full CRUD (all) | full CRUD (all) | full CRUD (all) | full CRUD (all) | full CRUD (all) | view (all) | view (all)¹ | view (all)¹ | view (all)¹² |
+| projects | full CRUD (all) | full CRUD (all) | full CRUD (all) | full CRUD (all) | full CRUD (all) | **full CRUD (all)**¹⁰ | view (all)¹ | view (all)¹ | view (all)¹² |
 | tasks | full CRUD+assign+comment (all) | same | same | same | same | full CRUD+assign+comment (all) | CRUD+assign+comment (own)³ | CRUD+comment (own)⁴ | edit+comment (own)⁵ |
 | activities | full CRUD (all) | same | same | same | same | create/edit/delete, no delete-scope⁶ (all) | CRUD (own) | CRUD (own) | CRUD (own) |
-| people | full CRUD (all) | same | same | same | same | view (all) | view (own)⁷ | view (own)⁷ | view (own) |
+| people | full CRUD (all) | same | same | same | same | view (all) / **edit own** | view+edit (own)⁷ | view+edit (own)⁷ | view+edit (own) |
 | skills | view+export (all) | same | same | same | same | view+export (all) | view+export (own) | view+export (own) | view+export (own) |
 | learning | full CRUD (all) | same | same | same | same | CRUD, no delete⁸ (all) | CRUD (own) | CRUD (own) | CRUD (own) |
-| pocs | full CRUD (all) | same | same | same | same | CRUD (view all / **edit own**) | CRUD (own) | CRUD (own) | **view only** (own)⁹ |
+| pocs | full CRUD (all) | same | same | same | same | CRUD (view all / **edit own**) | **view+edit+delete, no create**¹¹ (own) | **view+edit+delete, no create**¹¹ (own) | **view only** (own)⁹ |
 | reports | view+export (all) | same | same | same | same | view+export (all) | view+export (own) | view+export (own) | view+export (own) |
 | settings | view+edit | same | **view only** | view only | ❌ no access | ❌ | ❌ | ❌ | ❌ |
 | users | full CRUD | same | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -410,6 +405,15 @@ delete but no assign, intern has no create/delete, only edit+comment); ⁴/⁵
 also cap `estimateHours`/`actualHours` field editability. ⁶ tech-lead's
 `activities` entry omits `export`. ⁷ `experience` field read-only. ⁸ tech-lead
 can't delete learning records. ⁹ intern's `pocs` also hides `hoursSaved`.
+¹¹ POC creation is now Tech Lead and above only — Senior Developer and
+Developer lost `create` (they previously could create their own POCs); the
+"+ POC" button is simply absent for them (`canCreate("pocs")` gates it, no
+other UI change needed).
+¹⁰ upgraded from view-only so Tech Lead can edit projects (per the confirmed
+edit-access list). The 10th role, **Project Manager** (not shown as its own
+column — this table predates it), has the identical permission profile to
+Engineering Manager's row above (full CRUD on projects and everywhere else
+Engineering Manager has it, view-only Settings, no Users/Roles access).
 
 > This table supersedes `docs/05_ROLE_BASED_DASHBOARDS.md`'s original
 > aspirational matrix — that document describes the intended design; this
@@ -559,10 +563,18 @@ but is **not currently rendered** on the page (dead/unused code).
 - **Add/Edit form fields**: Project Name, Client, Program (hardcoded 3
   options), **Technology** (multi-select checkbox group, sourced from
   Settings > Technical Skills — was a single hardcoded `<select>` before being
-  converted), Project Stage, Status, Engineering Manager (dropdown filtered to
-  employees with `role === "Engineering Manager"`), Tech Lead (filtered to
-  `"Tech Lead"` or `"Senior Tech Lead"`), Start/End Date, AI Adoption (slider),
-  **Team Members** (multi-select checkbox group over all employees).
+  converted), Project Stage (9 stages incl. Planning), Status (Active/On
+  Hold/Completed — Planning moved to Stage), Engineering Manager (dropdown
+  filtered to employees with `role === "Engineering Manager"`, **optional**),
+  Tech Lead (filtered to `"Tech Lead"` or `"Senior Tech Lead"`, **optional**),
+  **Project Manager** (dropdown filtered to `role === "Project Manager"`,
+  **optional** — new field), Start/End Date, AI Adoption (slider), **Team
+  Members** (multi-select checkbox group over all employees). Note:
+  `ProjectFormDialog.tsx`'s Stage/Status dropdowns are driven by hardcoded
+  local consts (`STAGES`/`STATUSES`), not by `settings.projectStages`/
+  `settings.statusValues.project` — that's a pre-existing inconsistency with
+  the *filter* dropdowns above (which are Settings-driven); both were kept in
+  sync when Planning moved, but they remain two separate sources of truth.
 - **Validation**: project name must be unique (case-insensitive, excluding the
   record being edited); End Date must be after Start Date.
 - **Delete guard**: `ProjectService.delete()` throws `"REFERENCED"` (shown as
@@ -581,6 +593,22 @@ but is **not currently rendered** on the page (dead/unused code).
   are left untouched by this sync. Renaming a project
   (`employeeService.removeProjectEverywhere(oldName)`) and deleting one both
   clean up the stale name from every employee record too.
+- **Team assignment → Calendar + Task auto-sync**: adding a member also
+  blocks their calendar for the project's full `startDate`→`endDate` range
+  and creates a linked "To Do" task, by creating a `"Calendar Block for
+  Task"` event (title `"Project: {name}"`) and letting the **existing**
+  Calendar↔Task mirroring (§13.5) turn it into a task — `ProjectService`
+  just patches the auto-created task's `type`/`projectId` afterward, since
+  the generic mirror always produces a Standalone/unlinked task. The event
+  carries a new `CalendarEvent.linkedProjectId` field so a removed member's
+  block (and its linked task, via the existing delete cascade) can be found
+  and deleted. Skipped entirely if the project has no `endDate` yet (no
+  "entire duration" to block). If the date range changes, every
+  still-assigned member's block is deleted and recreated with the new
+  dates. All of this runs in `ProjectService.create()`/`update()`/`delete()`,
+  which now take an `actingEmployeeId` parameter (sourced from
+  `useAuth().currentUser?.id ?? ""` in `Projects.tsx`) to stamp as the
+  block/task's `createdBy`.
 
 ---
 
@@ -716,15 +744,18 @@ Activity" button (or a direct URL, still permission-gated).
 **Profile**: `EmployeeProfileDrawer.tsx`. **Hook**: `useEmployees()`.
 **Service**: `EmployeeService.ts`.
 
-- **List view**: card grid with search + Role/Technology/Project filters
-  (Role options from `settings.roles`; Technology from each employee's
-  `primarySkill`, not Settings). "Own data" scope roles (senior-developer,
-  developer, intern) see only their own card and no filter bar.
+- **List view**: card grid with search + Role/Skills/Project filters (Role
+  options from `settings.roles`; Skills options from `settings.skills`).
+  "Own data" scope roles (senior-developer, developer, intern) see only their
+  own card and no filter bar.
 - **Add/Edit form fields**: Name, Email (uniqueness-checked), **Role**
   (restricted to `settings.roles` — was a hardcoded constant before being
   wired live), Experience, Team (4 hardcoded options), Status, Reports To
-  (excludes self and anyone who'd create a manager cycle), Primary/Secondary
-  Skill, **Projects** (multi-select checkbox list of real `Project` names;
+  (excludes self and anyone who'd create a manager cycle), **Skills**
+  (multi-select checkbox group sourced from `settings.skills`, editable by
+  every role on their own profile — see §6.2's `people` permission table;
+  only Super Admin/Director can add new options via Settings), **Projects**
+  (multi-select checkbox list of real `Project` names;
   optional — an employee can have zero, one, or several). Assignments made
   here are independent of formal project team membership; see the Projects
   section below for the auto-sync direction that runs the other way.
@@ -738,9 +769,10 @@ Activity" button (or a direct URL, still permission-gated).
   sets `status: "Ex-Employee"` (never a hard delete), requires every direct
   report to be reassigned to a new manager first (throws `"REPORTS_UNASSIGNED"`
   otherwise), and deactivates (not deletes) their linked `User` account.
-- **Employee Profile Drawer** — 5–7 tabs depending on permission:
-  **Overview** (all core fields, field-level-security gated individually),
-  **Skills** (this employee's `SkillRecord`, one row per skill column),
+- **Employee Profile Drawer** — 4–6 tabs depending on permission:
+  **Overview** (all core fields including Skills, field-level-security gated
+  individually — the drawer's old separate "Skills" tab was removed as
+  redundant once Overview started showing `employee.skills` directly),
   **Learning** (progress bars per course), **Activities** (latest 8, prompt
   summary + tool/category/date/hours), **Tasks** (only if `canView("tasks")`
   — assigned-task stats + latest 8), **POCs** (owned POCs), and **Calendar**
@@ -834,21 +866,20 @@ POC-originated blocks.)
 
 ## 14. Skill Matrix *(`/skills`, module: `skills`)*
 
-**Page**: `src/pages/SkillMatrix.tsx`. **Service**: `SkillService.ts`.
-Entity — `SkillRecord`, §4.4.
+**Page**: `src/pages/SkillMatrix.tsx`. **Data**: `useEmployees()` (same hook
+`People.tsx` uses) — no dedicated service; this page reads `Employee.skills`
+directly, there is no separate skill entity anymore (see §4.4).
 
-- **Grid**: rows = employees, columns = the 13 skills in `SKILL_COLUMNS`
-  (`src/utils/skills.ts`), rendered as a `DataTable`. Each cell is a
-  `SkillBadge` (4-level color scale).
-- **Read-only — no editing exists at all.** `SkillService.ts` exposes only
-  `getAll()`/`getByEmployee()`; there is no create/update/delete, no form
-  dialog, no inline editing anywhere in the Skill Matrix page. (The
-  Employee Profile Drawer's Skills tab, §12, is likewise read-only display.)
+- **List**: a `DataTable` with two columns — Employee (avatar/name/role) and
+  Skills (every value in that employee's `skills` array, rendered as
+  badges). Not editable here — skills are edited on the employee's own
+  People profile (§12).
+- **Filters**: search (name/role/skills, hidden for own-data-scope) and a
+  Skills dropdown sourced from `settings.skills` — selecting a skill narrows
+  the list to employees who have it (the "who has skill X" lookup). Own-data-
+  scope roles see only their own row.
 - **Export** button (`canExport("skills")`-gated) is a placeholder toast
-  ("Export arrives with the Reports phase") — the real Skill Matrix CSV
-  export lives inside the Reports module instead (§17, report type 6).
-- **Filters**: search (name/role/team, hidden for own-data-scope), Skill,
-  Level. Own-data-scope roles see only their own row, no search box.
+  ("Export arrives with the Reports phase") — unchanged from before.
 
 ---
 
@@ -890,10 +921,15 @@ when non-empty).
 
 ### 16.2 Owner / Team role split
 - **Owner** — restricted to senior roles: Director, Delivery Manager,
-  Engineering Manager, Senior Tech Lead, Tech Lead. Exception: if the caller's
-  edit scope is `"own"` (senior-developer/developer/intern-tier POC creation),
-  the Owner field collapses to just themselves regardless of role — a forced
-  single candidate isn't a "choice" the role gate needs to police.
+  Engineering Manager, Project Manager, Senior Tech Lead, Tech Lead.
+  Exception: if the caller's edit scope is `"own"`, the Owner field
+  collapses to just themselves regardless of role — a forced single
+  candidate isn't a "choice" the role gate needs to police. Since Senior
+  Developer/Developer can no longer create POCs at all (§6.2's permission
+  matrix, footnote ¹¹), this exception is effectively dormant for new POCs
+  now — left in place rather than removed, since it's harmless and still
+  applies when editing any pre-existing POC that predates the permission
+  change.
 - **Team** — a `FormCheckboxGroupField` restricted to junior roles: Senior
   Developer, Developer, Intern. Optional (a solo-owner POC is valid). Always
   sourced from the **full** employee roster, independent of the Owner field's
@@ -942,6 +978,25 @@ calendar events, tied together by `POC.blockGroupId` rather than a single
   (`team: []`, empty dates/time, `hoursPerDay: 0`, `blockGroupId: null`)
   rather than crashing.
 
+### 16.6 Task Board auto-link (`POCService.ts`)
+Owner + team also each get a linked "To Do" task, added/removed/re-synced in
+lockstep with the calendar blocks above — but via a **separate, direct**
+link (`Task.linkedPocId`), not by piggybacking on the Calendar↔Task
+mirroring (§13.5). This is deliberate: POC calendar events stay labeled
+`"POC"` (their own distinct color/filtering on the Team Calendar), rather
+than becoming generic `"Calendar Block for Task"` entries.
+- **`create()`**: one `Task` per `[owner, ...team]` (`type: "Project"`,
+  `category: "Innovation"`, `projectId: poc.projectId`, `title: "POC:
+  {title}"`, `status: "To Do"`, `estimateHours: hoursPerDay × days in
+  range`, `linkedPocId: poc.id`), created right after the calendar fan-out.
+- **`update()`**: reuses the exact same `scheduleChanged()` gate as the
+  calendar re-sync (it already covers "owner or team changed") — deletes
+  every task linked to the POC and recreates them for the updated
+  owner+team. A title/description-only edit leaves tasks untouched, same as
+  the calendar side.
+- **`delete()`**: deletes every task where `linkedPocId === poc.id`,
+  alongside the existing `deleteByGroup()` calendar cleanup.
+
 ---
 
 ## 17. Reports *(`/reports`, module: `reports`)*
@@ -958,7 +1013,9 @@ tiles + a detail `DataTable`. **Only CSV export is implemented**
 (`reportToCSV` + Blob download); Excel and PDF buttons show a "planned for a
 future release" toast.
 
-**The 10 report types**:
+**The 9 report types** (the old "Skill Matrix" report — counts per skill
+level — was removed along with the proficiency-level system, §4.4; not
+replaced with a skills-count equivalent):
 1. **Weekly Summary** — last 7 days: Activities/Hours Saved/Active
    Contributors/Top Tool + per-employee breakdown.
 2. **Monthly Summary** — same, last 30 days.
@@ -966,14 +1023,12 @@ future release" toast.
    %/activities/hours saved/POC count.
 4. **AI Activities** — flat activity log + a high-impact metric.
 5. **Learning Progress** — per-employee course/completion/hours rollup.
-6. **Skill Matrix** — counts of each skill level per skill column (the "real"
-   Skill Matrix export the Skill Matrix page itself defers to).
-7. **POCs** — title/owner/project/category/status/hours saved rows.
-8. **Team Performance** — per-employee activities/hours/learning%/POCs.
-9. **Task Workload** — per-employee assigned/completed/overdue/estimate vs.
+6. **POCs** — title/owner/project/category/status/hours saved rows.
+7. **Team Performance** — per-employee activities/hours/learning%/POCs.
+8. **Task Workload** — per-employee assigned/completed/overdue/estimate vs.
    actual hours.
-10. **Tasks by Project** — tasks bucketed per project + a "Standalone Tasks"
-    bucket.
+9. **Tasks by Project** — tasks bucketed per project + a "Standalone Tasks"
+   bucket.
 
 ---
 
@@ -1094,13 +1149,15 @@ POCs > Add/Edit POC → POCFormDialog.handleSubmit
   → (no conflicts) onSave → POCService.create()/update()
       ├─ mint/reuse blockGroupId
       ├─ EmployeeService.getAll() → resolve names/emails for attendees
-      └─ CalendarService.create() × (days × [owner, ...team])   [eventType: "POC", linkedPocId]
+      ├─ CalendarService.create() × (days × [owner, ...team])   [eventType: "POC", linkedPocId]
+      └─ createPocTasks() × [owner, ...team]   [Task.linkedPocId, status "To Do" — separate from the calendar events above]
 ```
 
-### 21.5 Delete POC → cascade-delete its calendar blocks
+### 21.5 Delete POC → cascade-delete its calendar blocks and tasks
 ```
 POCs > Delete → POCService.delete(id)
   → CalendarService.deleteByGroup(poc.blockGroupId)   — every sibling event, and any Task each one mirrored
+  → removePocTasks(id)   — every Task where linkedPocId === id
   → remove the POC row
 ```
 
@@ -1114,14 +1171,29 @@ Calendar > Block Calendar (Event Type = "Calendar Block for Task") → CalendarE
   (delete: linked Task deleted first, then the event)
 ```
 
-### 21.7 Project deletion guard
+### 21.7 Project member assignment → calendar block → mirrored Task
+```
+Projects > Add/Edit Project (members changed) → ProjectService.create()/update()
+  → diff previous.members vs updated.members
+  ├─ newly added member ⇒ CalendarService.create({eventType: "Calendar Block for Task",
+  │     title: "Project: {name}", start/end: project dates, linkedProjectId: project.id})
+  │     → (existing §21.6 mirroring) ⇒ TaskService.create(...) ⇒ linkedTaskId stored on event
+  │     → ProjectService patches the new task: {type: "Project", projectId: project.id}
+  ├─ dropped member ⇒ find event where linkedProjectId === project.id for that employee
+  │     → CalendarService.delete(event.id)   — cascades to the linked task via §21.6's existing delete logic
+  └─ dates changed, member unchanged ⇒ delete + recreate that member's block (refreshes the date range)
+Skipped entirely if the project has no endDate yet.
+```
+
+### 21.8 Project deletion guard (+ assignment cleanup)
 ```
 Projects > Delete → ProjectService.delete(id)
   → Promise.all([ ActivityService.getByProject(id), POCService.getAll() ])
   → any Activity or POC still references this project ⇒ throw "REFERENCED", block deletion
+  → (no reference) remove every remaining member's assignment block (§21.7) before deleting the project row
 ```
 
-### 21.8 Permission evaluation (every gated UI element)
+### 21.9 Permission evaluation (every gated UI element)
 ```
 Component renders → usePermission() → canView/canEdit/canViewField/... (§6.3)
   → PermissionContextValue built once per role by PermissionProvider
@@ -1176,6 +1248,56 @@ Component renders → usePermission() → canView/canEdit/canViewField/... (§6.
 Track feature work here as it lands, newest first — this keeps the document
 honest as a living reference.
 
+- **2026-08-13** — Project team assignment now auto-blocks each member's
+  calendar for the project's full date range and creates a linked "To Do"
+  task, by reusing the existing `"Calendar Block for Task"` mirroring
+  (§13.5/§21.6) — a new `CalendarEvent.linkedProjectId` field lets a removed
+  member's block (and its cascaded task) be found and deleted; a
+  date-range change refreshes every unchanged member's block. Skipped if
+  the project has no end date yet. `ProjectService.create()`/`update()`
+  gained an `actingEmployeeId` parameter for this (see §21.7). POCs gained
+  an equivalent but separate mechanism: owner/team members now also get a
+  linked "To Do" task (`Task.linkedPocId`, §16.6) kept in sync via the same
+  `scheduleChanged()` trigger the existing calendar mirroring already uses
+  — the POC calendar events themselves are unchanged (still labeled
+  `"POC"`, not unified with the Calendar-Block-for-Task mechanism). POC
+  creation is now restricted to Tech Lead and above (Senior Developer/
+  Developer lost `create`, keep view/edit/delete on their own POCs).
+- **2026-08-13** — Projects permission/field changes: added a new
+  **Project Manager** role (`project-manager`, same permission profile as
+  Engineering Manager) and upgraded **Tech Lead** from view-only to full
+  CRUD on Projects — edit access is now Super Admin/Director/Delivery
+  Manager/Engineering Manager/Senior Tech Lead/Tech Lead/Project Manager,
+  everyone else stays view-only (unchanged). Moved **"Planning"** from
+  Project **Status** (`Active/On Hold/Completed`) to Project **Stage**
+  (added as the first stage, before Discovery); new projects now default to
+  `stage: "Planning"`, `status: "Active"`. Added a new **Project Manager**
+  field to Project (`projectManager: string`, dropdown filtered to
+  `role === "Project Manager"`) — and made it, Engineering Manager, and
+  Tech Lead all **optional** on the Add/Edit Project form (previously
+  Engineering Manager and Tech Lead were required).
+- **2026-08-13** — Removed the old proficiency-level Skill Matrix
+  (`SkillRecord`/`SkillLevel`, the `skills` table/route, `SkillService`,
+  `SkillBadge`, `skillLevels` Settings key — all dead code: the table was
+  always empty and had no UI to populate it). The `/skills` page now shows
+  every employee's `Employee.skills` (§4.1) as a simple filterable list
+  (search + a Skills dropdown sourced from `settings.skills`, to find who
+  has a given skill), reusing `useEmployees()` instead of a dedicated skill
+  hook/service. The Employee Profile Drawer's separate "Skills" tab was
+  removed as redundant (Overview already shows `employee.skills`). The
+  Reports module's "Skill Matrix" report type (skill-level counts) was
+  removed along with it, not replaced with a skills-count equivalent.
+- **2026-08-13** — Data source moved from JSON+localStorage to SQLite (see
+  `server/` — Express + better-sqlite3, one table per former JSON file; every
+  service's business logic/cross-service orchestration is unchanged, only the
+  storage internals moved to `fetch()` calls against `/api/*`); every
+  previously view-only role (Tech Lead, Senior Developer, Developer, Intern)
+  gained `edit (own)` on the `people` module, so everyone can edit their own
+  People profile by default; `Employee.primarySkill`/`secondarySkill` (two
+  free-text fields) were replaced with `Employee.skills: string[]`, a
+  multi-select sourced from a new Settings-managed `skills` list (Settings >
+  Skills, editable by Super Admin/Director only, same as every other
+  Settings-managed list).
 - **2026-08-08** — Multi-project assignment + auto-sync with Project teams:
   `Employee.currentProject: string` was replaced with
   `Employee.projects: string[]`, so a person can now belong to zero, one, or

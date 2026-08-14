@@ -29,7 +29,8 @@ export function ProjectCard({
   const { canViewField } = usePermission();
   const memberNames = project.members
     .map((id) => employeesById.get(id)?.name)
-    .filter((name): name is string => Boolean(name));
+    .filter((name): name is string => Boolean(name))
+    .sort((a, b) => a.localeCompare(b));
 
   return (
     <Card className="flex flex-col shadow-sm transition-shadow hover:shadow-md">
@@ -78,6 +79,15 @@ export function ProjectCard({
               <User className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
               <dt className="sr-only">Tech Lead</dt>
               <dd className="truncate" title={`Tech Lead: ${project.techLead}`}>{project.techLead}</dd>
+            </div>
+          )}
+          {canViewField("projects", "projectManager") && project.projectManager && (
+            <div className="flex items-center gap-1.5">
+              <User className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <dt className="sr-only">Project Manager</dt>
+              <dd className="truncate" title={`Project Manager: ${project.projectManager}`}>
+                {project.projectManager}
+              </dd>
             </div>
           )}
         </dl>

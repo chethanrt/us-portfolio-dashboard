@@ -58,7 +58,8 @@ export function ProjectDetailsDrawer({ project, employeesById, onClose }: Projec
 
   const team = project.members
     .map((id) => employeesById.get(id))
-    .filter((e): e is Employee => Boolean(e));
+    .filter((e): e is Employee => Boolean(e))
+    .sort((a, b) => a.name.localeCompare(b.name));
   const totalHoursSaved = details?.activities.reduce((sum, a) => sum + a.hoursSaved, 0) ?? 0;
 
   return (
@@ -79,6 +80,9 @@ export function ProjectDetailsDrawer({ project, employeesById, onClose }: Projec
         {show("stage") && <InfoRow label="Current Stage" value={project.stage} />}
         {show("manager") && <InfoRow label="Manager" value={project.manager} />}
         {show("techLead") && <InfoRow label="Tech Lead" value={project.techLead} />}
+        {show("projectManager") && (
+          <InfoRow label="Project Manager" value={project.projectManager || "—"} />
+        )}
         {show("startDate") && <InfoRow label="Start Date" value={formatDate(project.startDate)} />}
         {show("endDate") && <InfoRow label="End Date" value={formatDate(project.endDate)} />}
       </div>
@@ -99,7 +103,9 @@ export function ProjectDetailsDrawer({ project, employeesById, onClose }: Projec
                 <p className="truncate text-sm font-medium">{member.name}</p>
                 <p className="truncate text-xs text-muted-foreground">{member.role}</p>
               </div>
-              <Badge variant="secondary" className="text-xs">{member.primarySkill}</Badge>
+              <Badge variant="secondary" className="text-xs">
+                {member.skills.length > 0 ? member.skills.join(", ") : "—"}
+              </Badge>
             </li>
           ))}
         </ul>

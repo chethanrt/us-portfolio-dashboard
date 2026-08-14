@@ -1,4 +1,4 @@
-import { Drawer, LoadingSkeleton, ProgressBar, SkillBadge, StatusBadge } from "@/components/common";
+import { Drawer, LoadingSkeleton, ProgressBar, StatusBadge } from "@/components/common";
 import { TaskStatusBadge } from "@/components/tasks/TaskBadges";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,10 +8,8 @@ import type { EmployeeWithStats } from "@/hooks/useEmployees";
 import { useScopedTasks } from "@/hooks/useScopedTasks";
 import { usePermission } from "@/security";
 import { taskStatisticsService } from "@/services";
-import type { SkillLevel } from "@/types";
 import { formatDate } from "@/utils/format";
 import { canViewCalendar } from "@/utils/permissions";
-import { SKILL_COLUMNS } from "@/utils/skills";
 import { PeopleCalendar } from "./PeopleCalendar";
 
 function StatTile({ value, label }: { value: string | number; label: string }) {
@@ -84,7 +82,6 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
       <Tabs defaultValue="overview">
         <TabsList className="w-full">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="skills">Skills</TabsTrigger>
           <TabsTrigger value="learning">Learning</TabsTrigger>
           <TabsTrigger value="activities">Activities</TabsTrigger>
           {showTasks && <TabsTrigger value="tasks">Tasks</TabsTrigger>}
@@ -97,9 +94,8 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
           {show("role") && <InfoRow label="Role" value={employee.role} />}
           {show("experience") && <InfoRow label="Experience" value={`${employee.experience} years`} />}
           {show("team") && <InfoRow label="Team" value={employee.team} />}
-          {show("primarySkill") && <InfoRow label="Primary Technology" value={employee.primarySkill} />}
-          {show("secondarySkill") && (
-            <InfoRow label="Secondary Technology" value={employee.secondarySkill || "—"} />
+          {show("skills") && (
+            <InfoRow label="Skills" value={employee.skills.length > 0 ? employee.skills.join(", ") : "—"} />
           )}
           {show("projects") && (
             <InfoRow
@@ -113,23 +109,6 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
               <span className="text-muted-foreground">Status</span>
               <StatusBadge status={employee.status} />
             </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="skills" className="mt-4">
-          {isLoading || !details ? (
-            <LoadingSkeleton variant="list" count={4} />
-          ) : !details.skills ? (
-            <p className="text-sm text-muted-foreground">No skill record found.</p>
-          ) : (
-            <ul className="space-y-2">
-              {SKILL_COLUMNS.map(({ key, label }) => (
-                <li key={key} className="flex items-center justify-between gap-2 text-sm">
-                  <span>{label}</span>
-                  <SkillBadge level={details.skills![key] as SkillLevel} />
-                </li>
-              ))}
-            </ul>
           )}
         </TabsContent>
 

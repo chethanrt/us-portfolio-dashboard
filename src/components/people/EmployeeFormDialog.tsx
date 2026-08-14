@@ -40,8 +40,7 @@ function buildEmployeeSchema(takenEmails: Set<string>) {
         message: "Experience must be between 0 and 40.",
       }),
     team: z.string().min(1, REQUIRED),
-    primarySkill: z.string().trim().min(1, REQUIRED),
-    secondarySkill: z.string().trim(),
+    skills: z.array(z.string()).min(1, "Select at least one skill."),
     projects: z.array(z.string()),
     status: z.string().min(1, REQUIRED),
     managerId: z.string(),
@@ -56,8 +55,7 @@ const EMPTY_VALUES: EmployeeFormValues = {
   role: "",
   experience: "",
   team: "",
-  primarySkill: "",
-  secondarySkill: "",
+  skills: [],
   projects: [],
   status: "Active",
   managerId: NO_MANAGER,
@@ -72,6 +70,8 @@ interface EmployeeFormDialogProps {
   projects: Project[];
   /** Settings-managed role list (Settings > Roles). */
   roles: string[];
+  /** Settings-managed skills list (Settings > Skills). */
+  skillOptions: string[];
   onSave: (values: Omit<Employee, "id">) => Promise<void>;
 }
 
@@ -82,6 +82,7 @@ export function EmployeeFormDialog({
   employees,
   projects,
   roles,
+  skillOptions,
   onSave,
 }: EmployeeFormDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
@@ -115,8 +116,7 @@ export function EmployeeFormDialog({
               role: employee.role,
               experience: String(employee.experience),
               team: employee.team,
-              primarySkill: employee.primarySkill,
-              secondarySkill: employee.secondarySkill,
+              skills: employee.skills,
               projects: employee.projects,
               status: employee.status,
               managerId: employee.managerId ?? NO_MANAGER,
@@ -151,8 +151,7 @@ export function EmployeeFormDialog({
         role: values.role as Employee["role"],
         experience: Number(values.experience),
         team: values.team,
-        primarySkill: values.primarySkill.trim(),
-        secondarySkill: values.secondarySkill.trim(),
+        skills: values.skills,
         projects: values.projects,
         profileImage: employee?.profileImage ?? "",
         status: values.status as Employee["status"],
@@ -235,23 +234,14 @@ export function EmployeeFormDialog({
               disabled={readOnly("managerId")}
             />
           )}
-          {show("primarySkill") && (
-            <FormInputField
+          {show("skills") && (
+            <FormCheckboxGroupField
               control={form.control}
-              name="primarySkill"
-              label="Primary Skill"
-              placeholder="e.g. Software Engineering"
+              name="skills"
+              label="Skills"
               required
-              disabled={readOnly("primarySkill")}
-            />
-          )}
-          {show("secondarySkill") && (
-            <FormInputField
-              control={form.control}
-              name="secondarySkill"
-              label="Secondary Skill"
-              placeholder="e.g. React"
-              disabled={readOnly("secondarySkill")}
+              options={skillOptions.map((s) => ({ value: s, label: s }))}
+              disabled={readOnly("skills")}
             />
           )}
           {show("projects") && (
