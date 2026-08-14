@@ -1,4 +1,4 @@
-import { Drawer, LoadingSkeleton, ProgressBar, SkillBadge, StatusBadge } from "@/components/common";
+import { Drawer, LoadingSkeleton, ProgressBar, StatusBadge } from "@/components/common";
 import { TaskStatusBadge } from "@/components/tasks/TaskBadges";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,10 +8,9 @@ import type { EmployeeWithStats } from "@/hooks/useEmployees";
 import { useScopedTasks } from "@/hooks/useScopedTasks";
 import { usePermission } from "@/security";
 import { taskStatisticsService } from "@/services";
-import type { SkillLevel } from "@/types";
 import { formatDate } from "@/utils/format";
 import { canViewCalendar } from "@/utils/permissions";
-import { SKILL_COLUMNS } from "@/utils/skills";
+import { EmployeeAccessPanel } from "./EmployeeAccessPanel";
 import { PeopleCalendar } from "./PeopleCalendar";
 
 function StatTile({ value, label }: { value: string | number; label: string }) {
@@ -43,7 +42,7 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
   const { details, isLoading } = useEmployeeDetails(employee);
   const { currentUser } = useAuth();
   // Field-level security: hidden fields are omitted from the drawer.
-  const { canViewField, role, canView } = usePermission();
+  const { canViewField, role, canView, canEdit } = usePermission();
   const show = (field: string) => canViewField("people", field);
 
   // Task Board integration (docs/11 People integration).
@@ -59,6 +58,8 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
   if (!employee) return null;
 
   const canViewEmployeeCalendar = canViewCalendar(role?.id, employee.id, currentUser?.id);
+  const showAccess = canEdit("users");
+  const showProjects = show("projects");
 
   const headerParts = [
     show("role") ? employee.role : null,
@@ -84,12 +85,13 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
       <Tabs defaultValue="overview">
         <TabsList className="w-full">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="skills">Skills</TabsTrigger>
+          {showProjects && <TabsTrigger value="projects">Projects</TabsTrigger>}
           <TabsTrigger value="learning">Learning</TabsTrigger>
           <TabsTrigger value="activities">Activities</TabsTrigger>
           {showTasks && <TabsTrigger value="tasks">Tasks</TabsTrigger>}
           <TabsTrigger value="pocs">POCs</TabsTrigger>
           {canViewEmployeeCalendar && <TabsTrigger value="calendar">Calendar</TabsTrigger>}
+          {showAccess && <TabsTrigger value="access">Access</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="overview" className="mt-4 space-y-2">
@@ -97,15 +99,8 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
           {show("role") && <InfoRow label="Role" value={employee.role} />}
           {show("experience") && <InfoRow label="Experience" value={`${employee.experience} years`} />}
           {show("team") && <InfoRow label="Team" value={employee.team} />}
-          {show("primarySkill") && <InfoRow label="Primary Technology" value={employee.primarySkill} />}
-          {show("secondarySkill") && (
-            <InfoRow label="Secondary Technology" value={employee.secondarySkill || "—"} />
-          )}
-          {show("projects") && (
-            <InfoRow
-              label={employee.projects.length === 1 ? "Project" : "Projects"}
-              value={employee.projects.length > 0 ? employee.projects.join(", ") : "—"}
-            />
+          {show("skills") && (
+            <InfoRow label="Skills" value={employee.skills.length > 0 ? employee.skills.join(", ") : "—"} />
           )}
           {show("managerId") && <InfoRow label="Reports To" value={managerName ?? "—"} />}
           {show("status") && (
@@ -116,22 +111,58 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
           )}
         </TabsContent>
 
-        <TabsContent value="skills" className="mt-4">
-          {isLoading || !details ? (
-            <LoadingSkeleton variant="list" count={4} />
-          ) : !details.skills ? (
-            <p className="text-sm text-muted-foreground">No skill record found.</p>
-          ) : (
-            <ul className="space-y-2">
-              {SKILL_COLUMNS.map(({ key, label }) => (
-                <li key={key} className="flex items-center justify-between gap-2 text-sm">
-                  <span>{label}</span>
-                  <SkillBadge level={details.skills![key] as SkillLevel} />
-                </li>
-              ))}
-            </ul>
-          )}
-        </TabsContent>
+        {showProjects && (
+          <TabsContent value="projects" className="mt-4 space-y-4">
+            <div className="space-y-2">
+              {isLoading || !details ? (
+                <LoadingSkeleton variant="list" count={2} />
+              ) : details.projects.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Not currently assigned to any project.</p>
+              ) : (
+                details.projects.map(({ project, roles }) => (
+                  <div key={project.id} className="flex items-center justify-between gap-2 rounded-lg border p-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{project.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">{project.client}</p>
+                    </div>
+                    <div className="flex shrink-0 flex-wrap justify-end gap-1">
+                      {roles.map((r) => (
+                        <Badge key={r} variant="secondary">
+                          {r}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {!isLoading && details && details.projects.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-sm font-medium">AI Adoption</p>
+                {(() => {
+                  const categories = [
+                    ...new Set(details.projects.flatMap(({ project }) => project.aiAdoptionCategories)),
+                  ];
+                  return categories.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No AI adoption categories yet.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {categories.map((category) => (
+                        <Badge key={category} variant="outline">
+                          {category}
+                        </Badge>
+                      ))}
+                    </div>
+                  );
+                })()}
+                <p className="text-xs text-muted-foreground">
+                  Based on the AI adoption categories of the projects above.
+                </p>
+              </div>
+            )}
+          </TabsContent>
+        )}
 
         <TabsContent value="learning" className="mt-4 space-y-4">
           {isLoading || !details ? (
@@ -212,15 +243,16 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
           {isLoading || !details ? (
             <LoadingSkeleton variant="list" count={2} />
           ) : details.pocs.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No POCs owned.</p>
+            <p className="text-sm text-muted-foreground">Not currently on any POC.</p>
           ) : (
-            details.pocs.map((poc) => (
+            details.pocs.map(({ poc, role: pocRole }) => (
               <div key={poc.id} className="flex items-center justify-between gap-2 rounded-lg border p-2.5">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{poc.title}</p>
                   <p className="truncate text-xs text-muted-foreground">{poc.businessValue}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
+                  <Badge variant={pocRole === "Owner" ? "default" : "secondary"}>{pocRole}</Badge>
                   <Badge variant="secondary">{poc.category}</Badge>
                   <StatusBadge status={poc.status} />
                 </div>
@@ -232,6 +264,12 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
         {canViewEmployeeCalendar && (
           <TabsContent value="calendar" className="mt-4">
             <PeopleCalendar employee={employee} />
+          </TabsContent>
+        )}
+
+        {showAccess && (
+          <TabsContent value="access" className="mt-4">
+            <EmployeeAccessPanel employeeId={employee.id} employeeName={employee.name} />
           </TabsContent>
         )}
       </Tabs>

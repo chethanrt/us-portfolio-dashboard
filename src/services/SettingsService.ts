@@ -6,12 +6,14 @@ export type EditableSettingsKey =
   | "roles"
   | "technicalSkills"
   | "aiSkills"
+  | "skills"
   | "aiTools"
   | "projectStages"
   | "activityTypes"
   | "pocCategories"
   | "learningPlatforms"
-  | "eventTypes";
+  | "eventTypes"
+  | "aiAdoptionCategories";
 
 /**
  * Settings master data supports list editing. Backed by the `settings`

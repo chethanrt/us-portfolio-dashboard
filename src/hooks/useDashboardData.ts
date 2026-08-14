@@ -172,7 +172,7 @@ export function useDashboardData() {
       .map(([key, count]) => ({ week: format(parseISO(key), "MMM d"), count }));
 
     // --- Project status distribution ---
-    const projectStatus = ["Active", "Completed", "On Hold", "Planning"]
+    const projectStatus = ["Active", "Completed", "On Hold"]
       .map((status) => ({ status, count: projects.filter((p) => p.status === status).length }))
       .filter((slice) => slice.count > 0);
 

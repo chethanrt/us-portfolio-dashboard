@@ -3,12 +3,14 @@ import {
   CalendarDays,
   FolderKanban,
   GraduationCap,
+  History,
   KanbanSquare,
   LayoutDashboard,
   LayoutGrid,
   Lightbulb,
   Settings,
   ShieldCheck,
+  Sparkles,
   UserCog,
   Users,
 } from "lucide-react";
@@ -31,12 +33,14 @@ export const NAV_ITEMS: NavItem[] = [
   { title: "People", path: "/people", icon: Users, module: "people" },
   { title: "Calendar", path: "/calendar", icon: CalendarDays, module: "people" },
   { title: "Skill Matrix", path: "/skills", icon: LayoutGrid, module: "skills" },
+  { title: "AI Adoption", path: "/ai-adoption", icon: Sparkles, module: "aiAdoption" },
   { title: "Learning", path: "/learning", icon: GraduationCap, module: "learning" },
   { title: "POCs", path: "/pocs", icon: Lightbulb, module: "pocs" },
   { title: "Reports", path: "/reports", icon: BarChart3, module: "reports" },
   { title: "Settings", path: "/settings", icon: Settings, module: "settings" },
   { title: "User Management", path: "/users", icon: UserCog, module: "users" },
   { title: "Roles & Permissions", path: "/roles", icon: ShieldCheck, module: "roles" },
+  { title: "Audit Log", path: "/audit-log", icon: History, module: "auditLog" },
 ];
 
 /** Items the given permission check allows (hide modules without View). */

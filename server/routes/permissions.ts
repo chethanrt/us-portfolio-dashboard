@@ -1,5 +1,6 @@
 import { Router } from "express";
 import type Database from "better-sqlite3";
+import { recordAuditEvent } from "../db/audit.ts";
 import { requirePermission } from "../security/permissions.ts";
 
 function fromRow(row: { role_id: string; modules_json: string }) {
@@ -41,6 +42,13 @@ export function createPermissionsRouter(db: Database.Database) {
       `INSERT INTO permissions (role_id, modules_json) VALUES (@roleId, @modulesJson)
        ON CONFLICT(role_id) DO UPDATE SET modules_json = @modulesJson`
     ).run({ roleId: req.params.roleId, modulesJson });
+    recordAuditEvent(db, {
+      actorUserId: req.user?.id ?? "",
+      eventType: "update",
+      module: "Roles",
+      recordId: req.params.roleId,
+      summary: `Updated permissions for role ${req.params.roleId}`,
+    });
     res.json(fromRow(db.prepare("SELECT * FROM permissions WHERE role_id = ?").get(req.params.roleId) as any));
   });
 

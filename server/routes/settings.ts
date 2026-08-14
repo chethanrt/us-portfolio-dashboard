@@ -6,12 +6,14 @@ const EDITABLE_KEYS = [
   "roles",
   "technicalSkills",
   "aiSkills",
+  "skills",
   "aiTools",
   "projectStages",
   "activityTypes",
   "pocCategories",
   "learningPlatforms",
   "eventTypes",
+  "aiAdoptionCategories",
 ];
 
 function sortIfEditableList(key: string, value: unknown): unknown {

@@ -8,12 +8,14 @@ export type ModuleId =
   | "activities"
   | "people"
   | "skills"
+  | "aiAdoption"
   | "learning"
   | "pocs"
   | "reports"
   | "settings"
   | "users"
-  | "roles";
+  | "roles"
+  | "auditLog";
 
 export type PermissionAction = "view" | "create" | "edit" | "delete" | "export" | "assign" | "comment";
 

@@ -14,6 +14,7 @@ export function createRolesRouter(db: Database.Database) {
     db,
     table: "roles",
     module: "roles",
+    auditLabel: "Roles",
     fromRow,
     toRow,
     generateId: (database, payload) => nextRoleId(database, payload.name),

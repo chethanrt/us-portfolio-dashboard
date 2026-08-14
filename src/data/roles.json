@@ -24,6 +24,12 @@
     "isSystem": true
   },
   {
+    "id": "project-manager",
+    "name": "Project Manager",
+    "description": "Manages project delivery and AI adoption data. Read-only settings.",
+    "isSystem": true
+  },
+  {
     "id": "senior-tech-lead",
     "name": "Senior Tech Lead",
     "description": "Portfolio-wide access to delivery and AI adoption data. No settings access.",

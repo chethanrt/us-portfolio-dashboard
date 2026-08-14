@@ -20,6 +20,7 @@ const { fromRow, toRow } = buildRowMapper([
   { js: "createdBy", db: "created_by" },
   { js: "linkedTaskId", db: "linked_task_id", ...nullableField },
   { js: "linkedPocId", db: "linked_poc_id", ...nullableField },
+  { js: "linkedProjectId", db: "linked_project_id", ...nullableField },
   { js: "blockGroupId", db: "block_group_id", ...nullableField },
 ]);
 
@@ -38,6 +39,7 @@ export function createCalendarEventsRouter(db: Database.Database) {
       db,
       table: "calendar_events",
       module: "people",
+      auditLabel: "Calendar",
       fromRow,
       toRow,
       generateId: nextCalendarEventId,

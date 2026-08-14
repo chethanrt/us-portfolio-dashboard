@@ -22,6 +22,7 @@ export function createActivitiesRouter(db: Database.Database) {
     db,
     table: "activities",
     module: "activities",
+    auditLabel: "Activities",
     listOrderBy: "rowid DESC", // ActivityService used to prepend new records (newest-first)
     fromRow,
     toRow,

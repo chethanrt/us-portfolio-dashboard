@@ -9,12 +9,18 @@ import type { EditableSettingsKey } from "@/services/SettingsService";
 
 const SECTIONS: { key: EditableSettingsKey; label: string; description: string }[] = [
   { key: "roles", label: "Roles", description: "Organization roles used across the application." },
-  { key: "technicalSkills", label: "Technical Skills", description: "Skills tracked in the skill matrix." },
-  { key: "aiSkills", label: "AI Skills", description: "AI tools and skills tracked in the skill matrix." },
+  { key: "technicalSkills", label: "Technical Skills", description: "Technology options for Project.technology." },
+  { key: "aiSkills", label: "AI Skills", description: "AI tools and skills (not yet wired to a form)." },
+  { key: "skills", label: "Skills", description: "Skills employees can select on their own People profile." },
   { key: "aiTools", label: "AI Tools", description: "Tools that can be selected when logging activities." },
   { key: "projectStages", label: "Project Stages", description: "Stages a project can be in." },
   { key: "activityTypes", label: "AI Activity Categories", description: "Categories for AI activities." },
   { key: "pocCategories", label: "POC Categories", description: "Categories for POCs and innovations." },
+  {
+    key: "aiAdoptionCategories",
+    label: "AI Adoption Categories",
+    description: "Categories tracked on the AI Adoption segment, selectable per project.",
+  },
   { key: "learningPlatforms", label: "Learning Platforms", description: "Platforms for learning records." },
   { key: "eventTypes", label: "Calendar Event Types", description: "Event types available on the team calendar." },
 ];

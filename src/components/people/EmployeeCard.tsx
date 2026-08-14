@@ -9,6 +9,8 @@ import { getInitials } from "@/utils/format";
 
 interface EmployeeCardProps {
   employee: EmployeeWithStats;
+  /** Names of projects this employee is currently assigned to — computed live from Project records. */
+  projectNames: string[];
   /** Whether the signed-in user can edit this employee. */
   canEdit: boolean;
   /** Whether the signed-in user can remove (offboard) this employee. */
@@ -22,6 +24,7 @@ interface EmployeeCardProps {
 
 export function EmployeeCard({
   employee,
+  projectNames,
   canEdit,
   canDelete,
   hasAccount = true,
@@ -49,22 +52,20 @@ export function EmployeeCard({
 
       <CardContent className="flex-1 space-y-3">
         <div className="flex flex-wrap items-center gap-1.5">
-          <Badge variant="secondary">{employee.primarySkill}</Badge>
-          {employee.secondarySkill && <Badge variant="outline">{employee.secondarySkill}</Badge>}
+          {employee.skills.map((skill) => (
+            <Badge key={skill} variant="secondary">
+              {skill}
+            </Badge>
+          ))}
           {!hasAccount && !isExEmployee && (
             <Badge variant="destructive" title="No linked login account — add one in User Management">
               No Login Account
             </Badge>
           )}
         </div>
-        <p
-          className="truncate text-sm text-muted-foreground"
-          title={employee.projects.join(", ")}
-        >
-          {employee.projects.length === 1 ? "Project" : "Projects"}:{" "}
-          <span className="text-foreground">
-            {employee.projects.length > 0 ? employee.projects.join(", ") : "—"}
-          </span>
+        <p className="truncate text-sm text-muted-foreground" title={projectNames.join(", ")}>
+          {projectNames.length === 1 ? "Project" : "Projects"}:{" "}
+          <span className="text-foreground">{projectNames.length > 0 ? projectNames.join(", ") : "—"}</span>
         </p>
 
         <dl className="grid grid-cols-3 gap-2 rounded-lg bg-muted p-2 text-center">

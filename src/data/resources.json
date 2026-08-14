@@ -24,9 +24,11 @@
       { "key": "status", "label": "Status" },
       { "key": "manager", "label": "Engineering Manager" },
       { "key": "techLead", "label": "Tech Lead" },
+      { "key": "projectManager", "label": "Project Manager" },
       { "key": "startDate", "label": "Start Date" },
       { "key": "endDate", "label": "End Date" },
       { "key": "aiAdoption", "label": "AI Adoption" },
+      { "key": "aiAdoptionCategories", "label": "AI Adoption Categories" },
       { "key": "members", "label": "Team Members" }
     ]
   },
@@ -91,18 +93,30 @@
       { "key": "role", "label": "Role" },
       { "key": "experience", "label": "Experience" },
       { "key": "team", "label": "Team" },
-      { "key": "primarySkill", "label": "Primary Skill" },
-      { "key": "secondarySkill", "label": "Secondary Skill" },
+      { "key": "skills", "label": "Skills" },
       { "key": "projects", "label": "Projects" },
+      { "key": "pocs", "label": "POCs" },
       { "key": "status", "label": "Status" },
-      { "key": "managerId", "label": "Reports To" }
+      { "key": "managerId", "label": "Reports To" },
+      { "key": "leaderId", "label": "Leader" },
+      { "key": "businessUnit", "label": "Business Unit" },
+      { "key": "techNonTech", "label": "Tech/Non-Tech" }
     ]
   },
   {
     "id": "skills",
     "label": "Skill Matrix",
     "path": "/skills",
-    "description": "Technical and AI skill levels across the team.",
+    "description": "Skills employees have selected on their People profile.",
+    "actions": ["view", "export"],
+    "scopable": true,
+    "fields": []
+  },
+  {
+    "id": "aiAdoption",
+    "label": "AI Adoption",
+    "path": "/ai-adoption",
+    "description": "AI adoption categories across projects and teams.",
     "actions": ["view", "export"],
     "scopable": true,
     "fields": []
@@ -121,7 +135,9 @@
       { "key": "status", "label": "Status" },
       { "key": "progress", "label": "Completion %" },
       { "key": "hours", "label": "Hours" },
-      { "key": "completionDate", "label": "Completion Date" }
+      { "key": "completionDate", "label": "Completion Date" },
+      { "key": "programCoordinator", "label": "Program Coordinator" },
+      { "key": "minutesCompleted", "label": "Minutes Completed" }
     ]
   },
   {
@@ -188,6 +204,15 @@
     "path": "/roles",
     "description": "Roles with module, action and field permissions.",
     "actions": ["view", "create", "edit", "delete"],
+    "scopable": false,
+    "fields": []
+  },
+  {
+    "id": "auditLog",
+    "label": "Audit Log",
+    "path": "/audit-log",
+    "description": "Login/logout and edit history across the app.",
+    "actions": ["view"],
     "scopable": false,
     "fields": []
   }

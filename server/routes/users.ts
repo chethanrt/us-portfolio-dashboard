@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import type Database from "better-sqlite3";
+import { recordAuditEvent } from "../db/audit.ts";
 import { createCrudRouter } from "./_crud.ts";
 import { buildRowMapper, nullableField } from "./_fields.ts";
 import { nextUserId } from "../db/ids.ts";
@@ -55,6 +56,13 @@ export function createUsersRouter(db: Database.Database) {
 
     const token = createSession(db, row.id as string);
     res.cookie(SESSION_COOKIE, token, SESSION_COOKIE_OPTIONS);
+    recordAuditEvent(db, {
+      actorUserId: row.id as string,
+      eventType: "login",
+      module: "Auth",
+      recordId: row.id as string,
+      summary: `Login: ${row.username}`,
+    });
     res.json(fromRow(row));
   });
 
@@ -63,6 +71,15 @@ export function createUsersRouter(db: Database.Database) {
   router.use(requireAuth(db));
 
   router.post("/logout", (req, res) => {
+    if (req.user) {
+      recordAuditEvent(db, {
+        actorUserId: req.user.id,
+        eventType: "logout",
+        module: "Auth",
+        recordId: req.user.id,
+        summary: `Logout: ${req.user.username}`,
+      });
+    }
     deleteSession(db, req.cookies?.[SESSION_COOKIE]);
     res.clearCookie(SESSION_COOKIE);
     res.status(204).end();
@@ -80,6 +97,7 @@ export function createUsersRouter(db: Database.Database) {
       db,
       table: "users",
       module: "users",
+      auditLabel: "Users",
       fromRow,
       toRow,
       generateId: nextUserId,

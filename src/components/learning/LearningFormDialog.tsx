@@ -32,6 +32,12 @@ const learningSchema = z
         message: "Hours must be a positive number.",
       }),
     completionDate: z.string(),
+    programCoordinator: z.string().trim().max(80, "Maximum 80 characters."),
+    minutesCompleted: z
+      .string()
+      .refine((value) => value === "" || (!Number.isNaN(Number(value)) && Number(value) >= 0), {
+        message: "Minutes must be a positive number.",
+      }),
   })
   // docs/08: Completion Date is required only when Status = Completed, never in the future.
   .refine((values) => values.status !== "Completed" || values.completionDate.length > 0, {
@@ -53,6 +59,8 @@ const EMPTY_VALUES: LearningFormValues = {
   progress: "0",
   hours: "0",
   completionDate: "",
+  programCoordinator: "",
+  minutesCompleted: "",
 };
 
 interface LearningFormDialogProps {
@@ -90,6 +98,8 @@ export function LearningFormDialog({ open, onOpenChange, record, employees, onSa
               progress: String(record.progress),
               hours: String(record.hours),
               completionDate: record.completionDate,
+              programCoordinator: record.programCoordinator,
+              minutesCompleted: record.minutesCompleted ? String(record.minutesCompleted) : "",
             }
           : EMPTY_VALUES
       );
@@ -109,6 +119,8 @@ export function LearningFormDialog({ open, onOpenChange, record, employees, onSa
         hours: Number(values.hours),
         certificate: record?.certificate ?? "",
         completionDate: status === "Completed" ? values.completionDate : "",
+        programCoordinator: values.programCoordinator.trim(),
+        minutesCompleted: values.minutesCompleted ? Number(values.minutesCompleted) : 0,
       });
       onOpenChange(false);
     } catch {
@@ -184,6 +196,26 @@ export function LearningFormDialog({ open, onOpenChange, record, employees, onSa
           )}
           {show("completionDate") && (
             <FormInputField control={form.control} name="completionDate" label="Completion Date" type="date" disabled={readOnly("completionDate")} />
+          )}
+          {show("programCoordinator") && (
+            <FormInputField
+              control={form.control}
+              name="programCoordinator"
+              label="Program Coordinator"
+              placeholder="e.g. Chethan R T"
+              disabled={readOnly("programCoordinator")}
+            />
+          )}
+          {show("minutesCompleted") && (
+            <FormInputField
+              control={form.control}
+              name="minutesCompleted"
+              label="Minutes Completed"
+              type="number"
+              min="0"
+              step="0.25"
+              disabled={readOnly("minutesCompleted")}
+            />
           )}
 
           <div className="flex justify-end gap-2 sm:col-span-2">

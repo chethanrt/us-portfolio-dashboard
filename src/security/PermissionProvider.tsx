@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { permissionService, roleService } from "@/services";
+import { permissionOverrideService, permissionService, roleService } from "@/services";
 import type { ModuleId, PermissionAction, Role } from "@/types";
 import { PermissionContext } from "./PermissionContext";
 import type { DashboardScope, PermissionContextValue } from "./PermissionContext";
@@ -19,11 +19,12 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
 
   const roleId = account?.roleId ?? null;
+  const accountId = account?.id ?? null;
 
   useEffect(() => {
     let cancelled = false;
 
-    if (!roleId) {
+    if (!roleId || !accountId) {
       setRole(null);
       setEvaluator(PermissionService.denyAll());
       setIsLoading(false);
@@ -31,11 +32,15 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
     }
 
     setIsLoading(true);
-    Promise.all([roleService.getById(roleId), permissionService.getByRoleId(roleId)])
-      .then(([loadedRole, permission]) => {
+    Promise.all([
+      roleService.getById(roleId),
+      permissionService.getByRoleId(roleId),
+      permissionOverrideService.getByUserId(accountId),
+    ])
+      .then(([loadedRole, permission, override]) => {
         if (cancelled) return;
         setRole(loadedRole ?? null);
-        setEvaluator(new PermissionService(permission?.modules ?? []));
+        setEvaluator(PermissionService.fromRoleAndOverrides(permission?.modules ?? [], override?.modules ?? []));
       })
       .catch(() => {
         if (cancelled) return;
@@ -49,7 +54,7 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [roleId]);
+  }, [roleId, accountId]);
 
   const currentEmployeeId = currentUser?.id;
 

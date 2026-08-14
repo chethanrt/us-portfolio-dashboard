@@ -62,7 +62,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccount(null);
     setEmployees([]);
     // Fire-and-forget: the UI signs out immediately regardless of how long
-    // the server takes to delete the session row server-side.
+    // the server takes to delete the session row server-side. The logout
+    // audit event is recorded there too (server/routes/users.ts), using the
+    // verified session's user id rather than a client-supplied header.
     void userService.logout();
   }, []);
 
