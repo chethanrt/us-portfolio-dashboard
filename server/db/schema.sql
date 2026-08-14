@@ -73,10 +73,7 @@ CREATE TABLE IF NOT EXISTS employees (
   projects_json TEXT NOT NULL DEFAULT '[]',
   profile_image TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'Active',
-  manager_id TEXT REFERENCES employees(id),
-  leader_id TEXT REFERENCES employees(id),
-  business_unit TEXT NOT NULL DEFAULT '',
-  tech_non_tech TEXT NOT NULL DEFAULT 'Tech'
+  manager_id TEXT REFERENCES employees(id)
 );
 
 CREATE TABLE IF NOT EXISTS users (
@@ -127,7 +124,6 @@ CREATE TABLE IF NOT EXISTS projects (
   stage TEXT NOT NULL,
   status TEXT NOT NULL,
   ai_adoption INTEGER NOT NULL DEFAULT 0,
-  ai_adoption_categories_json TEXT NOT NULL DEFAULT '[]',
   members_json TEXT NOT NULL DEFAULT '[]',
   start_date TEXT NOT NULL DEFAULT '',
   end_date TEXT NOT NULL DEFAULT ''
@@ -159,9 +155,7 @@ CREATE TABLE IF NOT EXISTS learning (
   progress INTEGER NOT NULL DEFAULT 0,
   hours REAL NOT NULL DEFAULT 0,
   certificate TEXT NOT NULL DEFAULT '',
-  completion_date TEXT NOT NULL DEFAULT '',
-  program_coordinator TEXT NOT NULL DEFAULT '',
-  minutes_completed REAL NOT NULL DEFAULT 0
+  completion_date TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS idx_learning_employee ON learning(employee_id);
 

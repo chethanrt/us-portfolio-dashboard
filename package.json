@@ -16,9 +16,7 @@
     "db:migrate-drop-skill-matrix": "tsx server/db/migrate-drop-skill-matrix.ts",
     "db:migrate-add-project-manager": "tsx server/db/migrate-add-project-manager.ts",
     "db:migrate-add-linked-project": "tsx server/db/migrate-add-linked-project.ts",
-    "db:migrate-add-employee-org-fields": "tsx server/db/migrate-add-employee-org-fields.ts",
-    "db:migrate-add-learning-import-fields": "tsx server/db/migrate-add-learning-import-fields.ts",
-    "db:migrate-add-ai-adoption-categories": "tsx server/db/migrate-add-ai-adoption-categories.ts"
+    "db:migrate-schema": "tsx server/db/applyMigrations.ts"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.21",
