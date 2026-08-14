@@ -10,8 +10,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "db:migrate": "tsx server/db/migrate.ts",
-    "db:reset": "tsx server/db/migrate.ts --reset",
-    "db:migrate-schema": "tsx server/db/applyMigrations.ts"
+    "db:reset": "tsx server/db/migrate.ts --reset"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.21",
