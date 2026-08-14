@@ -7,6 +7,7 @@
 export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(path, {
     ...options,
+    credentials: "include", // send the session cookie with every request
     headers: { "Content-Type": "application/json", ...options.headers },
   });
 

@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(powershell -Command \"Stop-Process -Id 4992,36020 -Force -ErrorAction SilentlyContinue\")",
-      "Bash(netstat -ano)"
+      "Bash(netstat -ano)",
+      "Bash(rm -f dev-cookies.txt)",
+      "Bash(curl -s -c dev-cookies.txt -w \" STATUS:%{http_code}\\\\n\" -X POST http://localhost:4000/api/users/authenticate -H \"Content-Type: application/json\" -d '{\"username\":\"nikitha.r\",\"password\":\"Welcome@123\"}')"
     ]
   }
 }

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import type Database from "better-sqlite3";
+import { requirePermission } from "../security/permissions.ts";
 
 const SKILL_COLUMNS = [
   "Magento",
@@ -30,12 +31,12 @@ function fromRow(row: Record<string, any>) {
 export function createSkillsRouter(db: Database.Database) {
   const router = Router();
 
-  router.get("/", (_req, res) => {
+  router.get("/", requirePermission(db, "skills", "view"), (_req, res) => {
     const rows = db.prepare("SELECT * FROM skills").all();
     res.json(rows.map(fromRow));
   });
 
-  router.get("/:employeeId", (req, res) => {
+  router.get("/:employeeId", requirePermission(db, "skills", "view"), (req, res) => {
     const row = db.prepare("SELECT * FROM skills WHERE employee_id = ?").get(req.params.employeeId);
     if (!row) {
       res.status(404).json({ error: "NOT_FOUND" });

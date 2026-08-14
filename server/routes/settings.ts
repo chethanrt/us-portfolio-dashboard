@@ -1,5 +1,6 @@
 import { Router } from "express";
 import type Database from "better-sqlite3";
+import { requirePermission } from "../security/permissions.ts";
 
 const EDITABLE_KEYS = [
   "roles",
@@ -35,11 +36,14 @@ function readAll(db: Database.Database): Record<string, unknown> {
 export function createSettingsRouter(db: Database.Database) {
   const router = Router();
 
+  // Not gated by requirePermission beyond requireAuth — every signed-in user
+  // needs to read Settings master data (role lists, technical skills, etc.)
+  // for dropdowns app-wide, not just users with "settings" access.
   router.get("/", (_req, res) => {
     res.json(readAll(db));
   });
 
-  router.put("/:key", (req, res) => {
+  router.put("/:key", requirePermission(db, "settings", "edit"), (req, res) => {
     const key = req.params.key;
     const values = sortIfEditableList(key, req.body?.values ?? []);
     db.prepare(

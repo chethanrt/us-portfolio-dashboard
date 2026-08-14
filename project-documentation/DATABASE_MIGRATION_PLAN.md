@@ -178,13 +178,12 @@ flowchart LR
   method names/behaviour so the mapping to the frontend is mechanical.
 
 ### Phase 2 — Real authentication
-- **Deferred, then fully scoped separately** — see
-  `AUTHENTICATION_IMPLEMENTATION_PLAN.md` for the concrete, file-level
-  step-by-step plan (password hashing, real server-side sessions via
-  HTTP-only cookies, auth middleware, server-side permission checks, HTTPS).
-  That document is written to be picked up and executed on its own — not
-  implemented yet as of this writing; check its **Status** line at the top
-  for the current state.
+- **Implemented 2026-08-14** — see `AUTHENTICATION_IMPLEMENTATION_PLAN.md`
+  for the full design, and its **Status** line for exactly what's done vs.
+  the remaining second-pass item (field-level/data-scope enforcement,
+  still frontend-only). Password hashing, real HTTP-only-cookie sessions,
+  server-side auth + permission middleware, real logout, and login
+  rate-limiting are all live.
 
 ### Phase 3 — Frontend service layer swap
 - Rewrite each `src/services/*.ts` file so its methods call the new API

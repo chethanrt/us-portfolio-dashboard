@@ -21,6 +21,7 @@ export function createEmployeesRouter(db: Database.Database) {
   return createCrudRouter({
     db,
     table: "employees",
+    module: "people",
     fromRow,
     toRow,
     generateId: nextEmployeeId,

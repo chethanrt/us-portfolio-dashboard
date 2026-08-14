@@ -3,8 +3,6 @@ import type { ReactNode } from "react";
 import { employeeService, userService } from "@/services";
 import type { Employee, User } from "@/types";
 
-const SESSION_STORAGE_KEY = "ai-portfolio-dashboard.session";
-
 export interface AuthContextValue {
   /** The logged-in account, or null when signed out. */
   account: User | null;
@@ -25,20 +23,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Restore the session on startup.
+  // Restore the session on startup — ask the server who (if anyone) the
+  // session cookie belongs to, rather than trusting a client-side flag.
+  // Employees are only fetched once we know there's an authenticated
+  // session, since /api/employees now requires one.
   useEffect(() => {
     let cancelled = false;
 
     async function restore() {
       try {
-        const employeeList = await employeeService.getAll();
+        const user = await userService.me();
         if (cancelled) return;
-        setEmployees(employeeList);
-
-        const sessionUserId = localStorage.getItem(SESSION_STORAGE_KEY);
-        if (sessionUserId) {
-          const user = await userService.getById(sessionUserId);
-          if (!cancelled && user && user.status === "Active") setAccount(user);
+        if (user && user.status === "Active") {
+          setAccount(user);
+          const employeeList = await employeeService.getAll();
+          if (!cancelled) setEmployees(employeeList);
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -54,14 +53,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (username: string, password: string) => {
     const user = await userService.authenticate(username, password);
     if (!user) return false;
-    localStorage.setItem(SESSION_STORAGE_KEY, user.id);
     setAccount(user);
+    setEmployees(await employeeService.getAll());
     return true;
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem(SESSION_STORAGE_KEY);
     setAccount(null);
+    setEmployees([]);
+    // Fire-and-forget: the UI signs out immediately regardless of how long
+    // the server takes to delete the session row server-side.
+    void userService.logout();
   }, []);
 
   const value = useMemo<AuthContextValue>(() => {

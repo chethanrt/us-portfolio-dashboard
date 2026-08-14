@@ -104,7 +104,10 @@ class EmployeeService {
     // A departed employee shouldn't keep an active login; no-op if there wasn't one.
     const account = (await userService.getAll()).find((u) => u.employeeId === id);
     if (account && account.status === "Active") {
-      await userService.update(account.id, { ...account, status: "Inactive" });
+      // Excludes `password` from the spread — resubmitting the existing
+      // bcrypt hash would get it re-hashed server-side (see UserInput).
+      const { password: _password, ...accountWithoutPassword } = account;
+      await userService.update(account.id, { ...accountWithoutPassword, status: "Inactive" });
     }
 
     return updatedTarget;
