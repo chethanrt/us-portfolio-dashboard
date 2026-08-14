@@ -69,8 +69,7 @@ CREATE TABLE IF NOT EXISTS employees (
   role TEXT NOT NULL,
   experience INTEGER NOT NULL DEFAULT 0,
   team TEXT NOT NULL DEFAULT '',
-  primary_skill TEXT NOT NULL DEFAULT '',
-  secondary_skill TEXT NOT NULL DEFAULT '',
+  skills_json TEXT NOT NULL DEFAULT '[]',
   projects_json TEXT NOT NULL DEFAULT '[]',
   profile_image TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'Active',
@@ -86,6 +85,33 @@ CREATE TABLE IF NOT EXISTS users (
   status TEXT NOT NULL DEFAULT 'Active'
 );
 
+-- Per-user permission overrides layered on top of the role's defaults
+-- (permissions table above). One row per user that has any override at
+-- all — most users have none. Brand new table, so (unlike a column added
+-- to an existing table) this is safe directly in schema.sql: CREATE TABLE
+-- IF NOT EXISTS is a no-op once it exists, and there's no pre-existing data
+-- to migrate.
+CREATE TABLE IF NOT EXISTS user_permission_overrides (
+  user_id TEXT PRIMARY KEY REFERENCES users(id),
+  overrides_json TEXT NOT NULL DEFAULT '[]'
+);
+
+-- Append-only audit trail: logins/logouts and every create/update/delete
+-- across the app. New table, safe directly in schema.sql (no pre-existing
+-- data to migrate — same rationale as user_permission_overrides above).
+CREATE TABLE IF NOT EXISTS audit_log (
+  id TEXT PRIMARY KEY,
+  timestamp TEXT NOT NULL,
+  actor_user_id TEXT NOT NULL DEFAULT '',
+  actor_username TEXT NOT NULL DEFAULT '',
+  event_type TEXT NOT NULL,
+  module TEXT NOT NULL DEFAULT '',
+  record_id TEXT NOT NULL DEFAULT '',
+  summary TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_audit_log_timestamp ON audit_log(timestamp);
+CREATE INDEX IF NOT EXISTS idx_audit_log_actor ON audit_log(actor_user_id);
+
 CREATE TABLE IF NOT EXISTS projects (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -93,6 +119,7 @@ CREATE TABLE IF NOT EXISTS projects (
   program TEXT NOT NULL DEFAULT '',
   manager TEXT NOT NULL DEFAULT '',
   tech_lead TEXT NOT NULL DEFAULT '',
+  project_manager TEXT NOT NULL DEFAULT '',
   technology_json TEXT NOT NULL DEFAULT '[]',
   stage TEXT NOT NULL,
   status TEXT NOT NULL,
@@ -118,26 +145,6 @@ CREATE TABLE IF NOT EXISTS activities (
 );
 CREATE INDEX IF NOT EXISTS idx_activities_employee ON activities(employee_id);
 CREATE INDEX IF NOT EXISTS idx_activities_project ON activities(project_id);
-
--- One row per employee, flat skill-name columns — mirrors SkillRecord
--- exactly. Read-only today (SkillService has no create/update/delete), so
--- no write route is added for this table, matching current capability.
-CREATE TABLE IF NOT EXISTS skills (
-  employee_id TEXT PRIMARY KEY REFERENCES employees(id),
-  Magento TEXT NOT NULL,
-  PHP TEXT NOT NULL,
-  React TEXT NOT NULL,
-  JavaScript TEXT NOT NULL,
-  GraphQL TEXT NOT NULL,
-  MySQL TEXT NOT NULL,
-  Docker TEXT NOT NULL,
-  Git TEXT NOT NULL,
-  Claude TEXT NOT NULL,
-  ChatGPT TEXT NOT NULL,
-  GitHubCopilot TEXT NOT NULL,
-  Cursor TEXT NOT NULL,
-  PromptEngineering TEXT NOT NULL
-);
 
 CREATE TABLE IF NOT EXISTS learning (
   id TEXT PRIMARY KEY,
@@ -191,6 +198,7 @@ CREATE TABLE IF NOT EXISTS calendar_events (
   created_by TEXT NOT NULL,
   linked_task_id TEXT,
   linked_poc_id TEXT,
+  linked_project_id TEXT,
   block_group_id TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_calendar_employee ON calendar_events(employee_id);

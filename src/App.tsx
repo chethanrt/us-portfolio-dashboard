@@ -19,12 +19,14 @@ const Activities = lazy(() => import("@/pages/Activities"));
 const People = lazy(() => import("@/pages/People"));
 const CalendarPage = lazy(() => import("@/pages/Calendar"));
 const SkillMatrix = lazy(() => import("@/pages/SkillMatrix"));
+const AIAdoption = lazy(() => import("@/pages/AIAdoption"));
 const Learning = lazy(() => import("@/pages/Learning"));
 const POCs = lazy(() => import("@/pages/POCs"));
 const Reports = lazy(() => import("@/pages/Reports"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const Users = lazy(() => import("@/pages/Users"));
 const Roles = lazy(() => import("@/pages/Roles"));
+const AuditLog = lazy(() => import("@/pages/AuditLog"));
 
 /** Route table — every page is protected by its module's View permission. */
 const PROTECTED_ROUTES: { path: string; module: ModuleId; Page: LazyExoticComponent<ComponentType> }[] = [
@@ -35,12 +37,14 @@ const PROTECTED_ROUTES: { path: string; module: ModuleId; Page: LazyExoticCompon
   { path: "/people", module: "people", Page: People },
   { path: "/calendar", module: "people", Page: CalendarPage },
   { path: "/skills", module: "skills", Page: SkillMatrix },
+  { path: "/ai-adoption", module: "aiAdoption", Page: AIAdoption },
   { path: "/learning", module: "learning", Page: Learning },
   { path: "/pocs", module: "pocs", Page: POCs },
   { path: "/reports", module: "reports", Page: Reports },
   { path: "/settings", module: "settings", Page: Settings },
   { path: "/users", module: "users", Page: Users },
   { path: "/roles", module: "roles", Page: Roles },
+  { path: "/audit-log", module: "auditLog", Page: AuditLog },
 ];
 
 export default function App() {

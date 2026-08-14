@@ -1,15 +1,24 @@
 import { Router } from "express";
 import type Database from "better-sqlite3";
+import { recordAuditEvent } from "../db/audit.ts";
+
+/** Best-effort human label for an audit summary — tries the common "name" columns in order. */
+function describeRow(row: any, idColumn: string): string {
+  return row?.name ?? row?.title ?? row?.username ?? row?.course ?? row?.[idColumn] ?? "";
+}
 
 /**
  * Generic CRUD plumbing shared by every entity. All business logic
  * (cross-service orchestration, delete guards, sync side effects) stays in
  * the frontend service classes exactly as before migration — this router
- * is deliberately a thin, dumb CRUD layer, nothing more.
+ * is deliberately a thin, dumb CRUD layer, nothing more (besides the audit
+ * logging below, which every entity needs identically).
  */
 export function createCrudRouter(opts: {
   db: Database.Database;
   table: string;
+  /** Human-readable module label for the audit log, e.g. "People", "Projects". */
+  module: string;
   idColumn?: string;
   /** e.g. "rowid DESC" to replicate a service that used to prepend new records (newest-first lists). */
   listOrderBy?: string;
@@ -17,9 +26,18 @@ export function createCrudRouter(opts: {
   toRow: (payload: any) => Record<string, unknown>;
   generateId: (db: Database.Database, payload: any) => string;
 }) {
-  const { db, table, fromRow, toRow, generateId } = opts;
+  const { db, table, module, fromRow, toRow, generateId } = opts;
   const idColumn = opts.idColumn ?? "id";
   const router = Router();
+
+  const audit = (req: any, eventType: "create" | "update" | "delete", recordId: string, row: any) =>
+    recordAuditEvent(db, {
+      actorUserId: req.header("x-actor-id") ?? "",
+      eventType,
+      module,
+      recordId,
+      summary: describeRow(row, idColumn),
+    });
 
   router.get("/", (_req, res) => {
     const rows = db.prepare(`SELECT * FROM ${table}${opts.listOrderBy ? ` ORDER BY ${opts.listOrderBy}` : ""}`).all();
@@ -47,6 +65,7 @@ export function createCrudRouter(opts: {
         ...columns,
       });
       const row = db.prepare(`SELECT * FROM ${table} WHERE ${idColumn} = ?`).get(id);
+      audit(req, "create", id, row);
       res.status(201).json(fromRow(row));
     } catch (err) {
       res.status(400).json({ error: (err as Error).message });
@@ -68,6 +87,7 @@ export function createCrudRouter(opts: {
         res.status(404).json({ error: "NOT_FOUND" });
         return;
       }
+      audit(req, "update", req.params.id, row);
       res.json(fromRow(row));
     } catch (err) {
       res.status(400).json({ error: (err as Error).message });
@@ -75,11 +95,13 @@ export function createCrudRouter(opts: {
   });
 
   router.delete("/:id", (req, res) => {
+    const existing = db.prepare(`SELECT * FROM ${table} WHERE ${idColumn} = ?`).get(req.params.id);
     const result = db.prepare(`DELETE FROM ${table} WHERE ${idColumn} = ?`).run(req.params.id);
     if (result.changes === 0) {
       res.status(404).json({ error: "NOT_FOUND" });
       return;
     }
+    audit(req, "delete", req.params.id, existing);
     res.status(204).end();
   });
 

@@ -31,8 +31,10 @@ async function generateUsername(name: string): Promise<string> {
  * to them so the manager hierarchy never points at a departed employee.
  */
 class EmployeeService {
-  getAll(): Promise<Employee[]> {
-    return apiRequest<Employee[]>("/api/employees");
+  /** Alphabetical by name — every screen that lists/picks employees inherits this order. */
+  async getAll(): Promise<Employee[]> {
+    const employees = await apiRequest<Employee[]>("/api/employees");
+    return employees.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async getById(id: string): Promise<Employee | undefined> {

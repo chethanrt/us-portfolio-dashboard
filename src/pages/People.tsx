@@ -22,12 +22,15 @@ import { useSettings } from "@/hooks/useSettings";
 import { usePermission } from "@/security";
 import { userService } from "@/services";
 import type { Employee } from "@/types";
+import { getEmployeeProjectAssignments } from "@/utils/employeeAssignments";
+import { PeopleRoleSummary } from "@/components/people/PeopleRoleSummary";
 
 export default function People() {
-  const { employees, projects, isLoading, error, addEmployee, updateEmployee, offboardEmployee } =
+  const { employees, projects, pocs, isLoading, error, addEmployee, updateEmployee, offboardEmployee } =
     useEmployees();
   const { settings } = useSettings();
   const roles = settings?.roles ?? [];
+  const skillOptions = settings?.skills ?? [];
   const { currentUser } = useAuth();
   const { canCreate, canEditRow, canDeleteRow, isOwnDataScope } = usePermission();
   const ownDataOnly = isOwnDataScope("people");
@@ -54,7 +57,6 @@ export default function People() {
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState(ALL_FILTER);
-  const [technologyFilter, setTechnologyFilter] = useState(ALL_FILTER);
   const [projectFilter, setProjectFilter] = useState(ALL_FILTER);
 
   const [viewing, setViewing] = useState<EmployeeWithStats | null>(null);
@@ -75,37 +77,35 @@ export default function People() {
     [employees, offboarding]
   );
 
-  const technologyOptions = useMemo(
-    () => [...new Set(visibleEmployees.map((e) => e.primarySkill))].sort(),
-    [visibleEmployees]
-  );
-
   const filteredEmployees = useMemo(() => {
     const query = search.trim().toLowerCase();
     return visibleEmployees.filter((employee) => {
       if (roleFilter !== ALL_FILTER && employee.role !== roleFilter) return false;
-      if (technologyFilter !== ALL_FILTER && employee.primarySkill !== technologyFilter) return false;
-      if (projectFilter !== ALL_FILTER && !employee.projects.includes(projectFilter)) return false;
+      if (
+        projectFilter !== ALL_FILTER &&
+        !getEmployeeProjectAssignments(employee, projects).some((a) => a.project.name === projectFilter)
+      )
+        return false;
       if (!query) return true;
-      return [employee.name, employee.role, employee.primarySkill, employee.secondarySkill, employee.team]
-        .some((field) => field.toLowerCase().includes(query));
+      return [employee.name, employee.role, employee.team, ...employee.skills].some((field) =>
+        field.toLowerCase().includes(query)
+      );
     });
-  }, [visibleEmployees, search, roleFilter, technologyFilter, projectFilter]);
+  }, [visibleEmployees, projects, search, roleFilter, projectFilter]);
 
   const clearFilters = () => {
     setSearch("");
     setRoleFilter(ALL_FILTER);
-    setTechnologyFilter(ALL_FILTER);
     setProjectFilter(ALL_FILTER);
   };
 
-  const handleSave = async (values: Omit<Employee, "id">) => {
+  const handleSave = async (values: Omit<Employee, "id">, pocIds: string[]) => {
     try {
       if (editing) {
-        await updateEmployee(editing.id, values);
+        await updateEmployee(editing.id, values, pocIds);
         toast.success("Employee updated successfully.");
       } else {
-        await addEmployee(values);
+        await addEmployee(values, pocIds);
         toast.success("Employee created successfully.");
       }
     } catch {
@@ -168,17 +168,12 @@ export default function People() {
         }
       />
 
+      {!ownDataOnly && <PeopleRoleSummary employees={employees} roles={roles} />}
+
       {!ownDataOnly && (
         <FilterBar>
           <SearchBar value={search} onChange={setSearch} placeholder="Search people…" className="w-full sm:w-64" />
           <FilterSelect placeholder="Roles" options={roles} value={roleFilter} onChange={setRoleFilter} className="sm:w-48" />
-          <FilterSelect
-            placeholder="Technologies"
-            options={technologyOptions}
-            value={technologyFilter}
-            onChange={setTechnologyFilter}
-            className="sm:w-44"
-          />
           <FilterSelect
             placeholder="Projects"
             options={[...new Set(projects.map((p) => p.name))]}
@@ -203,6 +198,7 @@ export default function People() {
             <EmployeeCard
               key={employee.id}
               employee={employee}
+              projectNames={getEmployeeProjectAssignments(employee, projects).map((a) => a.project.name)}
               canEdit={canEditRow("people", employee.id)}
               canDelete={canDeleteRow("people", employee.id)}
               hasAccount={linkedEmployeeIds ? linkedEmployeeIds.has(employee.id) : true}
@@ -229,7 +225,9 @@ export default function People() {
         employee={editing}
         employees={employees}
         projects={projects}
+        pocs={pocs}
         roles={roles}
+        skillOptions={skillOptions}
         onSave={handleSave}
       />
 

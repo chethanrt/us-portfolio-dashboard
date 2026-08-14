@@ -9,18 +9,21 @@ const { fromRow, toRow } = buildRowMapper([
   { js: "role", db: "role" },
   { js: "experience", db: "experience" },
   { js: "team", db: "team" },
-  { js: "primarySkill", db: "primary_skill" },
-  { js: "secondarySkill", db: "secondary_skill" },
+  { js: "skills", db: "skills_json", ...jsonArrayField },
   { js: "projects", db: "projects_json", ...jsonArrayField },
   { js: "profileImage", db: "profile_image" },
   { js: "status", db: "status" },
   { js: "managerId", db: "manager_id", ...nullableField },
+  { js: "leaderId", db: "leader_id", ...nullableField },
+  { js: "businessUnit", db: "business_unit" },
+  { js: "techNonTech", db: "tech_non_tech" },
 ]);
 
 export function createEmployeesRouter(db: Database.Database) {
   return createCrudRouter({
     db,
     table: "employees",
+    module: "People",
     fromRow,
     toRow,
     generateId: nextEmployeeId,

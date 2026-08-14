@@ -44,12 +44,14 @@ export default function Projects() {
   const [statusOptions, setStatusOptions] = useState<string[]>([]);
   const [stageOptions, setStageOptions] = useState<string[]>([]);
   const [technicalSkills, setTechnicalSkills] = useState<string[]>([]);
+  const [aiAdoptionCategoryOptions, setAiAdoptionCategoryOptions] = useState<string[]>([]);
 
   useEffect(() => {
     settingsService.getSettings().then((settings) => {
       setStatusOptions(settings.statusValues.project);
       setStageOptions(settings.projectStages);
       setTechnicalSkills(settings.technicalSkills);
+      setAiAdoptionCategoryOptions(settings.aiAdoptionCategories);
     });
   }, []);
 
@@ -73,12 +75,15 @@ export default function Projects() {
   };
 
   const handleSave = async (values: Omit<Project, "id">) => {
+    // Super Admin-type accounts have no linked employee — falls back to "",
+    // matching TeamCalendar's currentEmployeeId={currentUser?.id ?? ""}.
+    const actingEmployeeId = currentUser?.id ?? "";
     try {
       if (editing) {
-        await updateProject(editing.id, values);
+        await updateProject(editing.id, values, actingEmployeeId);
         toast.success("Project updated successfully.");
       } else {
-        await addProject(values);
+        await addProject(values, actingEmployeeId);
         toast.success("Project created successfully.");
       }
     } catch {
@@ -193,6 +198,7 @@ export default function Projects() {
         projects={projects}
         employees={employees}
         technicalSkills={technicalSkills}
+        aiAdoptionCategoryOptions={aiAdoptionCategoryOptions}
         onSave={handleSave}
       />
 

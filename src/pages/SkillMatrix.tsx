@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Download, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -10,66 +11,93 @@ import {
   LoadingSkeleton,
   PageHeader,
   SearchBar,
-  SkillBadge,
 } from "@/components/common";
-import { buildSkillMatrixColumns } from "@/components/skills/skillMatrixColumns";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { useSkillMatrix } from "@/hooks/useSkillMatrix";
+import { useEmployees } from "@/hooks/useEmployees";
+import type { EmployeeWithStats } from "@/hooks/useEmployees";
+import { useSettings } from "@/hooks/useSettings";
 import { usePermission } from "@/security";
-import type { SkillLevel } from "@/types";
-import { SKILL_COLUMNS } from "@/utils/skills";
-
-const LEVELS: SkillLevel[] = ["Beginner", "Intermediate", "Advanced", "Expert"];
+import { getInitials } from "@/utils/format";
 
 export default function SkillMatrix() {
-  const { rows, isLoading, error } = useSkillMatrix();
+  const { employees, isLoading, error } = useEmployees();
+  const { settings } = useSettings();
+  const skillOptions = settings?.skills ?? [];
   const { currentUser } = useAuth();
   const { canExport, isOwnDataScope } = usePermission();
   const ownDataOnly = isOwnDataScope("skills");
+
   const [search, setSearch] = useState("");
   const [skillFilter, setSkillFilter] = useState(ALL_FILTER);
-  const [levelFilter, setLevelFilter] = useState(ALL_FILTER);
 
-  const columns = useMemo(() => buildSkillMatrixColumns(), []);
-
-  // Own-data view scope: see only their own skill row.
-  const visibleRows = useMemo(
-    () => (ownDataOnly ? rows.filter((row) => row.employee.id === currentUser?.id) : rows),
-    [rows, ownDataOnly, currentUser]
+  // Own-data view scope: see only their own row.
+  const visibleEmployees = useMemo(
+    () => (ownDataOnly ? employees.filter((e) => e.id === currentUser?.id) : employees),
+    [employees, ownDataOnly, currentUser]
   );
 
-  const filteredRows = useMemo(() => {
+  const filteredEmployees = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return visibleRows.filter(({ employee, skills }) => {
-      if (query) {
-        const matches = [employee.name, employee.role, employee.team].some((field) =>
-          field.toLowerCase().includes(query)
-        );
-        if (!matches) return false;
-      }
-      if (skillFilter !== ALL_FILTER && levelFilter !== ALL_FILTER) {
-        const key = SKILL_COLUMNS.find((c) => c.label === skillFilter)?.key;
-        return key ? skills[key] === levelFilter : true;
-      }
-      if (skillFilter !== ALL_FILTER) return true; // skill alone doesn't narrow rows
-      if (levelFilter !== ALL_FILTER) {
-        return SKILL_COLUMNS.some(({ key }) => skills[key] === levelFilter);
-      }
-      return true;
+    return visibleEmployees.filter((employee) => {
+      if (skillFilter !== ALL_FILTER && !employee.skills.includes(skillFilter)) return false;
+      if (!query) return true;
+      return [employee.name, employee.role, ...employee.skills].some((field) =>
+        field.toLowerCase().includes(query)
+      );
     });
-  }, [visibleRows, search, skillFilter, levelFilter]);
+  }, [visibleEmployees, search, skillFilter]);
 
   const clearFilters = () => {
     setSearch("");
     setSkillFilter(ALL_FILTER);
-    setLevelFilter(ALL_FILTER);
   };
+
+  const columns = useMemo<ColumnDef<EmployeeWithStats>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Employee",
+        cell: ({ row }) => (
+          <div className="flex items-center gap-3">
+            <Avatar className="size-9">
+              <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+                {getInitials(row.original.name)}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-medium">{row.original.name}</p>
+              <p className="text-xs text-muted-foreground">{row.original.role}</p>
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: "skills",
+        header: "Skills",
+        cell: ({ row }) =>
+          row.original.skills.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {row.original.skills.map((skill) => (
+                <Badge key={skill} variant="secondary">
+                  {skill}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <span className="text-sm text-muted-foreground">—</span>
+          ),
+      },
+    ],
+    []
+  );
 
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Skill Matrix" description="Technical and AI skills across the team" />
+        <PageHeader title="Skill Matrix" description="Skills employees have selected on their profile" />
         <LoadingSkeleton variant="table" count={8} />
       </div>
     );
@@ -90,8 +118,8 @@ export default function SkillMatrix() {
         title="Skill Matrix"
         description={
           ownDataOnly
-            ? `Your ${SKILL_COLUMNS.length} tracked skills`
-            : `${visibleRows.length} team members · ${SKILL_COLUMNS.length} tracked skills`
+            ? "Your skills"
+            : `${visibleEmployees.length} team members · ${skillOptions.length} tracked skills`
         }
         actions={
           canExport("skills") ? (
@@ -108,21 +136,14 @@ export default function SkillMatrix() {
         )}
         <FilterSelect
           placeholder="Skills"
-          options={SKILL_COLUMNS.map((c) => c.label)}
+          options={skillOptions}
           value={skillFilter}
           onChange={setSkillFilter}
           className="sm:w-48"
         />
-        <FilterSelect placeholder="Levels" options={LEVELS} value={levelFilter} onChange={setLevelFilter} className="sm:w-40" />
-        {/* Legend */}
-        <div className="flex flex-wrap items-center gap-1.5 sm:ml-auto">
-          {LEVELS.map((level) => (
-            <SkillBadge key={level} level={level} />
-          ))}
-        </div>
       </FilterBar>
 
-      {filteredRows.length === 0 ? (
+      {filteredEmployees.length === 0 ? (
         <EmptyState
           icon={LayoutGrid}
           title="No Matching Employees"
@@ -131,7 +152,7 @@ export default function SkillMatrix() {
           onAction={clearFilters}
         />
       ) : (
-        <DataTable columns={columns} data={filteredRows} pageSize={15} />
+        <DataTable columns={columns} data={filteredEmployees} pageSize={15} />
       )}
     </div>
   );

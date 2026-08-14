@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 interface PageHeaderProps {
   title: string;
-  description?: string;
+  description?: ReactNode;
   /** Action buttons rendered on the right side (e.g. "Add Project"). */
   actions?: ReactNode;
   className?: string;

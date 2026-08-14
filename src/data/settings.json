@@ -5,6 +5,7 @@
     "Director",
     "Engineering Manager",
     "Intern",
+    "Project Manager",
     "Senior Developer",
     "Senior Tech Lead",
     "Tech Lead"
@@ -19,6 +20,19 @@
     "PHP",
     "React"
   ],
+  "skills": [
+    "Delivery Management",
+    "Digital Marketing",
+    "Docker",
+    "Engineering Leadership",
+    "Engineering Management",
+    "Marketing & Communication",
+    "Project Management",
+    "Prompt Engineering",
+    "Python",
+    "Quality Assurance",
+    "Software Engineering"
+  ],
   "aiSkills": [
     "ChatGPT",
     "Claude",
@@ -26,18 +40,13 @@
     "GitHub Copilot",
     "Prompt Engineering"
   ],
-  "skillLevels": [
-    "Beginner",
-    "Intermediate",
-    "Advanced",
-    "Expert"
-  ],
   "projectStages": [
     "Deployment",
     "Development",
     "Discovery",
     "Documentation",
     "Estimation",
+    "Planning",
     "Requirement Gathering",
     "Support",
     "Testing"
@@ -78,6 +87,13 @@
     "Marketing",
     "Testing"
   ],
+  "aiAdoptionCategories": [
+    "API Generation",
+    "AI Design",
+    "Claude Code",
+    "Code Generation",
+    "UI Generation"
+  ],
   "impactLevels": [
     "Low",
     "Medium",
@@ -100,8 +116,7 @@
     "project": [
       "Active",
       "On Hold",
-      "Completed",
-      "Planning"
+      "Completed"
     ],
     "employee": [
       "Active",

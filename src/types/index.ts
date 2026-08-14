@@ -13,15 +13,15 @@ export type EmployeeRole =
   | "Director"
   | "Delivery Manager"
   | "Engineering Manager"
+  | "Project Manager"
   | "Senior Tech Lead"
   | "Tech Lead"
   | "Senior Developer"
   | "Developer"
   | "Intern";
 
-export type SkillLevel = "Beginner" | "Intermediate" | "Advanced" | "Expert";
-
 export type ProjectStage =
+  | "Planning"
   | "Discovery"
   | "Requirement Gathering"
   | "Estimation"
@@ -31,9 +31,11 @@ export type ProjectStage =
   | "Deployment"
   | "Support";
 
-export type ProjectStatus = "Active" | "On Hold" | "Completed" | "Planning";
+export type ProjectStatus = "Active" | "On Hold" | "Completed";
 
 export type EmployeeStatus = "Active" | "Inactive" | "Ex-Employee";
+
+export type TechNonTech = "Tech" | "Non-Tech";
 
 export type AITool =
   | "Claude"
@@ -86,14 +88,19 @@ export interface Employee {
   role: EmployeeRole;
   experience: number;
   team: string;
-  primarySkill: string;
-  secondarySkill: string;
+  /** Selected from the Settings-managed `skills` list; anyone can pick as many as apply on their own profile. */
+  skills: string[];
   /** Project names (free text, matches Project.name) this employee is assigned to; kept in sync with each Project's `members` list. */
   projects: string[];
   profileImage: string;
   status: EmployeeStatus;
   /** Employee id this person reports to; null at the top of the hierarchy. */
   managerId: string | null;
+  /** Skip-level manager (this person's manager's manager); null if not set. */
+  leaderId: string | null;
+  /** Business unit / department code, e.g. "TS-ADM". */
+  businessUnit: string;
+  techNonTech: TechNonTech;
 }
 
 /** projects.json */
@@ -104,10 +111,14 @@ export interface Project {
   program: string;
   manager: string;
   techLead: string;
+  /** Optional, like manager/techLead — employees with role "Project Manager". */
+  projectManager: string;
   technology: string[];
   stage: ProjectStage;
   status: ProjectStatus;
   aiAdoption: number;
+  /** Which AI capability categories (Settings-managed list) this project uses. */
+  aiAdoptionCategories: string[];
   members: string[];
   startDate: string;
   endDate: string;
@@ -129,24 +140,6 @@ export interface Activity {
   attachment: string;
 }
 
-/** skills.json — one record per employee, flat skill-name keys per docs/02 */
-export interface SkillRecord {
-  employeeId: string;
-  Magento: SkillLevel;
-  PHP: SkillLevel;
-  React: SkillLevel;
-  JavaScript: SkillLevel;
-  GraphQL: SkillLevel;
-  MySQL: SkillLevel;
-  Docker: SkillLevel;
-  Git: SkillLevel;
-  Claude: SkillLevel;
-  ChatGPT: SkillLevel;
-  GitHubCopilot: SkillLevel;
-  Cursor: SkillLevel;
-  PromptEngineering: SkillLevel;
-}
-
 /** learning.json */
 export interface LearningRecord {
   id: string;
@@ -158,6 +151,10 @@ export interface LearningRecord {
   hours: number;
   certificate: string;
   completionDate: string;
+  /** Who runs/owns this training program, e.g. "Chethan R T". */
+  programCoordinator: string;
+  /** Raw minutes completed, as reported by the source (e.g. Udemy export); `hours` is derived from this for the existing KPIs. */
+  minutesCompleted: number;
 }
 
 /** pocs.json */
@@ -191,12 +188,15 @@ export interface AppSettings {
   roles: EmployeeRole[];
   technicalSkills: string[];
   aiSkills: string[];
-  skillLevels: SkillLevel[];
+  /** Options for Employee.skills — distinct from technicalSkills/aiSkills, which back Project.technology. */
+  skills: string[];
   projectStages: ProjectStage[];
   aiTools: AITool[];
   learningPlatforms: LearningPlatform[];
   activityTypes: ActivityCategory[];
   pocCategories: POCCategory[];
+  /** Options for Project.aiAdoptionCategories — which AI capability types a project uses. */
+  aiAdoptionCategories: string[];
   impactLevels: ImpactLevel[];
   eventTypes: CalendarEventType[];
   statusValues: {
@@ -255,6 +255,8 @@ export interface CalendarEvent {
   linkedTaskId?: string | null;
   /** POC this event was blocked for, when eventType is "POC". */
   linkedPocId?: string | null;
+  /** Project this event was auto-blocked for, when created by a Project team assignment. */
+  linkedProjectId?: string | null;
   /** Shared id across sibling events created together for multiple people (team calendar). */
   blockGroupId?: string | null;
 }
@@ -282,6 +284,9 @@ export interface User {
 
 // Role & Permission framework types (Role, Permission, Resource, …).
 export * from "./permissions";
+
+// Audit log types (AuditLogEntry).
+export * from "./auditLog";
 
 // Task Board types (Task, TaskComment, TaskWorkflowStatus, …).
 export * from "./tasks";

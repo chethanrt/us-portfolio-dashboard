@@ -106,5 +106,21 @@ export function useLearning() {
     setRecords((current) => current.filter((r) => r.id !== id));
   }, []);
 
-  return { rows, employees, stats, leaderboard, isLoading, error, addRecord, updateRecord, deleteRecord };
+  /** Reflects an employee profile update (e.g. from the Learning import flow) without a full refetch. */
+  const applyEmployeeUpdate = useCallback((employee: Employee) => {
+    setEmployees((current) => current.map((e) => (e.id === employee.id ? employee : e)));
+  }, []);
+
+  return {
+    rows,
+    employees,
+    stats,
+    leaderboard,
+    isLoading,
+    error,
+    addRecord,
+    updateRecord,
+    deleteRecord,
+    applyEmployeeUpdate,
+  };
 }

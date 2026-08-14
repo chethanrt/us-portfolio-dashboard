@@ -12,12 +12,15 @@ const { fromRow, toRow } = buildRowMapper([
   { js: "hours", db: "hours" },
   { js: "certificate", db: "certificate" },
   { js: "completionDate", db: "completion_date" },
+  { js: "programCoordinator", db: "program_coordinator" },
+  { js: "minutesCompleted", db: "minutes_completed" },
 ]);
 
 export function createLearningRouter(db: Database.Database) {
   return createCrudRouter({
     db,
     table: "learning",
+    module: "Learning",
     listOrderBy: "rowid DESC", // LearningService used to prepend new records (newest-first)
     fromRow,
     toRow,

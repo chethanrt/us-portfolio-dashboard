@@ -1,13 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  activityService,
-  employeeService,
-  learningService,
-  pocService,
-  projectService,
-  skillService,
-  taskService,
-} from "@/services";
+import { activityService, employeeService, learningService, pocService, projectService, taskService } from "@/services";
 import type { ReportSources } from "@/utils/reportDefinitions";
 
 /** Loads every data source needed by the report generator. */
@@ -24,12 +16,11 @@ export function useReportsData() {
       projectService.getAll(),
       activityService.getAll(),
       learningService.getAll(),
-      skillService.getAll(),
       pocService.getAll(),
       taskService.getAll(),
     ])
-      .then(([employees, projects, activities, learning, skills, pocs, tasks]) => {
-        if (!cancelled) setSources({ employees, projects, activities, learning, skills, pocs, tasks });
+      .then(([employees, projects, activities, learning, pocs, tasks]) => {
+        if (!cancelled) setSources({ employees, projects, activities, learning, pocs, tasks });
       })
       .catch(() => {
         if (!cancelled) setError("Unable to load report data.");

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import type Database from "better-sqlite3";
+import { recordAuditEvent } from "../db/audit.ts";
 import { buildRowMapper, jsonArrayField, boolField, nullableField } from "./_fields.ts";
 import { nextTaskIds } from "../db/ids.ts";
 
@@ -32,7 +33,7 @@ const { fromRow: fromRowBase, toRow } = buildRowMapper([
   { js: "archived", db: "archived", ...boolField },
 ]);
 
-function fromRow(row: Record<string, any>) {
+function fromRow(row: any) {
   return {
     ...fromRowBase(row),
     taskNumber: row.task_number,
@@ -52,6 +53,15 @@ function fromRow(row: Record<string, any>) {
  */
 export function createTasksRouter(db: Database.Database) {
   const router = Router();
+
+  const audit = (req: any, eventType: "create" | "update" | "delete", recordId: string, row: any) =>
+    recordAuditEvent(db, {
+      actorUserId: req.header("x-actor-id") ?? "",
+      eventType,
+      module: "Tasks",
+      recordId,
+      summary: row?.title ?? "",
+    });
 
   router.get("/", (_req, res) => {
     res.json(db.prepare("SELECT * FROM tasks").all().map(fromRow));
@@ -81,7 +91,9 @@ export function createTasksRouter(db: Database.Database) {
         updatedDate: now,
         ...columns,
       });
-      res.status(201).json(fromRow(db.prepare("SELECT * FROM tasks WHERE id = ?").get(id)));
+      const created = db.prepare("SELECT * FROM tasks WHERE id = ?").get(id);
+      audit(req, "create", id, created);
+      res.status(201).json(fromRow(created));
     } catch (err) {
       res.status(400).json({ error: (err as Error).message });
     }
@@ -103,6 +115,7 @@ export function createTasksRouter(db: Database.Database) {
         res.status(404).json({ error: "NOT_FOUND" });
         return;
       }
+      audit(req, "update", req.params.id, row);
       res.json(fromRow(row));
     } catch (err) {
       res.status(400).json({ error: (err as Error).message });
@@ -110,11 +123,13 @@ export function createTasksRouter(db: Database.Database) {
   });
 
   router.delete("/:id", (req, res) => {
+    const existing = db.prepare("SELECT * FROM tasks WHERE id = ?").get(req.params.id);
     const result = db.prepare("DELETE FROM tasks WHERE id = ?").run(req.params.id);
     if (result.changes === 0) {
       res.status(404).json({ error: "NOT_FOUND" });
       return;
     }
+    audit(req, "delete", req.params.id, existing);
     res.status(204).end();
   });
 

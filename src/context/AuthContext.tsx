@@ -1,9 +1,8 @@
 import { createContext, useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { employeeService, userService } from "@/services";
+import { auditLogService, employeeService, userService } from "@/services";
 import type { Employee, User } from "@/types";
-
-const SESSION_STORAGE_KEY = "ai-portfolio-dashboard.session";
+import { SESSION_STORAGE_KEY } from "@/utils/session";
 
 export interface AuthContextValue {
   /** The logged-in account, or null when signed out. */
@@ -60,9 +59,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
+    if (account) {
+      // Fire-and-forget, and before clearing the session so X-Actor-Id still resolves to the departing user.
+      auditLogService.logEvent("logout", "Auth", `Logout: ${account.username}`).catch(() => {});
+    }
     localStorage.removeItem(SESSION_STORAGE_KEY);
     setAccount(null);
-  }, []);
+  }, [account]);
 
   const value = useMemo<AuthContextValue>(() => {
     const currentUser = account?.employeeId

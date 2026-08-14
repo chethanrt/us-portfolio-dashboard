@@ -21,4 +21,3 @@ export {
   FormSliderField,
   FormTextareaField,
 } from "./FormFields";
-export { SkillBadge } from "./SkillBadge";

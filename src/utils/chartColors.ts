@@ -10,10 +10,9 @@ export const CHART_COLORS = {
   orange: "#ea580c",
 } as const;
 
-/** Project status → color. Order in donuts: Active, Completed, On Hold, Planning. */
+/** Project status → color. Order in donuts: Active, Completed, On Hold. */
 export const PROJECT_STATUS_COLORS: Record<string, string> = {
   Active: CHART_COLORS.blue,
   Completed: CHART_COLORS.green,
   "On Hold": CHART_COLORS.orange,
-  Planning: CHART_COLORS.purple,
 };
