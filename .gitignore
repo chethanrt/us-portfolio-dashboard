@@ -25,4 +25,4 @@ npm-debug.log*
 *.local
 
 # SQLite database (each dev runs `npm run db:migrate` locally)
-server/db/*.sqlite3
+server/db/*.sqlite3*
