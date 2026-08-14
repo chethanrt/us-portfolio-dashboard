@@ -1,15 +1,7 @@
 # Database Migration Plan — JSON Files → SQLite + Backend API
 
-**Status**: Implementation underway. The backend (Express + `better-sqlite3`)
-described in Section 2 has already been built (`server/`), the frontend
-service layer has been migrated to call it, and the app now runs against a
-real shared SQLite database. Sections 1–8 below remain accurate as the
-record of *why* and *how this was planned*; treat anything phrased as a
-future proposal as historical context for a decision already made, not as
-still-open. Newer, smaller additions (like the migration-tracking system in
-the update below) are captured as dated notes rather than rewrites of the
-original plan.
-**Last updated**: 2026-08-13
+**Status**: Proposal for review — nothing in this document has been implemented yet.
+**Last updated**: 2026-08-08
 
 This document explains, in plain terms, two things:
 
@@ -169,7 +161,6 @@ flowchart LR
   well-established `better-sqlite3` package.
 - Decide on a lightweight migration tool/approach so schema changes are
   versioned and repeatable (not manual one-off edits to the database).
-  **Resolved 2026-08-13** — see the update at the end of this document.
 
 ### Phase 1 — Backend scaffolding
 - Stand up a small Express project alongside the existing frontend.
@@ -178,13 +169,16 @@ flowchart LR
   method names/behaviour so the mapping to the frontend is mechanical.
 
 ### Phase 2 — Real authentication
-- **Deferred, then fully scoped separately** — see
-  `AUTHENTICATION_IMPLEMENTATION_PLAN.md` for the concrete, file-level
-  step-by-step plan (password hashing, real server-side sessions via
-  HTTP-only cookies, auth middleware, server-side permission checks, HTTPS).
-  That document is written to be picked up and executed on its own — not
-  implemented yet as of this writing; check its **Status** line at the top
-  for the current state.
+- Today, login checks a JSON user list entirely in the browser — anyone
+  could edit that data client-side. Move this server-side: passwords
+  hashed and checked on the server, and a real session/token
+  (e.g. a signed cookie or JWT) issued on login and checked on every API
+  request.
+- Re-implement the existing role-based permission checks
+  (`canView`, `canEdit`, field-level rules, data scope "own/team/all") on
+  the **server**, not just in the React `usePermission()` hook — the hook
+  can stay for UI purposes (hiding buttons, etc.) but must no longer be
+  the only enforcement.
 
 ### Phase 3 — Frontend service layer swap
 - Rewrite each `src/services/*.ts` file so its methods call the new API
@@ -628,68 +622,3 @@ and the one that matters most when an actual emergency happens.
   actual outage will not want to reconstruct these steps from memory.
 - Run a real restore test at least once before go-live, and periodically
   afterward (quarterly is a reasonable cadence for a tool this size).
-
----
-
-## Update — 2026-08-13: Incremental schema migration tracking
-
-This closes the open item from Section 3, Phase 0 ("decide on a lightweight
-migration tool"), and directly answers a real scenario that came up during
-local testing: **how does a structural change (a new field) get promoted
-from a developer's machine to dev/production without dragging that
-developer's test data along with it?**
-
-### The gap this fixes
-
-`server/db/schema.sql` declares every table with `CREATE TABLE IF NOT
-EXISTS`. That statement only does something the *first* time a table is
-created — on any environment where the table already exists (which dev and
-production will, after their first migration), editing `schema.sql` to add
-a new column to an existing table silently does nothing. There was no
-mechanism to apply a structural change to a database that already exists.
-
-### What was added
-
-- **`server/db/migrations/`** — a folder of plain `.sql` files, one per
-  structural change, named `NNNN_description.sql` so they sort and apply in
-  order. See its `README.md` for the convention and, importantly, the rule
-  that these files must only ever contain structural changes (`ALTER
-  TABLE …`, `CREATE INDEX …`) — never test data or sample rows.
-- **`server/db/migrations.ts`** — the runner. Tracks which migration files
-  have already applied (in a new `schema_migrations` table, one row per
-  filename) and applies only the ones a given database hasn't seen yet,
-  each inside a transaction. Re-running is always safe — with nothing
-  pending, it's a no-op.
-- **`server/db/client.ts`** — `getDb()` now calls the runner automatically
-  right after applying `schema.sql`, so pending migrations apply on every
-  server start, on every environment, with no separate step to remember.
-- **`server/db/applyMigrations.ts`** (`npm run db:migrate-schema`) — the
-  same thing as a standalone script, for anyone who wants schema updates as
-  an explicit, visible deploy step rather than an implicit side effect of
-  starting the server.
-
-### The workflow this enables
-
-1. Locally: add `server/db/migrations/0001_add_project_country.sql`
-   containing `ALTER TABLE projects ADD COLUMN country TEXT NOT NULL
-   DEFAULT '';`, update the app code to use the new field, and test with
-   real-looking values (e.g. `"US"`) — that data only ever lands in the
-   developer's own local `portfolio.sqlite3`, which is `.gitignore`'d and
-   never travels anywhere.
-2. Commit and push the **migration file** (code) along with the rest of
-   the change.
-3. On dev/production, the next server start (or `npm run db:migrate-schema`
-   if run as its own deploy step) sees `0001_add_project_country.sql`
-   hasn't applied *there* yet, and applies just the `ALTER TABLE` —  every
-   existing row gets the column's default value, never the developer's
-   test value, since that value was never part of the migration file.
-4. Whoever owns that environment fills in their own real data from there.
-
-### Verified
-
-Tested against an isolated throwaway database (not the real dev
-`portfolio.sqlite3`): a migration adding a column to a table with an
-existing row applied correctly, the existing row received the column's
-default value, and running the same migration a second time was a safe
-no-op rather than erroring on a duplicate `ALTER TABLE ADD COLUMN` (a real
-risk if this weren't tracked).
