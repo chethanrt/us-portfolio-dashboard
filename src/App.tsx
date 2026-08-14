@@ -78,7 +78,7 @@ export default function App() {
             </Route>
           </Routes>
         </BrowserRouter>
-        <Toaster position="top-right" richColors />
+        <Toaster position="top-right" richColors closeButton duration={3000} />
       </PermissionProvider>
     </AuthProvider>
   );
