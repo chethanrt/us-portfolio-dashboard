@@ -12,6 +12,7 @@ const EDITABLE_KEYS = [
   "pocCategories",
   "learningPlatforms",
   "eventTypes",
+  "aiAdoptionCategories",
 ];
 
 function sortIfEditableList(key: string, value: unknown): unknown {

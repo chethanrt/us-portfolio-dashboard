@@ -12,7 +12,8 @@ export type EditableSettingsKey =
   | "activityTypes"
   | "pocCategories"
   | "learningPlatforms"
-  | "eventTypes";
+  | "eventTypes"
+  | "aiAdoptionCategories";
 
 /**
  * Settings master data supports list editing. Backed by the `settings`

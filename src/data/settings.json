@@ -87,6 +87,13 @@
     "Marketing",
     "Testing"
   ],
+  "aiAdoptionCategories": [
+    "API Generation",
+    "AI Design",
+    "Claude Code",
+    "Code Generation",
+    "UI Generation"
+  ],
   "impactLevels": [
     "Low",
     "Medium",

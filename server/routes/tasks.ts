@@ -33,7 +33,7 @@ const { fromRow: fromRowBase, toRow } = buildRowMapper([
   { js: "archived", db: "archived", ...boolField },
 ]);
 
-function fromRow(row: Record<string, any>) {
+function fromRow(row: any) {
   return {
     ...fromRowBase(row),
     taskNumber: row.task_number,

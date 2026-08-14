@@ -32,6 +32,7 @@ export const REPORT_TYPES = [
   "Weekly Summary",
   "Monthly Summary",
   "Project Summary",
+  "Skill Summary",
   "AI Activities",
   "Learning Progress",
   "POCs",
@@ -137,6 +138,41 @@ function projectSummary(sources: ReportSources, rangeDays: number): ReportResult
       { key: "pocs", label: "POCs" },
     ],
     rows,
+  };
+}
+
+/** Per-skill headcount and team coverage, from each employee's selected `skills` (Settings-managed list). */
+function skillSummaryReport(sources: ReportSources): ReportResult {
+  const bySkill = new Map<string, number>();
+  for (const employee of sources.employees) {
+    for (const skill of employee.skills) {
+      bySkill.set(skill, (bySkill.get(skill) ?? 0) + 1);
+    }
+  }
+  const totalEmployees = sources.employees.length || 1;
+  const topSkill = [...bySkill.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
+  const avgSkillsPerEmployee =
+    sources.employees.reduce((sum, e) => sum + e.skills.length, 0) / totalEmployees;
+
+  return {
+    metrics: [
+      { label: "Skills Tracked", value: bySkill.size },
+      { label: "Employees with Skills", value: sources.employees.filter((e) => e.skills.length > 0).length },
+      { label: "Avg Skills / Employee", value: avgSkillsPerEmployee.toFixed(1) },
+      { label: "Top Skill", value: topSkill },
+    ],
+    columns: [
+      { key: "skill", label: "Skill" },
+      { key: "employees", label: "Employees" },
+      { key: "coverage", label: "Team Coverage" },
+    ],
+    rows: [...bySkill.entries()]
+      .map(([skill, count]) => ({
+        skill,
+        employees: count,
+        coverage: `${Math.round((count / totalEmployees) * 100)}%`,
+      }))
+      .sort((a, b) => Number(b.employees) - Number(a.employees)),
   };
 }
 
@@ -389,6 +425,8 @@ export function computeReport(type: ReportType, sources: ReportSources, filters:
       return activitySummary(sources, 30, filters.projectId);
     case "Project Summary":
       return projectSummary(sources, filters.rangeDays);
+    case "Skill Summary":
+      return skillSummaryReport(sources);
     case "AI Activities":
       return activitiesReport(sources, filters.rangeDays, filters.projectId);
     case "Learning Progress":

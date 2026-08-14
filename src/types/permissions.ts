@@ -20,6 +20,7 @@ export type ModuleId =
   | "activities"
   | "people"
   | "skills"
+  | "aiAdoption"
   | "learning"
   | "pocs"
   | "reports"

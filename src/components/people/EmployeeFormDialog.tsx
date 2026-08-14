@@ -15,8 +15,20 @@ const REQUIRED = "This field is required.";
 
 const TEAMS = ["Leadership", "Software Engineering", "Marketing & Communication", "Quality Assurance"];
 
-/** Sentinel for "no manager" — Radix Select can't hold an empty string value. */
+const BUSINESS_UNITS = [
+  "TS-ADM",
+  "TS-Data",
+  "TS- Digital eCommerce",
+  "TS- Digital Marketing",
+  "TS- Delivery Management",
+  "TS- Project Management",
+];
+
+const TECH_NON_TECH = ["Tech", "Non-Tech"];
+
+/** Sentinel for "no manager"/"no leader" — Radix Select can't hold an empty string value. */
 const NO_MANAGER = "__none__";
+const NO_LEADER = "__none__";
 
 function buildEmployeeSchema(takenEmails: Set<string>) {
   return z.object({
@@ -46,6 +58,9 @@ function buildEmployeeSchema(takenEmails: Set<string>) {
     pocIds: z.array(z.string()),
     status: z.string().min(1, REQUIRED),
     managerId: z.string(),
+    leaderId: z.string(),
+    businessUnit: z.string(),
+    techNonTech: z.string().min(1, REQUIRED),
   });
 }
 
@@ -61,6 +76,9 @@ const EMPTY_VALUES: EmployeeFormValues = {
   pocIds: [],
   status: "Active",
   managerId: NO_MANAGER,
+  leaderId: NO_LEADER,
+  businessUnit: "",
+  techNonTech: "Tech",
 };
 
 interface EmployeeFormDialogProps {
@@ -127,6 +145,9 @@ export function EmployeeFormDialog({
               pocIds: pocs.filter((p) => p.team.includes(employee.id)).map((p) => p.id),
               status: employee.status,
               managerId: employee.managerId ?? NO_MANAGER,
+              leaderId: employee.leaderId ?? NO_LEADER,
+              businessUnit: employee.businessUnit,
+              techNonTech: employee.techNonTech,
             }
           : EMPTY_VALUES
       );
@@ -150,6 +171,16 @@ export function EmployeeFormDialog({
     ];
   }, [employees, employee]);
 
+  const leaderOptions = useMemo(
+    () => [
+      { value: NO_LEADER, label: "— No leader —" },
+      ...employees
+        .filter((e) => e.id !== employee?.id && e.status !== "Ex-Employee")
+        .map((e) => ({ value: e.id, label: `${e.name} (${e.role})` })),
+    ],
+    [employees, employee]
+  );
+
   const handleSubmit = form.handleSubmit(async (values) => {
     setIsSaving(true);
     try {
@@ -166,6 +197,9 @@ export function EmployeeFormDialog({
           profileImage: employee?.profileImage ?? "",
           status: values.status as Employee["status"],
           managerId: values.managerId === NO_MANAGER ? null : values.managerId,
+          leaderId: values.leaderId === NO_LEADER ? null : values.leaderId,
+          businessUnit: values.businessUnit,
+          techNonTech: values.techNonTech as Employee["techNonTech"],
         },
         values.pocIds
       );
@@ -242,6 +276,34 @@ export function EmployeeFormDialog({
               label="Reports To"
               options={managerOptions}
               disabled={readOnly("managerId")}
+            />
+          )}
+          {show("leaderId") && (
+            <FormSelectField
+              control={form.control}
+              name="leaderId"
+              label="Leader"
+              options={leaderOptions}
+              disabled={readOnly("leaderId")}
+            />
+          )}
+          {show("businessUnit") && (
+            <FormSelectField
+              control={form.control}
+              name="businessUnit"
+              label="Business Unit"
+              options={BUSINESS_UNITS}
+              disabled={readOnly("businessUnit")}
+            />
+          )}
+          {show("techNonTech") && (
+            <FormSelectField
+              control={form.control}
+              name="techNonTech"
+              label="Tech/Non-Tech"
+              options={TECH_NON_TECH}
+              required
+              disabled={readOnly("techNonTech")}
             />
           )}
           {show("skills") && (

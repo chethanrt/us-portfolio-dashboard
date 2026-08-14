@@ -14,6 +14,9 @@ const { fromRow, toRow } = buildRowMapper([
   { js: "profileImage", db: "profile_image" },
   { js: "status", db: "status" },
   { js: "managerId", db: "manager_id", ...nullableField },
+  { js: "leaderId", db: "leader_id", ...nullableField },
+  { js: "businessUnit", db: "business_unit" },
+  { js: "techNonTech", db: "tech_non_tech" },
 ]);
 
 export function createEmployeesRouter(db: Database.Database) {

@@ -200,8 +200,8 @@ function main(): void {
   // ---- Insert everything in one transaction ----
   const run = db.transaction(() => {
     const insertEmployee = db.prepare(`
-      INSERT INTO employees (id, name, email, role, experience, team, skills_json, projects_json, profile_image, status, manager_id)
-      VALUES (@id, @name, @email, @role, @experience, @team, @skillsJson, @projectsJson, @profileImage, @status, @managerId)
+      INSERT INTO employees (id, name, email, role, experience, team, skills_json, projects_json, profile_image, status, manager_id, leader_id, business_unit, tech_non_tech)
+      VALUES (@id, @name, @email, @role, @experience, @team, @skillsJson, @projectsJson, @profileImage, @status, @managerId, @leaderId, @businessUnit, @techNonTech)
     `);
     for (const e of employees) {
       insertEmployee.run({
@@ -216,12 +216,15 @@ function main(): void {
         profileImage: e.profileImage ?? "",
         status: e.status,
         managerId: e.managerId ?? null,
+        leaderId: e.leaderId ?? null,
+        businessUnit: e.businessUnit ?? "",
+        techNonTech: e.techNonTech ?? "Tech",
       });
     }
 
     const insertProject = db.prepare(`
-      INSERT INTO projects (id, name, client, program, manager, tech_lead, project_manager, technology_json, stage, status, ai_adoption, members_json, start_date, end_date)
-      VALUES (@id, @name, @client, @program, @manager, @techLead, @projectManager, @technologyJson, @stage, @status, @aiAdoption, @membersJson, @startDate, @endDate)
+      INSERT INTO projects (id, name, client, program, manager, tech_lead, project_manager, technology_json, stage, status, ai_adoption, ai_adoption_categories_json, members_json, start_date, end_date)
+      VALUES (@id, @name, @client, @program, @manager, @techLead, @projectManager, @technologyJson, @stage, @status, @aiAdoption, @aiAdoptionCategoriesJson, @membersJson, @startDate, @endDate)
     `);
     for (const p of projects) {
       insertProject.run({
@@ -236,6 +239,7 @@ function main(): void {
         stage: p.stage,
         status: p.status,
         aiAdoption: p.aiAdoption ?? 0,
+        aiAdoptionCategoriesJson: JSON.stringify(p.aiAdoptionCategories ?? []),
         membersJson: JSON.stringify(p.members ?? []),
         startDate: p.startDate ?? "",
         endDate: p.endDate ?? "",
@@ -264,8 +268,8 @@ function main(): void {
     }
 
     const insertLearning = db.prepare(`
-      INSERT INTO learning (id, employee_id, course, platform, status, progress, hours, certificate, completion_date)
-      VALUES (@id, @employeeId, @course, @platform, @status, @progress, @hours, @certificate, @completionDate)
+      INSERT INTO learning (id, employee_id, course, platform, status, progress, hours, certificate, completion_date, program_coordinator, minutes_completed)
+      VALUES (@id, @employeeId, @course, @platform, @status, @progress, @hours, @certificate, @completionDate, @programCoordinator, @minutesCompleted)
     `);
     for (const l of learning) {
       insertLearning.run({
@@ -278,6 +282,8 @@ function main(): void {
         hours: l.hours ?? 0,
         certificate: l.certificate ?? "",
         completionDate: l.completionDate ?? "",
+        programCoordinator: l.programCoordinator ?? "",
+        minutesCompleted: l.minutesCompleted ?? 0,
       });
     }
 

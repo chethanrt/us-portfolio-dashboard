@@ -35,6 +35,8 @@ export type ProjectStatus = "Active" | "On Hold" | "Completed";
 
 export type EmployeeStatus = "Active" | "Inactive" | "Ex-Employee";
 
+export type TechNonTech = "Tech" | "Non-Tech";
+
 export type AITool =
   | "Claude"
   | "ChatGPT"
@@ -94,6 +96,11 @@ export interface Employee {
   status: EmployeeStatus;
   /** Employee id this person reports to; null at the top of the hierarchy. */
   managerId: string | null;
+  /** Skip-level manager (this person's manager's manager); null if not set. */
+  leaderId: string | null;
+  /** Business unit / department code, e.g. "TS-ADM". */
+  businessUnit: string;
+  techNonTech: TechNonTech;
 }
 
 /** projects.json */
@@ -110,6 +117,8 @@ export interface Project {
   stage: ProjectStage;
   status: ProjectStatus;
   aiAdoption: number;
+  /** Which AI capability categories (Settings-managed list) this project uses. */
+  aiAdoptionCategories: string[];
   members: string[];
   startDate: string;
   endDate: string;
@@ -142,6 +151,10 @@ export interface LearningRecord {
   hours: number;
   certificate: string;
   completionDate: string;
+  /** Who runs/owns this training program, e.g. "Chethan R T". */
+  programCoordinator: string;
+  /** Raw minutes completed, as reported by the source (e.g. Udemy export); `hours` is derived from this for the existing KPIs. */
+  minutesCompleted: number;
 }
 
 /** pocs.json */
@@ -182,6 +195,8 @@ export interface AppSettings {
   learningPlatforms: LearningPlatform[];
   activityTypes: ActivityCategory[];
   pocCategories: POCCategory[];
+  /** Options for Project.aiAdoptionCategories — which AI capability types a project uses. */
+  aiAdoptionCategories: string[];
   impactLevels: ImpactLevel[];
   eventTypes: CalendarEventType[];
   statusValues: {

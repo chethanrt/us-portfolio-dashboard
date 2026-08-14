@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { BookOpen, CheckCircle2, Clock, GraduationCap, Plus } from "lucide-react";
+import { BookOpen, CheckCircle2, Clock, GraduationCap, Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
 import {
   ALL_FILTER,
@@ -14,6 +14,7 @@ import {
 } from "@/components/common";
 import { LearningCard } from "@/components/learning/LearningCard";
 import { LearningFormDialog } from "@/components/learning/LearningFormDialog";
+import { LearningImportDialog } from "@/components/learning/LearningImportDialog";
 import { LearningLeaderboard } from "@/components/learning/LearningLeaderboard";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,8 +27,18 @@ const PLATFORMS = ["Udemy AI Lab", "Internal Training", "Other"];
 const STATUSES = ["Not Started", "In Progress", "Completed"];
 
 export default function Learning() {
-  const { rows, employees, stats, leaderboard, isLoading, error, addRecord, updateRecord, deleteRecord } =
-    useLearning();
+  const {
+    rows,
+    employees,
+    stats,
+    leaderboard,
+    isLoading,
+    error,
+    addRecord,
+    updateRecord,
+    deleteRecord,
+    applyEmployeeUpdate,
+  } = useLearning();
   const { currentUser } = useAuth();
   const { canCreate, canEditRow, canDeleteRow, isOwnDataScope } = usePermission();
   const ownDataOnly = isOwnDataScope("learning");
@@ -62,6 +73,7 @@ export default function Learning() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<LearningRow | null>(null);
   const [deleting, setDeleting] = useState<LearningRow | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -139,14 +151,19 @@ export default function Learning() {
         }
         actions={
           canCreate("learning") ? (
-            <Button
-              onClick={() => {
-                setEditing(null);
-                setFormOpen(true);
-              }}
-            >
-              <Plus /> Add Learning
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setImportOpen(true)}>
+                <Upload /> Import
+              </Button>
+              <Button
+                onClick={() => {
+                  setEditing(null);
+                  setFormOpen(true);
+                }}
+              >
+                <Plus /> Add Learning
+              </Button>
+            </div>
           ) : undefined
         }
       />
@@ -210,6 +227,14 @@ export default function Learning() {
         record={editing}
         employees={formEmployees}
         onSave={handleSave}
+      />
+
+      <LearningImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        employees={employees}
+        onImportRecord={addRecord}
+        onEmployeeUpdated={applyEmployeeUpdate}
       />
 
       <ConfirmationDialog

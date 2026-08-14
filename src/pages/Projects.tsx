@@ -44,12 +44,14 @@ export default function Projects() {
   const [statusOptions, setStatusOptions] = useState<string[]>([]);
   const [stageOptions, setStageOptions] = useState<string[]>([]);
   const [technicalSkills, setTechnicalSkills] = useState<string[]>([]);
+  const [aiAdoptionCategoryOptions, setAiAdoptionCategoryOptions] = useState<string[]>([]);
 
   useEffect(() => {
     settingsService.getSettings().then((settings) => {
       setStatusOptions(settings.statusValues.project);
       setStageOptions(settings.projectStages);
       setTechnicalSkills(settings.technicalSkills);
+      setAiAdoptionCategoryOptions(settings.aiAdoptionCategories);
     });
   }, []);
 
@@ -196,6 +198,7 @@ export default function Projects() {
         projects={projects}
         employees={employees}
         technicalSkills={technicalSkills}
+        aiAdoptionCategoryOptions={aiAdoptionCategoryOptions}
         onSave={handleSave}
       />
 

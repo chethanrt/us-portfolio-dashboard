@@ -112,27 +112,54 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
         </TabsContent>
 
         {showProjects && (
-          <TabsContent value="projects" className="mt-4 space-y-2">
-            {isLoading || !details ? (
-              <LoadingSkeleton variant="list" count={2} />
-            ) : details.projects.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Not currently assigned to any project.</p>
-            ) : (
-              details.projects.map(({ project, roles }) => (
-                <div key={project.id} className="flex items-center justify-between gap-2 rounded-lg border p-2.5">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{project.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">{project.client}</p>
+          <TabsContent value="projects" className="mt-4 space-y-4">
+            <div className="space-y-2">
+              {isLoading || !details ? (
+                <LoadingSkeleton variant="list" count={2} />
+              ) : details.projects.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Not currently assigned to any project.</p>
+              ) : (
+                details.projects.map(({ project, roles }) => (
+                  <div key={project.id} className="flex items-center justify-between gap-2 rounded-lg border p-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{project.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">{project.client}</p>
+                    </div>
+                    <div className="flex shrink-0 flex-wrap justify-end gap-1">
+                      {roles.map((r) => (
+                        <Badge key={r} variant="secondary">
+                          {r}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex shrink-0 flex-wrap justify-end gap-1">
-                    {roles.map((r) => (
-                      <Badge key={r} variant="secondary">
-                        {r}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              ))
+                ))
+              )}
+            </div>
+
+            {!isLoading && details && details.projects.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-sm font-medium">AI Adoption</p>
+                {(() => {
+                  const categories = [
+                    ...new Set(details.projects.flatMap(({ project }) => project.aiAdoptionCategories)),
+                  ];
+                  return categories.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No AI adoption categories yet.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {categories.map((category) => (
+                        <Badge key={category} variant="outline">
+                          {category}
+                        </Badge>
+                      ))}
+                    </div>
+                  );
+                })()}
+                <p className="text-xs text-muted-foreground">
+                  Based on the AI adoption categories of the projects above.
+                </p>
+              </div>
             )}
           </TabsContent>
         )}

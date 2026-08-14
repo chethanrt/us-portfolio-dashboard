@@ -58,6 +58,7 @@ function buildProjectSchema(existing: Project[], editingId: string | null) {
       startDate: z.string().min(1, "Start Date cannot be empty."),
       endDate: z.string(),
       aiAdoption: z.number().min(0).max(100),
+      aiAdoptionCategories: z.array(z.string()),
       members: z.array(z.string()).min(1, "Please assign at least one team member."),
     })
     // docs/08: End Date must be after Start Date
@@ -82,6 +83,7 @@ const EMPTY_VALUES: ProjectFormValues = {
   startDate: "",
   endDate: "",
   aiAdoption: 0,
+  aiAdoptionCategories: [],
   members: [],
 };
 
@@ -94,6 +96,8 @@ interface ProjectFormDialogProps {
   employees: Employee[];
   /** Settings-managed technology list (Settings > Technical Skills). */
   technicalSkills: string[];
+  /** Settings-managed AI adoption category options (Settings > AI Adoption Categories). */
+  aiAdoptionCategoryOptions: string[];
   onSave: (values: Omit<Project, "id">) => Promise<void>;
 }
 
@@ -104,6 +108,7 @@ export function ProjectFormDialog({
   projects,
   employees,
   technicalSkills,
+  aiAdoptionCategoryOptions,
   onSave,
 }: ProjectFormDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
@@ -138,6 +143,7 @@ export function ProjectFormDialog({
               startDate: project.startDate,
               endDate: project.endDate,
               aiAdoption: project.aiAdoption,
+              aiAdoptionCategories: project.aiAdoptionCategories,
               members: project.members,
             }
           : EMPTY_VALUES
@@ -168,6 +174,7 @@ export function ProjectFormDialog({
         startDate: values.startDate,
         endDate: values.endDate,
         aiAdoption: values.aiAdoption,
+        aiAdoptionCategories: values.aiAdoptionCategories,
         members: values.members,
       });
       onOpenChange(false);
@@ -243,6 +250,15 @@ export function ProjectFormDialog({
             <div className="sm:col-span-2">
               <FormSliderField control={form.control} name="aiAdoption" label="AI Adoption" disabled={readOnly("aiAdoption")} />
             </div>
+          )}
+          {show("aiAdoptionCategories") && (
+            <FormCheckboxGroupField
+              control={form.control}
+              name="aiAdoptionCategories"
+              label="AI Adoption Categories"
+              options={aiAdoptionCategoryOptions.map((c) => ({ value: c, label: c }))}
+              disabled={readOnly("aiAdoptionCategories")}
+            />
           )}
           {show("members") && (
             <FormCheckboxGroupField

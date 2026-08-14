@@ -15,7 +15,10 @@
     "db:migrate-skills-field": "tsx server/db/migrate-employee-skills.ts",
     "db:migrate-drop-skill-matrix": "tsx server/db/migrate-drop-skill-matrix.ts",
     "db:migrate-add-project-manager": "tsx server/db/migrate-add-project-manager.ts",
-    "db:migrate-add-linked-project": "tsx server/db/migrate-add-linked-project.ts"
+    "db:migrate-add-linked-project": "tsx server/db/migrate-add-linked-project.ts",
+    "db:migrate-add-employee-org-fields": "tsx server/db/migrate-add-employee-org-fields.ts",
+    "db:migrate-add-learning-import-fields": "tsx server/db/migrate-add-learning-import-fields.ts",
+    "db:migrate-add-ai-adoption-categories": "tsx server/db/migrate-add-ai-adoption-categories.ts"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.21",
@@ -43,6 +46,7 @@
     "recharts": "^3.1.0",
     "sonner": "^2.0.0",
     "tailwind-merge": "^3.3.0",
+    "xlsx": "^0.18.5",
     "zod": "^4.0.0"
   },
   "devDependencies": {

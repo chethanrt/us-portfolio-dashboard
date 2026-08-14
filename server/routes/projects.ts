@@ -14,6 +14,7 @@ const { fromRow, toRow } = buildRowMapper([
   { js: "stage", db: "stage" },
   { js: "status", db: "status" },
   { js: "aiAdoption", db: "ai_adoption" },
+  { js: "aiAdoptionCategories", db: "ai_adoption_categories_json", ...jsonArrayField },
   { js: "members", db: "members_json", ...jsonArrayField },
   { js: "startDate", db: "start_date" },
   { js: "endDate", db: "end_date" },

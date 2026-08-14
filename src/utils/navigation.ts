@@ -10,6 +10,7 @@ import {
   Lightbulb,
   Settings,
   ShieldCheck,
+  Sparkles,
   UserCog,
   Users,
 } from "lucide-react";
@@ -32,6 +33,7 @@ export const NAV_ITEMS: NavItem[] = [
   { title: "People", path: "/people", icon: Users, module: "people" },
   { title: "Calendar", path: "/calendar", icon: CalendarDays, module: "people" },
   { title: "Skill Matrix", path: "/skills", icon: LayoutGrid, module: "skills" },
+  { title: "AI Adoption", path: "/ai-adoption", icon: Sparkles, module: "aiAdoption" },
   { title: "Learning", path: "/learning", icon: GraduationCap, module: "learning" },
   { title: "POCs", path: "/pocs", icon: Lightbulb, module: "pocs" },
   { title: "Reports", path: "/reports", icon: BarChart3, module: "reports" },
