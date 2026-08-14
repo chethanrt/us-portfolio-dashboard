@@ -9,7 +9,14 @@
 > original aspirational spec (see `docs/` for the original requirements/specs
 > that seeded this project).
 >
-> Last updated: 2026-08-08
+> Last updated: 2026-08-13
+>
+> **Architecture note**: this app was originally built with no backend at
+> all (JSON files + `localStorage`, per §1's original design). It has
+> since been migrated to a real shared backend — see the fully rewritten
+> §1, §2, and §3 below, and `project-documentation/DATABASE_MIGRATION_PLAN.md`
+> for the complete story of why and how, including disaster recovery and
+> schema migration tracking.
 
 ---
 
@@ -22,14 +29,22 @@ proofs-of-concept are being built, and how everyone's time is scheduled. It is
 explicitly **not** a replacement for Jira, Azure DevOps, an ERP, an HRMS, or a
 CRM — it stays lightweight and single-purpose.
 
-There is **no backend**. Every "table" is a JSON file bundled into the app;
-every mutation is persisted to the browser's `localStorage` under app-specific
-keys, with the JSON file acting only as the seed/fallback. This keeps a future
-migration to a real API straightforward — every data shape already mirrors
-what a REST/GraphQL response would look like, and every access goes through a
-service class (never a direct component-to-JSON import), so swapping a
-service's internals for real HTTP calls is the only change a migration would
-require.
+There **is a backend**: a small Express API (`server/`) in front of a real
+shared SQLite database (`server/db/portfolio.sqlite3`, via `better-sqlite3`),
+so every user sees the same data instead of each browser keeping its own
+private copy. This replaced an earlier no-backend design (JSON files +
+`localStorage`) once the app needed to be genuinely multi-user — see
+`DATABASE_MIGRATION_PLAN.md` for the full rationale and migration writeup.
+
+The original JSON files in `src/data/` still exist, but only as the
+**one-time seed** for a fresh database (`npm run db:migrate`) — the running
+app never reads them directly. Every entity shape in §4 below is unchanged
+from the original design (the migration was deliberately built so every
+data shape already mirrored what a REST response would look like, and every
+access already went through a service class rather than a direct
+component-to-JSON import) — that's exactly what made swapping each
+service's internals from `localStorage` to real HTTP calls a contained
+change instead of a rewrite.
 
 ---
 
@@ -49,9 +64,14 @@ require.
 | Dates | `date-fns` |
 | Toasts | Sonner |
 | State management | React Context + custom hooks only — no Redux/MobX/Zustand |
-| "Database" | JSON files in `src/data/`, read through service classes, mutations persisted to `localStorage` |
+| Backend API | Express (`server/`), one router per entity, mounted at `/api/<entity>` |
+| Database | SQLite via `better-sqlite3` (`server/db/portfolio.sqlite3`), WAL mode |
+| Seed data | `src/data/*.json` — read once by `npm run db:migrate`, never at runtime |
 
-No Express, no Node API, no real database — by design (see `CLAUDE.md`).
+`CLAUDE.md`'s original tech stack list still says "No backend, no Express,
+no database" — that constraint was superseded by the migration described in
+`DATABASE_MIGRATION_PLAN.md` and should be treated as outdated wherever the
+two documents disagree.
 
 ---
 
@@ -78,14 +98,43 @@ No Express, no Node API, no real database — by design (see `CLAUDE.md`).
 │  DataTable, EmptyState, etc.    │             │  delete + entity-specific     │
 └───────────────────────────────┘              │  methods and side effects     │
                                                   └───────────────┬────────────────┘
-                                                                   │
+                                                                   │ apiRequest()
+                                                                   │ (fetch, JSON over HTTP)
                                                                    ▼
                                                   ┌───────────────────────────────┐
-                                                  │  Data layer                    │
-                                                  │  src/data/*.json  (seed)       │
-                                                  │  localStorage     (mutations)  │
+                                                  │  Express API (server/)         │
+                                                  │  One thin CRUD router per      │
+                                                  │  entity (server/routes/*.ts) — │
+                                                  │  no business logic, no auth,   │
+                                                  │  no validation (see below)     │
+                                                  └───────────────┬────────────────┘
+                                                                   │ better-sqlite3
+                                                                   ▼
+                                                  ┌───────────────────────────────┐
+                                                  │  SQLite database               │
+                                                  │  server/db/portfolio.sqlite3   │
+                                                  │  (src/data/*.json only seeds   │
+                                                  │  it once, via db:migrate)      │
                                                   └───────────────────────────────┘
 ```
+
+**Important, and different from what the diagram might suggest**: moving
+persistence into a real database did **not** add any server-side
+enforcement. All business logic (cross-entity sync, delete guards,
+scheduling-conflict checks, etc.) and all permission/field-visibility
+checks (§6) still live entirely in the frontend service classes and the
+`usePermission()` hook — exactly as before the migration, by deliberate
+design (see the comment at the top of `server/routes/_crud.ts`). The
+Express routes are intentionally "dumb": they read/write whatever they're
+given, with **no request validation and no authentication check** on any
+endpoint (the one exception is `POST /api/users/authenticate`, which does
+the login credential match server-side — see §6). Practically, this means
+anyone who can reach the API's port on the network can read or write any
+data directly, bypassing the UI and every permission rule entirely, with no
+login required. This was an accepted, explicit tradeoff to keep the
+migration scoped (see `DATABASE_MIGRATION_PLAN.md` Phase 2, "Real
+authentication," which was intentionally deferred) — it is a real gap, not
+an oversight, and should be closed before this is treated as production-hardened.
 
 Cross-cutting layers wrap all of the above:
 
@@ -119,7 +168,9 @@ multiple independent service calls with `Promise.all`.
 All entity shapes live in `src/types/index.ts` (plus `src/types/tasks.ts` for
 Task Board types and `src/types/permissions.ts` for the RBAC framework — both
 re-exported from `index.ts`). Every JSON file in `src/data/` corresponds to
-exactly one interface below.
+exactly one interface below **and to one SQLite table** of the same shape
+(see `server/db/schema.sql`) — the JSON file is only ever read once, as the
+seed for that table, not at runtime.
 
 ### 4.1 Employee (`employees.json`)
 ```ts
@@ -350,16 +401,29 @@ typing the URL directly (still permission-gated by `RequirePermission`).
 ## 6. Authentication & Permission Framework
 
 ### 6.1 Authentication
-Client-side demo auth only — **not production security** (plaintext
-passwords in JSON/localStorage, no hashing, no backend). Flow:
+Still demo-grade auth, **not production security** — the migration to a
+real database (§1–§3) moved *where* the credential check runs, but not
+*how* it works: passwords are plaintext, unhashed, in the `users` table.
+Flow:
 
 ```
 Login page → UserService.authenticate(username, password)
-  → matches users.json / localStorage "ai-portfolio-dashboard.users"
-  → must have status "Active"
+  → POST /api/users/authenticate
+  → server: SELECT * FROM users WHERE username = ? AND password = ? AND status = 'Active'
+      (plaintext comparison, no hashing — see server/routes/users.ts)
   → on success: localStorage["ai-portfolio-dashboard.session"] = user.id
   → AuthContext loads the linked Employee (via user.employeeId) as `currentUser`
 ```
+
+This credential check is the **one deliberate exception** to "all business
+logic stays in the frontend" (§3) — doing the match server-side means a
+failed or successful login attempt never ships the full plaintext-password
+user list to the browser's network tab the way a naive `GET /api/users`
+would. Every other read/write on `/api/users` (and every other entity) has
+no such protection: there is no session token or credential required to
+call the API directly (see §3's callout) — the session stored in
+`localStorage` after login is only ever checked by the **frontend**, never
+sent to or verified by the server on subsequent requests.
 `AuthContext` (`src/context/AuthContext.tsx`) exposes: `account` (the `User`),
 `currentUser` (the linked `Employee`, null for accounts like Super Admin with
 no employee), `isAuthenticated`, `isLoading`, `login()`, `logout()`.
@@ -567,10 +631,14 @@ but is **not currently rendered** on the page (dead/unused code).
   record being edited); End Date must be after Start Date.
 - **Delete guard**: `ProjectService.delete()` throws `"REFERENCED"` (shown as
   a friendly toast) if any `Activity` or `POC` still points at the project.
-- **Data-shape migration note**: `technology` used to be a single `string`;
-  `ProjectService.load()` still defensively coerces any legacy single-string
-  value found in `localStorage` into a one-item array, so old saved data
-  doesn't crash the new multi-select UI.
+- **Data-shape migration note (historical)**: `technology` used to be a
+  single `string`, and `ProjectService.load()` used to defensively coerce
+  any legacy single-string value found in `localStorage` into a one-item
+  array. That coercion no longer exists — the SQLite migration (§1–§3)
+  removed it along with the rest of `ProjectService`'s `localStorage`
+  logic, since the `technology` column now has one fixed shape (a JSON-array
+  column) from creation. Any future column-shape change now goes through a
+  schema migration (`server/db/migrations/`) instead.
 - **Team ↔ People sync**: `ProjectService.create()`/`update()` call
   `employeeService.syncProjectMembership(projectName, members, previousMembers)`
   after persisting, which adds the project's name to every newly added
@@ -937,10 +1005,14 @@ calendar events, tied together by `POC.blockGroupId` rather than a single
   itself — §16.4's check is the sole gate, run once by the form. A future
   second entry point (bulk import, API) would need to call
   `checkPOCScheduleConflicts()` itself.
-- **Data migration**: `POCService.load()` normalizes any POC (seed or
-  `localStorage`) missing the newer scheduling fields to safe defaults
-  (`team: []`, empty dates/time, `hoursPerDay: 0`, `blockGroupId: null`)
-  rather than crashing.
+- **Data migration (historical)**: `POCService.load()` used to normalize any
+  POC (seed or `localStorage`) missing the newer scheduling fields to safe
+  defaults (`team: []`, empty dates/time, `hoursPerDay: 0`,
+  `blockGroupId: null`) rather than crashing. That normalization no longer
+  exists post-SQLite-migration — the `pocs` table's columns have a fixed
+  shape with real `DEFAULT` values from creation (`server/db/schema.sql`),
+  and any future field addition goes through a schema migration
+  (`server/db/migrations/`) instead of per-read JS coercion.
 
 ---
 
@@ -990,14 +1062,16 @@ each backs) — as an "Add / Edit / Delete" table over a plain `string[]`.
 Read-only for anyone without `canEdit("settings")` (a `Badge` shows
 "Read-only ({role name})" instead of the edit controls).
 
-**Self-healing sort**: `SettingsService.withSortedLists()` re-sorts every
-editable list alphabetically on *every read* — from `localStorage` or from
-the seed JSON, regardless of how it got there — so lists can never drift back
-to an unsorted/scattered state, even from a stale cache saved before this
-behavior existed (falls back to the seed value for any key an old cache
-predates, rather than discarding the rest of that cache's customizations).
-`SettingsSection` also re-sorts on every add/rename, so new entries land in
-the right place immediately.
+**Always-sorted lists**: every editable list is re-sorted alphabetically on
+every read *and* every write. This logic now lives server-side
+(`server/routes/settings.ts`'s `sortIfEditableList()`, applied both when
+returning `GET /api/settings` and when persisting `PUT /api/settings/:key`)
+— it moved from the frontend's `SettingsService.withSortedLists()` (which
+no longer exists) during the SQLite migration, since sorting on write there
+means every reader always gets an already-sorted list, regardless of which
+client wrote it last. `SettingsSection` also re-sorts its local state on
+every add/rename, so new entries land in the right place immediately in
+the UI, ahead of the next full refetch.
 
 ---
 
@@ -1060,7 +1134,9 @@ each one crosses a service boundary that isn't obvious from any single page.
 ### 21.1 Login → session restore
 ```
 Login page → UserService.authenticate(username, password)
-  → match in users.json / localStorage, require status === "Active"
+  → POST /api/users/authenticate → server-side match against the `users`
+    table, require status === "Active" (see §6.1 — the one credential
+    check that runs server-side; everything else below is frontend-only)
   → success: localStorage["ai-portfolio-dashboard.session"] = user.id
   → AuthContext: EmployeeService.getAll() → find by user.employeeId → currentUser
   → PermissionProvider: RoleService.getById(user.roleId) + PermissionService.getByRoleId(user.roleId)
@@ -1135,39 +1211,62 @@ Component renders → usePermission() → canView/canEdit/canViewField/... (§6.
 
 ## 22. Non-Functional Notes
 
-- **No backend, ever (by design)** — every service persists to
-  `localStorage` under keys like `ai-portfolio-dashboard.<entity>`, falling
-  back to the bundled `src/data/*.json` seed only when that key doesn't exist
-  yet. Seed files for most transactional entities (`activities.json`,
+- **Real shared backend (as of 2026-08-13)** — every service persists to a
+  shared SQLite database via a small Express API (§1–§3), not to each
+  browser's own `localStorage`. `src/data/*.json` is only ever read once, by
+  `npm run db:migrate`, to seed a fresh database. Seed content is unchanged
+  from the original design: most transactional entities (`activities.json`,
   `calendarEvents.json`, `learning.json`, `pocs.json`, `projects.json`,
-  `skills.json`, `tasks.json`) currently ship **empty** (`[]`) — only
+  `skills.json`, `tasks.json`) ship **empty** (`[]`) — only
   `employees.json`, `users.json`, `roles.json`, `permissions.json`,
   `resources.json`, `settings.json`, `taskCategories.json`, and
   `taskWorkflow.json` have real seeded content. The app is meant to be
-  populated by its ~30 users at runtime.
-- **Simulated network latency** — every service call is wrapped in
-  `simulateRequest()` (`src/services/BaseService.ts`), a flat **300ms**
-  `setTimeout`, so the UI is written against real Promises/loading states as
-  if there were a real API.
-- **Defensive/self-healing reads** — several services normalize data on
-  *every* read rather than trusting whatever's cached, so schema changes
-  never crash old `localStorage` data: `SettingsService.withSortedLists()`
-  (§18), `ProjectService`'s technology-array migration (single string →
-  `string[]`), `POCService`'s scheduling-field migration (§16.5). This is the
-  established pattern to follow whenever a stored entity's shape changes.
-- **Migration path to a real API** — every data shape in `src/types/`
-  already mirrors what a REST/GraphQL response would look like (the
-  `CalendarEvent` shape explicitly mirrors a Microsoft Graph event for this
-  reason). Because components only ever call service methods — never import
-  JSON directly — replacing a service's internals with real HTTP calls is a
-  one-file change per entity with zero component changes required.
-- **Demo-only authentication** — plaintext passwords, no hashing, no tokens,
-  no backend validation. Explicitly documented in code as not
-  production-security.
-- **Client-side-only permission enforcement** — there is no server to
-  re-check permissions; a determined user could bypass UI gating via
-  devtools. Acceptable for an internal ~30-person tool, but a real backend
-  migration must re-implement every permission check server-side too.
+  populated by its ~30 users at runtime, same as before.
+- **Real network latency, no more artificial delay** — the old
+  `simulateRequest()` flat 300ms `setTimeout` (written to make the UI behave
+  correctly against Promises/loading states before a real API existed) is
+  gone. `src/services/BaseService.ts` now exports `apiRequest()`, a thin
+  `fetch()` wrapper — latency is whatever the actual network/API round-trip
+  takes (small and consistent for a same-VM setup, but real).
+- **Self-healing reads were retired, not replaced 1:1** — the old pattern of
+  normalizing legacy data shapes on every `localStorage` read
+  (`SettingsService.withSortedLists()`, `ProjectService`'s technology-array
+  coercion, `EmployeeService`'s `normalizeEmployee()`, `POCService`'s
+  scheduling-field migration) no longer exists in the frontend services —
+  none of those functions are present anymore. A SQLite column has one
+  fixed shape from the moment it's created, so there's nothing to coerce on
+  read. **Evolving that shape later** (e.g. adding a column) is now handled
+  by versioned schema migrations (`server/db/migrations/`, tracked in a
+  `schema_migrations` table, applied automatically on server start) instead
+  of ad-hoc JS normalization — see `DATABASE_MIGRATION_PLAN.md`'s
+  "Update — 2026-08-13" section for the full mechanism and why it's needed
+  (`schema.sql`'s `CREATE TABLE IF NOT EXISTS` only takes effect once, on a
+  table's first creation).
+- **Migration to a real API — completed.** This was possible as a contained
+  change specifically because every data shape in `src/types/` already
+  mirrored what a REST response would look like, and because components
+  only ever called service methods — never imported JSON directly. Swapping
+  each service's internals from `localStorage` to real HTTP calls
+  (`apiRequest()`) required zero changes to any component or page.
+- **Demo-only authentication, unchanged in substance** — plaintext
+  passwords, no hashing, no session tokens verified per request. The
+  migration moved *where* the login credential check runs (server-side now,
+  §6.1) but did not add real security; still explicitly documented in code
+  as not production-grade.
+- **Permission enforcement is still entirely client-side — and the bypass
+  surface got bigger, not smaller.** Before this migration, bypassing a
+  permission check meant editing your own browser's `localStorage` via
+  devtools — limited to your own local data. Now, the Express API accepts
+  any request with **no authentication or authorization check at all**
+  (aside from the one login-matching exception in §6.1): anyone who can
+  reach the API's network port can read or write *any* user's data
+  directly — `curl`, Postman, or a script, no login required — completely
+  bypassing every `canView`/`canEdit`/field-level rule in §6. This was an
+  explicit, scoped-out decision (`DATABASE_MIGRATION_PLAN.md` Phase 2, "Real
+  authentication," deferred rather than skipped by accident) and should be
+  treated as a real, open item — not a theoretical one — before this app is
+  relied on with real, sensitive data on a network reachable by more than a
+  fully trusted audience.
 
 ---
 
@@ -1176,6 +1275,39 @@ Component renders → usePermission() → canView/canEdit/canViewField/... (§6.
 Track feature work here as it lands, newest first — this keeps the document
 honest as a living reference.
 
+- **2026-08-13** — Rewrote §1–§3, §6.1, §18, and §22 to describe the actual
+  current architecture: a real Express + SQLite backend (`server/`) exists,
+  replacing the original no-backend/`localStorage` design these sections
+  had described since this document was first written. This backend was
+  built outside this document's awareness (discovered mid-conversation
+  while debugging a `npm install`/login issue) and had already been running
+  for some time before the docs caught up — a reminder that "living
+  document" only holds if updates happen in the same session as the change,
+  which didn't happen here. Also corrected several "current behavior"
+  claims that had quietly gone stale in the same way: `SettingsService`,
+  `ProjectService`, and `POCService`'s old `localStorage`-era self-healing
+  normalization functions no longer exist in the frontend at all (moved
+  server-side for settings, or simply unnecessary now that SQLite columns
+  have a fixed shape) — those sections now say so explicitly rather than
+  describing removed code as current. Most explicitly: documented that
+  permission/field-level enforcement (§6) and all request validation remain
+  entirely client-side even with a real backend in place — the Express API
+  currently accepts any request with no authentication check at all except
+  the login endpoint, which is a materially larger bypass surface than the
+  old "devtools on your own local data" gap, and is called out as a real
+  open item rather than a theoretical one.
+- **2026-08-13** — Incremental schema migration tracking added for the
+  SQLite backend: `server/db/migrations/` (versioned `.sql` files, one per
+  structural change) + `server/db/migrations.ts` (tracks which ones have
+  applied per-database in a `schema_migrations` table, runs pending ones
+  automatically on every `getDb()` call). This fixes a real gap —
+  `schema.sql`'s `CREATE TABLE IF NOT EXISTS` statements only take effect
+  the first time a table is created, so editing them to add a column to an
+  *existing* table on dev/production silently did nothing. Also added
+  `npm run db:migrate-schema` for applying migrations as an explicit deploy
+  step. Full writeup, including the exact problem this solves and how test
+  data stays out of it, is in `DATABASE_MIGRATION_PLAN.md`'s "Update —
+  2026-08-13" section.
 - **2026-08-08** — Multi-project assignment + auto-sync with Project teams:
   `Employee.currentProject: string` was replaced with
   `Employee.projects: string[]`, so a person can now belong to zero, one, or
