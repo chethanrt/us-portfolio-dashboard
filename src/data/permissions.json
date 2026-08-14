@@ -13,7 +13,8 @@
       { "module": "reports", "actions": { "view": true, "export": true }, "scope": { "view": "all" } },
       { "module": "settings", "actions": { "view": true, "edit": true } },
       { "module": "users", "actions": { "view": true, "create": true, "edit": true, "delete": true } },
-      { "module": "roles", "actions": { "view": true, "create": true, "edit": true, "delete": true } }
+      { "module": "roles", "actions": { "view": true, "create": true, "edit": true, "delete": true } },
+      { "module": "auditLog", "actions": { "view": true } }
     ]
   },
   {
@@ -30,7 +31,8 @@
       { "module": "reports", "actions": { "view": true, "export": true }, "scope": { "view": "all" } },
       { "module": "settings", "actions": { "view": true, "edit": true } },
       { "module": "users", "actions": { "view": true, "create": true, "edit": true, "delete": true } },
-      { "module": "roles", "actions": { "view": true, "create": true, "edit": true, "delete": true } }
+      { "module": "roles", "actions": { "view": true, "create": true, "edit": true, "delete": true } },
+      { "module": "auditLog", "actions": { "view": true } }
     ]
   },
   {

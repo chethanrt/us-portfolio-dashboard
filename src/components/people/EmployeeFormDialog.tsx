@@ -6,8 +6,10 @@ import { z } from "zod";
 import { FormCheckboxGroupField, FormInputField, FormSelectField, Modal } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
+import { Badge } from "@/components/ui/badge";
 import { usePermission } from "@/security";
-import type { Employee, Project } from "@/types";
+import type { Employee, POC, Project } from "@/types";
+import { getEmployeeProjectAssignments } from "@/utils/employeeAssignments";
 
 const REQUIRED = "This field is required.";
 
@@ -41,7 +43,7 @@ function buildEmployeeSchema(takenEmails: Set<string>) {
       }),
     team: z.string().min(1, REQUIRED),
     skills: z.array(z.string()).min(1, "Select at least one skill."),
-    projects: z.array(z.string()),
+    pocIds: z.array(z.string()),
     status: z.string().min(1, REQUIRED),
     managerId: z.string(),
   });
@@ -56,7 +58,7 @@ const EMPTY_VALUES: EmployeeFormValues = {
   experience: "",
   team: "",
   skills: [],
-  projects: [],
+  pocIds: [],
   status: "Active",
   managerId: NO_MANAGER,
 };
@@ -67,12 +69,16 @@ interface EmployeeFormDialogProps {
   /** When set, the dialog is in Edit mode. */
   employee: Employee | null;
   employees: Employee[];
+  /** All projects — used to show (read-only) this employee's current project assignments. */
   projects: Project[];
+  /** All POCs — used to pre-select this employee's current team assignments. */
+  pocs: POC[];
   /** Settings-managed role list (Settings > Roles). */
   roles: string[];
   /** Settings-managed skills list (Settings > Skills). */
   skillOptions: string[];
-  onSave: (values: Omit<Employee, "id">) => Promise<void>;
+  /** `pocIds` is this employee's edited POC *team* membership — never touches `ownerId`. */
+  onSave: (values: Omit<Employee, "id">, pocIds: string[]) => Promise<void>;
 }
 
 export function EmployeeFormDialog({
@@ -81,6 +87,7 @@ export function EmployeeFormDialog({
   employee,
   employees,
   projects,
+  pocs,
   roles,
   skillOptions,
   onSave,
@@ -117,13 +124,14 @@ export function EmployeeFormDialog({
               experience: String(employee.experience),
               team: employee.team,
               skills: employee.skills,
-              projects: employee.projects,
+              pocIds: pocs.filter((p) => p.team.includes(employee.id)).map((p) => p.id),
               status: employee.status,
               managerId: employee.managerId ?? NO_MANAGER,
             }
           : EMPTY_VALUES
       );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, employee, form]);
 
   // Can't report to yourself or to one of your own direct reports (would create a cycle).
@@ -145,18 +153,22 @@ export function EmployeeFormDialog({
   const handleSubmit = form.handleSubmit(async (values) => {
     setIsSaving(true);
     try {
-      await onSave({
-        name: values.name.trim(),
-        email: values.email.trim().toLowerCase(),
-        role: values.role as Employee["role"],
-        experience: Number(values.experience),
-        team: values.team,
-        skills: values.skills,
-        projects: values.projects,
-        profileImage: employee?.profileImage ?? "",
-        status: values.status as Employee["status"],
-        managerId: values.managerId === NO_MANAGER ? null : values.managerId,
-      });
+      await onSave(
+        {
+          name: values.name.trim(),
+          email: values.email.trim().toLowerCase(),
+          role: values.role as Employee["role"],
+          experience: Number(values.experience),
+          team: values.team,
+          skills: values.skills,
+          // No longer manually edited here — kept in sync from Project assignments (see EmployeeService.syncProjectMembership).
+          projects: employee?.projects ?? [],
+          profileImage: employee?.profileImage ?? "",
+          status: values.status as Employee["status"],
+          managerId: values.managerId === NO_MANAGER ? null : values.managerId,
+        },
+        values.pocIds
+      );
       onOpenChange(false);
     } catch {
       // save failed — the caller shows the error toast; keep the dialog open
@@ -165,10 +177,8 @@ export function EmployeeFormDialog({
     }
   });
 
-  const projectOptions = [...new Set(projects.map((p) => p.name))].map((name) => ({
-    value: name,
-    label: name,
-  }));
+  const pocOptions = pocs.map((poc) => ({ value: poc.id, label: poc.title }));
+  const projectAssignments = employee ? getEmployeeProjectAssignments(employee, projects) : [];
 
   return (
     <Modal
@@ -244,13 +254,39 @@ export function EmployeeFormDialog({
               disabled={readOnly("skills")}
             />
           )}
-          {show("projects") && (
+          {show("projects") && isEdit && (
+            <div className="space-y-1.5 sm:col-span-2">
+              <p className="text-sm font-medium">Projects</p>
+              {projectAssignments.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Not currently assigned to any project.</p>
+              ) : (
+                <div className="space-y-1 rounded-md border p-2">
+                  {projectAssignments.map(({ project, roles: projectRoles }) => (
+                    <div key={project.id} className="flex items-center justify-between gap-2 text-sm">
+                      <span className="truncate">{project.name}</span>
+                      <div className="flex shrink-0 flex-wrap justify-end gap-1">
+                        {projectRoles.map((r) => (
+                          <Badge key={r} variant="secondary" className="text-[10px]">
+                            {r}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Read-only — project assignment is edited from the Projects page.
+              </p>
+            </div>
+          )}
+          {show("pocs") && (
             <FormCheckboxGroupField
               control={form.control}
-              name="projects"
-              label="Projects"
-              options={projectOptions}
-              disabled={readOnly("projects")}
+              name="pocIds"
+              label="POCs"
+              options={pocOptions}
+              disabled={readOnly("pocs")}
             />
           )}
 

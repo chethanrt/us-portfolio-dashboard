@@ -72,20 +72,29 @@ export function useEmployees() {
           learningProgress: ownLearning.length
             ? Math.round(ownLearning.reduce((sum, l) => sum + l.progress, 0) / ownLearning.length)
             : 0,
-          pocs: pocs.filter((p) => p.ownerId === employee.id).length,
+          pocs: pocs.filter((p) => p.ownerId === employee.id || p.team.includes(employee.id)).length,
         },
       };
     });
   }, [employees, activities, learningRecords, pocs]);
 
-  const addEmployee = useCallback(async (input: Omit<Employee, "id">) => {
+  /** `pocIds`, when given, syncs this employee's POC *team* membership (never `ownerId`) — see POCService.syncEmployeeTeamMembership. */
+  const addEmployee = useCallback(async (input: Omit<Employee, "id">, pocIds?: string[]) => {
     const created = await employeeService.create(input);
     setEmployees((current) => [...current, created]);
+    if (pocIds) {
+      await pocService.syncEmployeeTeamMembership(created.id, pocIds);
+      setPocs(await pocService.getAll());
+    }
   }, []);
 
-  const updateEmployee = useCallback(async (id: string, input: Omit<Employee, "id">) => {
+  const updateEmployee = useCallback(async (id: string, input: Omit<Employee, "id">, pocIds?: string[]) => {
     const updated = await employeeService.update(id, input);
     setEmployees((current) => current.map((e) => (e.id === id ? updated : e)));
+    if (pocIds) {
+      await pocService.syncEmployeeTeamMembership(id, pocIds);
+      setPocs(await pocService.getAll());
+    }
   }, []);
 
   /** Marks an employee as an Ex-Employee and reassigns their direct reports. */
@@ -103,6 +112,7 @@ export function useEmployees() {
   return {
     employees: employeesWithStats,
     projects,
+    pocs,
     isLoading,
     error,
     addEmployee,

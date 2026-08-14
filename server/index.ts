@@ -13,8 +13,10 @@ import { createTaskWorkflowRouter } from "./routes/taskWorkflow.ts";
 import { createUsersRouter } from "./routes/users.ts";
 import { createRolesRouter } from "./routes/roles.ts";
 import { createPermissionsRouter } from "./routes/permissions.ts";
+import { createPermissionOverridesRouter } from "./routes/permissionOverrides.ts";
 import { createResourcesRouter } from "./routes/resources.ts";
 import { createSettingsRouter } from "./routes/settings.ts";
+import { createAuditLogRouter } from "./routes/auditLog.ts";
 
 const PORT = 4000;
 
@@ -36,8 +38,10 @@ app.use("/api/task-workflow", createTaskWorkflowRouter(db));
 app.use("/api/users", createUsersRouter(db));
 app.use("/api/roles", createRolesRouter(db));
 app.use("/api/permissions", createPermissionsRouter(db));
+app.use("/api/permission-overrides", createPermissionOverridesRouter(db));
 app.use("/api/resources", createResourcesRouter(db));
 app.use("/api/settings", createSettingsRouter(db));
+app.use("/api/audit-log", createAuditLogRouter(db));
 
 // Catch-all so any unhandled route error returns a real message instead of a
 // bare 500 with no body (Express's default) — apiRequest on the frontend

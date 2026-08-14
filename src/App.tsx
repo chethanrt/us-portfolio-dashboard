@@ -25,6 +25,7 @@ const Reports = lazy(() => import("@/pages/Reports"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const Users = lazy(() => import("@/pages/Users"));
 const Roles = lazy(() => import("@/pages/Roles"));
+const AuditLog = lazy(() => import("@/pages/AuditLog"));
 
 /** Route table — every page is protected by its module's View permission. */
 const PROTECTED_ROUTES: { path: string; module: ModuleId; Page: LazyExoticComponent<ComponentType> }[] = [
@@ -41,6 +42,7 @@ const PROTECTED_ROUTES: { path: string; module: ModuleId; Page: LazyExoticCompon
   { path: "/settings", module: "settings", Page: Settings },
   { path: "/users", module: "users", Page: Users },
   { path: "/roles", module: "roles", Page: Roles },
+  { path: "/audit-log", module: "auditLog", Page: AuditLog },
 ];
 
 export default function App() {

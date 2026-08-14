@@ -362,8 +362,8 @@ no employee), `isAuthenticated`, `isLoading`, `login()`, `logout()`.
 Chain: **User → Role (roleId) → Permission entry (permissions.json) → one
 `ModulePermission` per module → actions + scope + field overrides.**
 
-- **`ModuleId`** (12 values): `dashboard, projects, tasks, activities, people,
-  skills, learning, pocs, reports, settings, users, roles`.
+- **`ModuleId`** (13 values): `dashboard, projects, tasks, activities, people,
+  skills, learning, pocs, reports, settings, users, roles, auditLog`.
 - **`PermissionAction`**: `view, create, edit, delete, export, assign,
   comment` (assign/comment are Task-Board-specific).
 - **`DataScope`**: `"all" | "team" | "own"` — row-level visibility/edit scope.
@@ -398,6 +398,7 @@ to render the Roles & Permissions editor UI).
 | settings | view+edit | same | **view only** | view only | ❌ no access | ❌ | ❌ | ❌ | ❌ |
 | users | full CRUD | same | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | roles | full CRUD | same | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| auditLog | view only | same | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
 Footnotes: ¹ `aiAdoption` field read-only. ² Intern additionally hides
 `client`. ³/⁴/⁵ decreasing action sets (sr-dev has delete+assign, dev has
@@ -426,10 +427,11 @@ Engineering Manager has it, view-only Settings, no Users/Roles access).
 - **`PermissionContext.ts`** — the `PermissionContextValue` interface + the
   React `Context` object; also defines `DashboardScope = "portfolio" | "team"
   | "personal"`.
-- **`PermissionProvider.tsx`** — on `account.roleId` change, loads the `Role`
-  + its `Permission` entry, builds a `PermissionService`, and memoizes the
-  full context value (including the `canMutateRow` helper and
-  `dashboardScope` derivation).
+- **`PermissionProvider.tsx`** — on `account.roleId`/`account.id` change,
+  loads the `Role`, its `Permission` entry, and the signed-in account's own
+  `UserPermissionOverride` (§6.5), merges role + overrides into a
+  `PermissionService`, and memoizes the full context value (including the
+  `canMutateRow` helper and `dashboardScope` derivation).
 - **`usePermission.ts`** — the hook (throws outside a provider).
 - Route guarding itself lives in `src/components/auth/RequirePermission.tsx`
   (§5), which just calls `canView(module)`.
@@ -481,6 +483,58 @@ concept the single-scope (`all`/`own`) framework doesn't fit:
   `canDeleteCalendarEvent(...)` — admins/managers can edit/delete any event;
   tech-lead/senior-developer/developer only events where
   `event.createdBy === currentEmployeeId`.
+
+### 6.5 Per-user permission overrides
+On top of the role-based framework above, an individual **User** account can
+hold action-level grants/removals that apply only to them — e.g. giving one
+Developer `create` on `pocs` without changing the Developer role (and
+therefore every other Developer) at all.
+
+- **Storage**: `user_permission_overrides` table (`user_id` PK →
+  `overrides_json`), one row per user that has *any* override — most users
+  have none. Same "whole-row JSON blob keyed by natural id" shape as
+  `permissions` (§6.2), same bespoke-router rationale
+  (`server/routes/permissionOverrides.ts`, mirrors `permissions.ts`). Unlike
+  the `permissions` table, `GET /api/permission-overrides/:userId` never
+  404s — it returns `{ userId, modules: [] }` when no row exists, since "no
+  overrides yet" is the common case and callers shouldn't need special-case
+  handling for it.
+- **Type**: `UserPermissionOverride { userId, modules: ModulePermission[] }`
+  (`src/types/permissions.ts`). Only `actions` are meaningful in an
+  override's `ModulePermission` entries — `scope` and `fields` are always
+  inherited from the role; a per-user override changes *what a user can do*,
+  not row-scope or field-visibility rules.
+- **Merge**: `mergeModulePermissions(roleModules, overrideModules)`
+  (`src/security/PermissionService.ts`) — override action keys always win;
+  an action key **absent** from the override means "inherit the role
+  default". `PermissionService.fromRoleAndOverrides(roleModules,
+  overrideModules)` builds the merged evaluator in one call.
+  `PermissionProvider` calls this on every `(roleId, accountId)` change
+  (both, not just `roleId` — two accounts sharing a role must still refetch
+  each other's own overrides when switching between them), fetching the
+  role's `Permission` and the signed-in account's own
+  `UserPermissionOverride` in parallel.
+- **Client service**: `permissionOverrideService` (`getAll`, `getByUserId`,
+  `saveForUser`, `deleteForUser`) — data access only, same split as
+  `permissionService`/`PermissionService` (data layer vs. evaluator).
+- **UI** (People section, admin-only — gated on `canEdit("users")`, since
+  granting/revoking another user's access is a Users/Roles-tier action):
+  `EmployeeProfileDrawer` gains an **Access** tab
+  (`EmployeeAccessPanel.tsx`) showing the employee's linked login account
+  (username/role/status), a read-only summary of their **Role-Based
+  Permissions**, and — computed by diffing the role's modules against the
+  user's overrides — **Additional Permissions Granted** and **Permissions
+  Removed** chip lists (empty state: "using role defaults"). Its **Edit
+  Permissions** button opens `UserPermissionOverrideDialog`, a per-action
+  checkbox grid (one row per module, one checkbox per action the module
+  supports) where every checkbox reflects the *effective* permission
+  (role merged with override): toggling a checkbox back to the role's own
+  default removes the override for that action (back to "inherit");
+  toggling it away from the role default records an explicit per-user grant
+  or removal, badged "Added"/"Removed" inline. Saving calls
+  `permissionOverrideService.saveForUser(account.id, modules)` — it never
+  touches the role's own `permissions.json`/`permissions` row, so other
+  users on the same role are unaffected.
 
 ---
 
@@ -745,20 +799,61 @@ Activity" button (or a direct URL, still permission-gated).
 **Service**: `EmployeeService.ts`.
 
 - **List view**: card grid with search + Role/Skills/Project filters (Role
-  options from `settings.roles`; Skills options from `settings.skills`).
-  "Own data" scope roles (senior-developer, developer, intern) see only their
-  own card and no filter bar.
+  options from `settings.roles`; Skills options from `settings.skills`; the
+  Project filter matches against each employee's *computed* assignments,
+  below — not a stored field). "Own data" scope roles (senior-developer,
+  developer, intern) see only their own card and no filter bar. A
+  **role-count summary** (`PeopleRoleSummary.tsx`) sits above the filter
+  bar, hidden in own-data scope: a "Total Team Members" tile plus one tile
+  per role in the live `settings.roles` list (excluding Ex-Employees from
+  every count) — entirely computed on render, so a role added in Settings
+  or an employee's role/status change shows up with no separate sync step.
+- **Project & POC assignments are computed, never manually maintained**
+  (`src/utils/employeeAssignments.ts`): `getEmployeeProjectAssignments(employee,
+  projects)` checks, for every `Project`, whether the employee is in
+  `members` (id-based → role "Team Member") or equals `techLead` /
+  `manager` / `projectManager` (**name**-based — those three fields store
+  the employee's name string, not an id; see §9's Project field notes and
+  `ProjectFormDialog.tsx` — a pre-existing pattern this reuses rather than
+  migrating), attaching every matching role (a person can hold more than
+  one, e.g. Tech Lead *and* a listed team member). `getEmployeePocAssignments`
+  checks `POC.ownerId`/`POC.team` (both ids) → role "Owner" or "Team
+  Member". There is **no field on `Project` for "Director"** — that role
+  has no per-project assignment mechanism today, so it only appears in the
+  role-count summary above (a portfolio-wide headcount), never in a
+  project's role list.
 - **Add/Edit form fields**: Name, Email (uniqueness-checked), **Role**
   (restricted to `settings.roles` — was a hardcoded constant before being
   wired live), Experience, Team (4 hardcoded options), Status, Reports To
   (excludes self and anyone who'd create a manager cycle), **Skills**
   (multi-select checkbox group sourced from `settings.skills`, editable by
   every role on their own profile — see §6.2's `people` permission table;
-  only Super Admin/Director can add new options via Settings), **Projects**
-  (multi-select checkbox list of real `Project` names;
-  optional — an employee can have zero, one, or several). Assignments made
-  here are independent of formal project team membership; see the Projects
-  section below for the auto-sync direction that runs the other way.
+  only Super Admin/Director can add new options via Settings), **POCs**
+  (multi-select checkbox list of all POC titles, pre-selected from
+  `POC.team`; the one two-way-editable relationship here — see below).
+  **There is no "Projects" field in this form** — project assignment is
+  edited only from the Projects page (`members`/`techLead`/`manager`/
+  `projectManager`) and always flows one-way into People, per the point
+  above.
+- **POC assignment from People is genuinely bidirectional**: checking/
+  unchecking a POC here calls `POCService.syncEmployeeTeamMembership(
+  employeeId, pocIds)` after the employee save (`useEmployees.ts`'s
+  `addEmployee`/`updateEmployee`, both now take an optional `pocIds`
+  param) — it diffs against every POC's current `team` and calls the
+  **same** `POCService.update()` used by the POC form itself for each
+  changed POC, so the existing calendar-block/task resync
+  (`scheduleChanged`, §16) fires exactly as it would editing the POC
+  directly. It only ever touches `team`, never `ownerId` — POC ownership
+  stays a POC-form-only concept.
+- **`Employee.projects: string[]` still exists in the type/schema** (kept
+  for low-risk reasons — removing the column outright wasn't necessary to
+  satisfy this feature) **but is no longer read or written by any UI** as
+  of this change: `EmployeeService.syncProjectMembership`/
+  `removeProjectEverywhere` still run in the background off `Project`
+  create/update/delete (harmless, now purely internal bookkeeping with no
+  remaining reader), and the Edit form no longer has a checkbox for it.
+  Every display (card, filter, profile drawer) reads the live computed
+  assignments instead.
 - **Side effect on create**: `EmployeeService.create()` also creates a
   matching `User` login account (`generateUsername()` → `firstname.lastname`,
   deduplicated; default password `"Welcome@123"`; `roleId` resolved by
@@ -769,15 +864,26 @@ Activity" button (or a direct URL, still permission-gated).
   sets `status: "Ex-Employee"` (never a hard delete), requires every direct
   report to be reassigned to a new manager first (throws `"REPORTS_UNASSIGNED"`
   otherwise), and deactivates (not deletes) their linked `User` account.
-- **Employee Profile Drawer** — 4–6 tabs depending on permission:
-  **Overview** (all core fields including Skills, field-level-security gated
-  individually — the drawer's old separate "Skills" tab was removed as
-  redundant once Overview started showing `employee.skills` directly),
-  **Learning** (progress bars per course), **Activities** (latest 8, prompt
-  summary + tool/category/date/hours), **Tasks** (only if `canView("tasks")`
-  — assigned-task stats + latest 8), **POCs** (owned POCs), and **Calendar**
-  (only if `canViewCalendar()` allows it for this viewer/target pair — embeds
-  `PeopleCalendar`, the single-person calendar, see §13.6).
+- **Employee Profile Drawer** — 5–8 tabs depending on permission:
+  **Overview** (core identity fields, field-level-security gated
+  individually — Skills shown directly as `employee.skills`; the old
+  "Projects" row was removed in favor of the dedicated tab below),
+  **Projects** (gated on the same `people.projects` field permission as
+  before — now a computed list of every project the employee's involved
+  in, each with its role badge(s): Team Member / Tech Lead / Engineering
+  Manager / Project Manager), **Learning** (progress bars per course),
+  **Activities** (latest 8, prompt summary + tool/category/date/hours),
+  **Tasks** (only if `canView("tasks")` — assigned-task stats + latest 8),
+  **POCs** (owner **and** team POCs, each badged "Owner"/"Team Member" —
+  previously owned-only), **Calendar** (only if `canViewCalendar()` allows
+  it for this viewer/target pair — embeds `PeopleCalendar`, the
+  single-person calendar, see §13.6), and **Access** (only if
+  `canEdit("users")` — the linked login account plus role-based and
+  user-specific permission overrides, with an edit entry point; see §6.5).
+  `useEmployeeDetails.ts` fetches `projectService.getAll()`/
+  `pocService.getAll()` (not `getByOwner`) and returns the two computed
+  assignment arrays directly, so the drawer never touches raw
+  Project/POC lists itself.
 
 ---
 
@@ -1104,6 +1210,59 @@ the right place immediately.
      Editable is force-disabled whenever Visible is off.
 - This is genuinely the entire permission surface — no additional row-level
   allow-list mechanism exists beyond the three `DataScope` values.
+
+### 20.1 Audit Log *(`/audit-log`, module: `auditLog`)*
+**Page**: `src/pages/AuditLog.tsx`. **Service**: `AuditLogService.ts`.
+Read-only, admin-only (Super Admin + Director only — the two roles with
+`users`/`roles` access today; `auditLog` is a `view`-only module, no
+create/edit/delete actions registered for it at all).
+
+- **Storage**: append-only `audit_log` table (`server/db/audit.ts`'s
+  `recordAuditEvent()`), one row per event: `timestamp`, `actorUserId`,
+  `actorUsername` (resolved server-side at write time so a later username
+  change or account deletion doesn't corrupt old rows), `eventType`
+  (`login | logout | create | update | delete`), `module` (a display label,
+  not a `ModuleId` — e.g. `"Calendar"`/`"Auth"` aren't real modules but are
+  meaningful log categories), `recordId`, `summary` (best-effort — the
+  generic CRUD layer tries the row's `name`/`title`/`username`/`course`
+  column, falling back to the id).
+- **Who logs what**:
+  - **Login** — stamped directly inside `users.ts`'s `POST /authenticate`
+    on a successful match (not client-triggered — can't be skipped by a
+    client bug).
+  - **Logout** — `AuthContext.logout()` fires a best-effort
+    `auditLogService.logEvent("logout", ...)` *before* clearing the
+    session, since the actor header (below) needs the outgoing session to
+    still be present.
+  - **Every create/update/delete** — `server/routes/_crud.ts` (the generic
+    factory used by employees/projects/activities/learning/pocs/
+    calendar_events/roles/users) logs automatically once each route passes
+    a `module` label; the three bespoke routers with their own hand-rolled
+    SQL (`tasks.ts`, and the `PUT` handlers in `permissions.ts` /
+    `permissionOverrides.ts`) call `recordAuditEvent()` directly. Config
+    tables synced only via `npm run db:sync-config` (`settings`,
+    `resources`, `taskCategories`, `taskWorkflow`) are **not** logged —
+    those are seed-data pushes, not end-user edits.
+- **Actor identification without a real auth session**: since this app's
+  auth is client-side only (§6.1 — no server session/JWT/cookies), the
+  server can't otherwise tell who's calling it. `apiRequest()`
+  (`src/services/BaseService.ts`) reads the signed-in user's id out of
+  `localStorage` (`SESSION_STORAGE_KEY`, now factored into
+  `src/utils/session.ts` so both `AuthContext` and `BaseService` can read
+  it without an import cycle) and stamps every request with an
+  `X-Actor-Id` header; the audit layer reads that header and resolves the
+  username at write time. **This header is read for logging only, never
+  for authorization** — it's exactly as spoofable as the rest of this
+  demo-auth setup (§22).
+- **"Live"**: polled, not pushed — `AuditLog.tsx` re-fetches the latest 200
+  rows every 5 seconds (`POLL_INTERVAL_MS`). No WebSocket/SSE layer exists
+  anywhere else in this app, and a few seconds of staleness is an
+  acceptable tradeoff against adding one for this scale (per CLAUDE.md's
+  "keep it lightweight" mandate) — a small pulsing-dot indicator next to
+  the page title communicates "live" without implying true real-time push.
+- **Filters**: free-text search (account/module/details), Event dropdown,
+  Module dropdown (options derived from whatever modules are actually
+  present in the current 200-row window, not a fixed list).
 
 ---
 

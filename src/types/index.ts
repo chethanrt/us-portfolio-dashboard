@@ -270,5 +270,8 @@ export interface User {
 // Role & Permission framework types (Role, Permission, Resource, …).
 export * from "./permissions";
 
+// Audit log types (AuditLogEntry).
+export * from "./auditLog";
+
 // Task Board types (Task, TaskComment, TaskWorkflowStatus, …).
 export * from "./tasks";

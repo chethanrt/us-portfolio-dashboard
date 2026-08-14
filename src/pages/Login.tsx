@@ -7,9 +7,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { FormInputField } from "@/components/common";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
-import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 
 const loginSchema = z.object({
@@ -18,14 +17,6 @@ const loginSchema = z.object({
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
-
-/** Demo accounts shown below the form (internal demo application). */
-const DEMO_ACCOUNTS = [
-  { label: "Super Admin", username: "admin", password: "Admin@123" },
-  { label: "Director", username: "michael.thompson", password: "Welcome@123" },
-  { label: "Eng. Manager", username: "rajesh.kumar", password: "Welcome@123" },
-  { label: "Developer", username: "nikhil.menon", password: "Welcome@123" },
-];
 
 export default function Login() {
   const { login, isAuthenticated, isLoading } = useAuth();
@@ -56,11 +47,6 @@ export default function Login() {
     }
   });
 
-  const fillDemo = (username: string, password: string) => {
-    form.reset({ username, password });
-    form.clearErrors();
-  };
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm space-y-4">
@@ -78,9 +64,8 @@ export default function Login() {
         <Card className="shadow-sm">
           <CardHeader>
             <CardTitle className="text-base">Sign in</CardTitle>
-            <CardDescription>Use your portfolio account to continue.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent>
             <Form {...form}>
               <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                 <FormInputField
@@ -104,34 +89,8 @@ export default function Login() {
                 </Button>
               </form>
             </Form>
-
-            <Separator />
-
-            {/* Demo accounts (internal demo — no backend) */}
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">Demo accounts — click to fill</p>
-              <div className="grid grid-cols-2 gap-1.5">
-                {DEMO_ACCOUNTS.map((demo) => (
-                  <Button
-                    key={demo.username}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-auto flex-col items-start gap-0 py-1.5"
-                    onClick={() => fillDemo(demo.username, demo.password)}
-                  >
-                    <span className="text-xs font-semibold">{demo.label}</span>
-                    <span className="text-[10px] font-normal text-muted-foreground">{demo.username}</span>
-                  </Button>
-                ))}
-              </div>
-            </div>
           </CardContent>
         </Card>
-
-        <p className="text-center text-xs text-muted-foreground">
-          Internal demo · employee accounts use password <code>Welcome@123</code>
-        </p>
       </div>
     </div>
   );

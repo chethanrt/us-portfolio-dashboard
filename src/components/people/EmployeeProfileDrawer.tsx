@@ -10,6 +10,7 @@ import { usePermission } from "@/security";
 import { taskStatisticsService } from "@/services";
 import { formatDate } from "@/utils/format";
 import { canViewCalendar } from "@/utils/permissions";
+import { EmployeeAccessPanel } from "./EmployeeAccessPanel";
 import { PeopleCalendar } from "./PeopleCalendar";
 
 function StatTile({ value, label }: { value: string | number; label: string }) {
@@ -41,7 +42,7 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
   const { details, isLoading } = useEmployeeDetails(employee);
   const { currentUser } = useAuth();
   // Field-level security: hidden fields are omitted from the drawer.
-  const { canViewField, role, canView } = usePermission();
+  const { canViewField, role, canView, canEdit } = usePermission();
   const show = (field: string) => canViewField("people", field);
 
   // Task Board integration (docs/11 People integration).
@@ -57,6 +58,8 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
   if (!employee) return null;
 
   const canViewEmployeeCalendar = canViewCalendar(role?.id, employee.id, currentUser?.id);
+  const showAccess = canEdit("users");
+  const showProjects = show("projects");
 
   const headerParts = [
     show("role") ? employee.role : null,
@@ -82,11 +85,13 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
       <Tabs defaultValue="overview">
         <TabsList className="w-full">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          {showProjects && <TabsTrigger value="projects">Projects</TabsTrigger>}
           <TabsTrigger value="learning">Learning</TabsTrigger>
           <TabsTrigger value="activities">Activities</TabsTrigger>
           {showTasks && <TabsTrigger value="tasks">Tasks</TabsTrigger>}
           <TabsTrigger value="pocs">POCs</TabsTrigger>
           {canViewEmployeeCalendar && <TabsTrigger value="calendar">Calendar</TabsTrigger>}
+          {showAccess && <TabsTrigger value="access">Access</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="overview" className="mt-4 space-y-2">
@@ -97,12 +102,6 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
           {show("skills") && (
             <InfoRow label="Skills" value={employee.skills.length > 0 ? employee.skills.join(", ") : "—"} />
           )}
-          {show("projects") && (
-            <InfoRow
-              label={employee.projects.length === 1 ? "Project" : "Projects"}
-              value={employee.projects.length > 0 ? employee.projects.join(", ") : "—"}
-            />
-          )}
           {show("managerId") && <InfoRow label="Reports To" value={managerName ?? "—"} />}
           {show("status") && (
             <div className="flex justify-between gap-4 text-sm">
@@ -111,6 +110,32 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
             </div>
           )}
         </TabsContent>
+
+        {showProjects && (
+          <TabsContent value="projects" className="mt-4 space-y-2">
+            {isLoading || !details ? (
+              <LoadingSkeleton variant="list" count={2} />
+            ) : details.projects.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Not currently assigned to any project.</p>
+            ) : (
+              details.projects.map(({ project, roles }) => (
+                <div key={project.id} className="flex items-center justify-between gap-2 rounded-lg border p-2.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{project.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">{project.client}</p>
+                  </div>
+                  <div className="flex shrink-0 flex-wrap justify-end gap-1">
+                    {roles.map((r) => (
+                      <Badge key={r} variant="secondary">
+                        {r}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </TabsContent>
+        )}
 
         <TabsContent value="learning" className="mt-4 space-y-4">
           {isLoading || !details ? (
@@ -191,15 +216,16 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
           {isLoading || !details ? (
             <LoadingSkeleton variant="list" count={2} />
           ) : details.pocs.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No POCs owned.</p>
+            <p className="text-sm text-muted-foreground">Not currently on any POC.</p>
           ) : (
-            details.pocs.map((poc) => (
+            details.pocs.map(({ poc, role: pocRole }) => (
               <div key={poc.id} className="flex items-center justify-between gap-2 rounded-lg border p-2.5">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{poc.title}</p>
                   <p className="truncate text-xs text-muted-foreground">{poc.businessValue}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
+                  <Badge variant={pocRole === "Owner" ? "default" : "secondary"}>{pocRole}</Badge>
                   <Badge variant="secondary">{poc.category}</Badge>
                   <StatusBadge status={poc.status} />
                 </div>
@@ -211,6 +237,12 @@ export function EmployeeProfileDrawer({ employee, managerName, onClose }: Employ
         {canViewEmployeeCalendar && (
           <TabsContent value="calendar" className="mt-4">
             <PeopleCalendar employee={employee} />
+          </TabsContent>
+        )}
+
+        {showAccess && (
+          <TabsContent value="access" className="mt-4">
+            <EmployeeAccessPanel employeeId={employee.id} employeeName={employee.name} />
           </TabsContent>
         )}
       </Tabs>

@@ -18,6 +18,7 @@ export function createLearningRouter(db: Database.Database) {
   return createCrudRouter({
     db,
     table: "learning",
+    module: "Learning",
     listOrderBy: "rowid DESC", // LearningService used to prepend new records (newest-first)
     fromRow,
     toRow,

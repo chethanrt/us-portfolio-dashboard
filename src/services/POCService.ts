@@ -200,6 +200,34 @@ class POCService {
     return all.filter((poc) => poc.ownerId === ownerId);
   }
 
+  /**
+   * Keeps one employee's POC team membership in sync with a chosen set of
+   * POC ids — called from the People form (Edit Profile), the one place
+   * POC assignment is editable in the direction opposite to POCs itself.
+   * Goes through `update()` for every affected POC so the existing
+   * calendar-block/task resync (`scheduleChanged`) fires exactly as it
+   * would editing the POC directly — no separate sync path to drift out of
+   * step. Never touches `ownerId`, only team membership.
+   */
+  async syncEmployeeTeamMembership(employeeId: string, pocIds: string[]): Promise<void> {
+    const all = await this.getAll();
+    const targetSet = new Set(pocIds);
+    const changed: POC[] = [];
+    for (const poc of all) {
+      const onTeam = poc.team.includes(employeeId);
+      const shouldBeOnTeam = targetSet.has(poc.id);
+      if (shouldBeOnTeam && !onTeam) {
+        changed.push({ ...poc, team: [...poc.team, employeeId] });
+      } else if (!shouldBeOnTeam && onTeam) {
+        changed.push({ ...poc, team: poc.team.filter((id) => id !== employeeId) });
+      }
+    }
+    for (const poc of changed) {
+      const { id, ...input } = poc;
+      await this.update(id, input);
+    }
+  }
+
   async create(input: Omit<POC, "id">): Promise<POC> {
     const created = await apiRequest<POC>("/api/pocs", {
       method: "POST",

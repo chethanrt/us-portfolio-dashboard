@@ -6,13 +6,37 @@ import type {
 } from "@/types";
 
 /**
+ * Merges a role's ModulePermission[] with a user's own overrides.
+ * Override actions always win; an action key absent from the override
+ * means "inherit the role default". Scope and field rules are never
+ * overridden — they always come from the role. A module the role doesn't
+ * grant at all but the override does gets added standalone.
+ */
+export function mergeModulePermissions(
+  roleModules: ModulePermission[],
+  overrideModules: ModulePermission[]
+): ModulePermission[] {
+  const merged = new Map(roleModules.map((entry) => [entry.module, { ...entry, actions: { ...entry.actions } }]));
+  for (const override of overrideModules) {
+    const existing = merged.get(override.module);
+    if (existing) {
+      existing.actions = { ...existing.actions, ...override.actions };
+    } else {
+      merged.set(override.module, { module: override.module, actions: { ...override.actions } });
+    }
+  }
+  return [...merged.values()];
+}
+
+/**
  * Permission evaluator — the runtime side of the framework.
  *
  * One instance is built per signed-in user from their role's
  * ModulePermission list (see src/services/PermissionService for the data
- * layer). Everything defaults to DENY: a module missing from the list grants
- * nothing. Fields default to visible + editable once the module itself is
- * viewable, so field rules only need to list exceptions.
+ * layer), merged with any user-specific overrides. Everything defaults to
+ * DENY: a module missing from the list grants nothing. Fields default to
+ * visible + editable once the module itself is viewable, so field rules
+ * only need to list exceptions.
  */
 export class PermissionService {
   private readonly modules: Map<ModuleId, ModulePermission>;
@@ -24,6 +48,11 @@ export class PermissionService {
   /** An evaluator that denies everything (signed out / role still loading). */
   static denyAll(): PermissionService {
     return new PermissionService([]);
+  }
+
+  /** Builds an evaluator from a role's modules plus that user's own overrides. */
+  static fromRoleAndOverrides(roleModules: ModulePermission[], overrideModules: ModulePermission[] = []): PermissionService {
+    return new PermissionService(mergeModulePermissions(roleModules, overrideModules));
   }
 
   hasPermission(module: ModuleId, action: PermissionAction): boolean {

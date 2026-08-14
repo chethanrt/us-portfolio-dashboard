@@ -85,6 +85,33 @@ CREATE TABLE IF NOT EXISTS users (
   status TEXT NOT NULL DEFAULT 'Active'
 );
 
+-- Per-user permission overrides layered on top of the role's defaults
+-- (permissions table above). One row per user that has any override at
+-- all — most users have none. Brand new table, so (unlike a column added
+-- to an existing table) this is safe directly in schema.sql: CREATE TABLE
+-- IF NOT EXISTS is a no-op once it exists, and there's no pre-existing data
+-- to migrate.
+CREATE TABLE IF NOT EXISTS user_permission_overrides (
+  user_id TEXT PRIMARY KEY REFERENCES users(id),
+  overrides_json TEXT NOT NULL DEFAULT '[]'
+);
+
+-- Append-only audit trail: logins/logouts and every create/update/delete
+-- across the app. New table, safe directly in schema.sql (no pre-existing
+-- data to migrate — same rationale as user_permission_overrides above).
+CREATE TABLE IF NOT EXISTS audit_log (
+  id TEXT PRIMARY KEY,
+  timestamp TEXT NOT NULL,
+  actor_user_id TEXT NOT NULL DEFAULT '',
+  actor_username TEXT NOT NULL DEFAULT '',
+  event_type TEXT NOT NULL,
+  module TEXT NOT NULL DEFAULT '',
+  record_id TEXT NOT NULL DEFAULT '',
+  summary TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_audit_log_timestamp ON audit_log(timestamp);
+CREATE INDEX IF NOT EXISTS idx_audit_log_actor ON audit_log(actor_user_id);
+
 CREATE TABLE IF NOT EXISTS projects (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,

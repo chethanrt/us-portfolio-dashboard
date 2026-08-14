@@ -3,6 +3,7 @@ import {
   CalendarDays,
   FolderKanban,
   GraduationCap,
+  History,
   KanbanSquare,
   LayoutDashboard,
   LayoutGrid,
@@ -37,6 +38,7 @@ export const NAV_ITEMS: NavItem[] = [
   { title: "Settings", path: "/settings", icon: Settings, module: "settings" },
   { title: "User Management", path: "/users", icon: UserCog, module: "users" },
   { title: "Roles & Permissions", path: "/roles", icon: ShieldCheck, module: "roles" },
+  { title: "Audit Log", path: "/audit-log", icon: History, module: "auditLog" },
 ];
 
 /** Items the given permission check allows (hide modules without View). */

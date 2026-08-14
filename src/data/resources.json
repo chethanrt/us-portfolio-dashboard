@@ -94,6 +94,7 @@
       { "key": "team", "label": "Team" },
       { "key": "skills", "label": "Skills" },
       { "key": "projects", "label": "Projects" },
+      { "key": "pocs", "label": "POCs" },
       { "key": "status", "label": "Status" },
       { "key": "managerId", "label": "Reports To" }
     ]
@@ -188,6 +189,15 @@
     "path": "/roles",
     "description": "Roles with module, action and field permissions.",
     "actions": ["view", "create", "edit", "delete"],
+    "scopable": false,
+    "fields": []
+  },
+  {
+    "id": "auditLog",
+    "label": "Audit Log",
+    "path": "/audit-log",
+    "description": "Login/logout and edit history across the app.",
+    "actions": ["view"],
     "scopable": false,
     "fields": []
   }

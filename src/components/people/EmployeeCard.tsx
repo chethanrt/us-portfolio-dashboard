@@ -9,6 +9,8 @@ import { getInitials } from "@/utils/format";
 
 interface EmployeeCardProps {
   employee: EmployeeWithStats;
+  /** Names of projects this employee is currently assigned to — computed live from Project records. */
+  projectNames: string[];
   /** Whether the signed-in user can edit this employee. */
   canEdit: boolean;
   /** Whether the signed-in user can remove (offboard) this employee. */
@@ -22,6 +24,7 @@ interface EmployeeCardProps {
 
 export function EmployeeCard({
   employee,
+  projectNames,
   canEdit,
   canDelete,
   hasAccount = true,
@@ -60,14 +63,9 @@ export function EmployeeCard({
             </Badge>
           )}
         </div>
-        <p
-          className="truncate text-sm text-muted-foreground"
-          title={employee.projects.join(", ")}
-        >
-          {employee.projects.length === 1 ? "Project" : "Projects"}:{" "}
-          <span className="text-foreground">
-            {employee.projects.length > 0 ? employee.projects.join(", ") : "—"}
-          </span>
+        <p className="truncate text-sm text-muted-foreground" title={projectNames.join(", ")}>
+          {projectNames.length === 1 ? "Project" : "Projects"}:{" "}
+          <span className="text-foreground">{projectNames.length > 0 ? projectNames.join(", ") : "—"}</span>
         </p>
 
         <dl className="grid grid-cols-3 gap-2 rounded-lg bg-muted p-2 text-center">

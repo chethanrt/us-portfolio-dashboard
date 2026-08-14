@@ -25,7 +25,8 @@ export type ModuleId =
   | "reports"
   | "settings"
   | "users"
-  | "roles";
+  | "roles"
+  | "auditLog";
 
 /** Actions a role can be granted on a module. */
 export type PermissionAction =
@@ -96,6 +97,18 @@ export interface ModulePermission {
 /** permissions.json — one entry per role. */
 export interface Permission {
   roleId: string;
+  modules: ModulePermission[];
+}
+
+/**
+ * user_permission_overrides — per-user action grants/revocations layered on
+ * top of the role's defaults (see src/security/PermissionService's
+ * mergeModulePermissions). Only actions are meaningful here; scope and field
+ * rules always come from the role. An action key absent from `modules`
+ * means "inherit the role default" — present keys always win.
+ */
+export interface UserPermissionOverride {
+  userId: string;
   modules: ModulePermission[];
 }
 

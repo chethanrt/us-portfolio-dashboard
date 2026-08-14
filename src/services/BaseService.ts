@@ -1,3 +1,5 @@
+import { SESSION_STORAGE_KEY } from "@/utils/session";
+
 /**
  * Shared fetch helper for all services, backed by the Express/SQLite API
  * under /api (see server/). Replaces the old localStorage + simulateRequest
@@ -5,9 +7,15 @@
  * unchanged, only the storage mechanism underneath them moved.
  */
 export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const actorId = localStorage.getItem(SESSION_STORAGE_KEY);
   const response = await fetch(path, {
     ...options,
-    headers: { "Content-Type": "application/json", ...options.headers },
+    headers: {
+      "Content-Type": "application/json",
+      // Read server-side for the audit log (see server/db/audit.ts) — never for authorization.
+      ...(actorId ? { "X-Actor-Id": actorId } : {}),
+      ...options.headers,
+    },
   });
 
   if (!response.ok) {

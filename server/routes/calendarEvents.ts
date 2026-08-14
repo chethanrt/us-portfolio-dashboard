@@ -37,6 +37,7 @@ export function createCalendarEventsRouter(db: Database.Database) {
     createCrudRouter({
       db,
       table: "calendar_events",
+      module: "Calendar",
       fromRow,
       toRow,
       generateId: nextCalendarEventId,

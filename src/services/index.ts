@@ -8,6 +8,8 @@ export { settingsService } from "./SettingsService";
 export { userService } from "./UserService";
 export { roleService } from "./RoleService";
 export { permissionService } from "./PermissionService";
+export { permissionOverrideService } from "./PermissionOverrideService";
+export { auditLogService } from "./AuditLogService";
 export { taskService } from "./TaskService";
 export { taskWorkflowService } from "./TaskWorkflowService";
 export { taskBoardService } from "./TaskBoardService";

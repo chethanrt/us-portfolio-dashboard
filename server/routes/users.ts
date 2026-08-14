@@ -1,5 +1,6 @@
 import { Router } from "express";
 import type Database from "better-sqlite3";
+import { recordAuditEvent } from "../db/audit.ts";
 import { createCrudRouter } from "./_crud.ts";
 import { buildRowMapper, nullableField } from "./_fields.ts";
 import { nextUserId } from "../db/ids.ts";
@@ -24,7 +25,16 @@ export function createUsersRouter(db: Database.Database) {
     const { username, password } = req.body ?? {};
     const row = db
       .prepare("SELECT * FROM users WHERE LOWER(username) = LOWER(?) AND password = ? AND status = 'Active'")
-      .get(username, password);
+      .get(username, password) as { id: string; username: string } | undefined;
+    if (row) {
+      recordAuditEvent(db, {
+        actorUserId: row.id,
+        eventType: "login",
+        module: "Auth",
+        recordId: row.id,
+        summary: `Login: ${row.username}`,
+      });
+    }
     res.json(row ? fromRow(row) : null);
   });
 
@@ -32,6 +42,7 @@ export function createUsersRouter(db: Database.Database) {
     createCrudRouter({
       db,
       table: "users",
+      module: "Users",
       fromRow,
       toRow,
       generateId: nextUserId,

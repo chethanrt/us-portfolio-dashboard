@@ -23,6 +23,7 @@ export function createProjectsRouter(db: Database.Database) {
   return createCrudRouter({
     db,
     table: "projects",
+    module: "Projects",
     fromRow,
     toRow,
     generateId: nextProjectId,

@@ -22,9 +22,11 @@ import { useSettings } from "@/hooks/useSettings";
 import { usePermission } from "@/security";
 import { userService } from "@/services";
 import type { Employee } from "@/types";
+import { getEmployeeProjectAssignments } from "@/utils/employeeAssignments";
+import { PeopleRoleSummary } from "@/components/people/PeopleRoleSummary";
 
 export default function People() {
-  const { employees, projects, isLoading, error, addEmployee, updateEmployee, offboardEmployee } =
+  const { employees, projects, pocs, isLoading, error, addEmployee, updateEmployee, offboardEmployee } =
     useEmployees();
   const { settings } = useSettings();
   const roles = settings?.roles ?? [];
@@ -55,7 +57,6 @@ export default function People() {
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState(ALL_FILTER);
-  const [skillFilter, setSkillFilter] = useState(ALL_FILTER);
   const [projectFilter, setProjectFilter] = useState(ALL_FILTER);
 
   const [viewing, setViewing] = useState<EmployeeWithStats | null>(null);
@@ -80,29 +81,31 @@ export default function People() {
     const query = search.trim().toLowerCase();
     return visibleEmployees.filter((employee) => {
       if (roleFilter !== ALL_FILTER && employee.role !== roleFilter) return false;
-      if (skillFilter !== ALL_FILTER && !employee.skills.includes(skillFilter)) return false;
-      if (projectFilter !== ALL_FILTER && !employee.projects.includes(projectFilter)) return false;
+      if (
+        projectFilter !== ALL_FILTER &&
+        !getEmployeeProjectAssignments(employee, projects).some((a) => a.project.name === projectFilter)
+      )
+        return false;
       if (!query) return true;
       return [employee.name, employee.role, employee.team, ...employee.skills].some((field) =>
         field.toLowerCase().includes(query)
       );
     });
-  }, [visibleEmployees, search, roleFilter, skillFilter, projectFilter]);
+  }, [visibleEmployees, projects, search, roleFilter, projectFilter]);
 
   const clearFilters = () => {
     setSearch("");
     setRoleFilter(ALL_FILTER);
-    setSkillFilter(ALL_FILTER);
     setProjectFilter(ALL_FILTER);
   };
 
-  const handleSave = async (values: Omit<Employee, "id">) => {
+  const handleSave = async (values: Omit<Employee, "id">, pocIds: string[]) => {
     try {
       if (editing) {
-        await updateEmployee(editing.id, values);
+        await updateEmployee(editing.id, values, pocIds);
         toast.success("Employee updated successfully.");
       } else {
-        await addEmployee(values);
+        await addEmployee(values, pocIds);
         toast.success("Employee created successfully.");
       }
     } catch {
@@ -165,17 +168,12 @@ export default function People() {
         }
       />
 
+      {!ownDataOnly && <PeopleRoleSummary employees={employees} roles={roles} />}
+
       {!ownDataOnly && (
         <FilterBar>
           <SearchBar value={search} onChange={setSearch} placeholder="Search people…" className="w-full sm:w-64" />
           <FilterSelect placeholder="Roles" options={roles} value={roleFilter} onChange={setRoleFilter} className="sm:w-48" />
-          <FilterSelect
-            placeholder="Skills"
-            options={skillOptions}
-            value={skillFilter}
-            onChange={setSkillFilter}
-            className="sm:w-44"
-          />
           <FilterSelect
             placeholder="Projects"
             options={[...new Set(projects.map((p) => p.name))]}
@@ -200,6 +198,7 @@ export default function People() {
             <EmployeeCard
               key={employee.id}
               employee={employee}
+              projectNames={getEmployeeProjectAssignments(employee, projects).map((a) => a.project.name)}
               canEdit={canEditRow("people", employee.id)}
               canDelete={canDeleteRow("people", employee.id)}
               hasAccount={linkedEmployeeIds ? linkedEmployeeIds.has(employee.id) : true}
@@ -226,6 +225,7 @@ export default function People() {
         employee={editing}
         employees={employees}
         projects={projects}
+        pocs={pocs}
         roles={roles}
         skillOptions={skillOptions}
         onSave={handleSave}
