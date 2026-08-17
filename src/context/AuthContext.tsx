@@ -1,8 +1,7 @@
 import { createContext, useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { auditLogService, employeeService, userService } from "@/services";
+import { employeeService, userService } from "@/services";
 import type { Employee, User } from "@/types";
-import { SESSION_STORAGE_KEY } from "@/utils/session";
 
 export interface AuthContextValue {
   /** The logged-in account, or null when signed out. */
@@ -24,20 +23,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Restore the session on startup.
+  // Restore the session on startup — ask the server who (if anyone) the
+  // session cookie belongs to, rather than trusting a client-side flag.
+  // Employees are only fetched once we know there's an authenticated
+  // session, since /api/employees now requires one.
   useEffect(() => {
     let cancelled = false;
 
     async function restore() {
       try {
-        const employeeList = await employeeService.getAll();
+        const user = await userService.me();
         if (cancelled) return;
-        setEmployees(employeeList);
-
-        const sessionUserId = localStorage.getItem(SESSION_STORAGE_KEY);
-        if (sessionUserId) {
-          const user = await userService.getById(sessionUserId);
-          if (!cancelled && user && user.status === "Active") setAccount(user);
+        if (user && user.status === "Active") {
+          setAccount(user);
+          const employeeList = await employeeService.getAll();
+          if (!cancelled) setEmployees(employeeList);
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -53,19 +53,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (username: string, password: string) => {
     const user = await userService.authenticate(username, password);
     if (!user) return false;
-    localStorage.setItem(SESSION_STORAGE_KEY, user.id);
     setAccount(user);
+    setEmployees(await employeeService.getAll());
     return true;
   }, []);
 
   const logout = useCallback(() => {
-    if (account) {
-      // Fire-and-forget, and before clearing the session so X-Actor-Id still resolves to the departing user.
-      auditLogService.logEvent("logout", "Auth", `Logout: ${account.username}`).catch(() => {});
-    }
-    localStorage.removeItem(SESSION_STORAGE_KEY);
     setAccount(null);
-  }, [account]);
+    setEmployees([]);
+    // Fire-and-forget: the UI signs out immediately regardless of how long
+    // the server takes to delete the session row server-side. The logout
+    // audit event is recorded there too (server/routes/users.ts), using the
+    // verified session's user id rather than a client-supplied header.
+    void userService.logout();
+  }, []);
 
   const value = useMemo<AuthContextValue>(() => {
     const currentUser = account?.employeeId

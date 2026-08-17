@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type Database from "better-sqlite3";
 import { recordAuditEvent } from "../db/audit.ts";
+import { requirePermission } from "../security/permissions.ts";
 
 function fromRow(row: { user_id: string; overrides_json: string }) {
   return { userId: row.user_id, modules: JSON.parse(row.overrides_json) };
@@ -11,6 +12,11 @@ function fromRow(row: { user_id: string; overrides_json: string }) {
  * userId (no separate generated id), and most users have no row at all —
  * GET returns an empty-modules default instead of 404 so the client never
  * needs special-case handling for "no overrides yet".
+ *
+ * GET routes are intentionally not gated by requirePermission (beyond the
+ * requireAuth already applied in server/index.ts) — every signed-in user
+ * needs to read their own overrides to build the frontend's permission
+ * evaluator (see PermissionProvider.tsx), not just users with "users" access.
  */
 export function createPermissionOverridesRouter(db: Database.Database) {
   const router = Router();
@@ -26,14 +32,14 @@ export function createPermissionOverridesRouter(db: Database.Database) {
   });
 
   // Mirrors PermissionOverrideService.saveForUser — upsert, since a user may not have a row yet.
-  router.put("/:userId", (req, res) => {
+  router.put("/:userId", requirePermission(db, "users", "edit"), (req, res) => {
     const overridesJson = JSON.stringify(req.body?.modules ?? []);
     db.prepare(
       `INSERT INTO user_permission_overrides (user_id, overrides_json) VALUES (@userId, @overridesJson)
        ON CONFLICT(user_id) DO UPDATE SET overrides_json = @overridesJson`
     ).run({ userId: req.params.userId, overridesJson });
     recordAuditEvent(db, {
-      actorUserId: req.header("x-actor-id") ?? "",
+      actorUserId: req.user?.id ?? "",
       eventType: "update",
       module: "Users",
       recordId: req.params.userId,
@@ -44,7 +50,7 @@ export function createPermissionOverridesRouter(db: Database.Database) {
     );
   });
 
-  router.delete("/:userId", (req, res) => {
+  router.delete("/:userId", requirePermission(db, "users", "edit"), (req, res) => {
     db.prepare("DELETE FROM user_permission_overrides WHERE user_id = ?").run(req.params.userId);
     res.status(204).end();
   });

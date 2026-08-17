@@ -1,9 +1,16 @@
 # Real Authentication — Implementation Plan
 
-**Status**: Plan only — **not implemented**. Do not build this until the
-user explicitly asks for it in a session. This document exists so a future
-Claude session (with no memory of the conversation that produced this plan)
-can pick it up and execute it correctly without re-deriving the reasoning.
+**Status**: Implemented 2026-08-14. All 10 steps below are done: passwords
+are bcrypt-hashed, sessions are real random tokens in an HTTP-only cookie
+(`server/security/sessions.ts`), every route requires a valid session
+(`server/security/requireAuth.ts`) except `/api/users/authenticate` itself,
+module+action permission checks run server-side
+(`server/security/permissions.ts`, wired into `_crud.ts` and each custom
+route file), logout invalidates the session row, the frontend no longer
+uses `localStorage` for session state, and login attempts are rate-limited.
+Field-level and data-scope ("own"/"team"/"all") server-side enforcement —
+called out in Step 5 as a second-pass item — is **not** done; only
+module+action (view/create/edit/delete) checks exist server-side so far.
 
 **Context**: this is "Phase 2 — Real authentication" from
 `DATABASE_MIGRATION_PLAN.md` §3, called out there as deliberately deferred
@@ -311,8 +318,43 @@ entirely, as it can today).
       just hidden in the UI.
 - [ ] `npx tsc --noEmit -p tsconfig.app.json` and `-p server/tsconfig.json`
       both pass clean.
-- [ ] Update `PROJECT_DOCUMENTATION.md` §6.1 and §22 (which currently and
+- [x] Update `PROJECT_DOCUMENTATION.md` §6.1 and §22 (which currently and
       correctly describe the *old* demo-auth behavior) to reflect the new
       flow, and add a changelog entry there. Also mark this document's
       **Status** line at the top as "Implemented" with the date, and update
       `DATABASE_MIGRATION_PLAN.md`'s Phase 2 bullet to point here as resolved.
+
+### Note from implementation: the Node 24.19 / better-sqlite3 crash — found, and fixed 2026-08-14
+
+Earlier troubleshooting in this project treated the native crash
+(`Assertion failed: (env) != nullptr` in `node::RemoveEnvironmentCleanupHook`)
+as a shutdown-only cosmetic issue. During this implementation it recurred
+**during live request handling**, not just at shutdown, including
+repeatedly interrupting the one-time password-hashing script mid-run (it
+had to be run in a loop ~10 times, each attempt making partial progress
+before crashing, until every row was hashed) — and it caused a real,
+user-visible failure: a signed-in user's login attempt hit a server that
+had silently died in the background.
+
+**Fixed** by upgrading `better-sqlite3` from `11.10.0` to `13.0.3`
+(`npm install better-sqlite3@latest`). The older version had to be
+compiled locally via `node-gyp` (the whole Visual Studio Build Tools saga
+earlier in this project); `13.0.3` ships prebuilt native binaries for
+every platform (`node_modules/better-sqlite3/prebuilds/`), including
+`win32-x64` — no local compilation at all anymore, which also removes 34
+now-unneeded build-tooling packages from `node_modules`.
+
+**Verified**: 25 rapid-fire failed-login requests (correctly rate-limited
+after 10) plus 9+ consecutive fresh-process script runs against the live
+database, all against the same running server process, with zero crashes
+— versus the old version, which crashed on nearly every single such
+attempt during this same implementation work. Treat this as resolved,
+not just improved, unless it resurfaces.
+
+The previous recommendation (upgrade `better-sqlite3`, or run under an LTS
+Node version) is now: upgrade `better-sqlite3`, done. Running under Node
+24.19 with the current version appears fine — no need to change Node
+versions unless this recurs. This is no longer a blocker before relying
+on this app for real use — a production server that can silently die under
+load was the real risk, and it's what the
+disaster-recovery plan in `DATABASE_MIGRATION_PLAN.md` §8 does not cover.

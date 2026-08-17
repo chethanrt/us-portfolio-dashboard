@@ -19,7 +19,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUsers } from "@/hooks/useUsers";
 import type { UserRow } from "@/hooks/useUsers";
 import { usePermission } from "@/security";
-import type { User } from "@/types";
+import type { UserInput } from "@/services/UserService";
 
 export default function Users() {
   const { account } = useAuth();
@@ -122,7 +122,7 @@ export default function Users() {
     );
   }
 
-  const handleSave = async (values: Omit<User, "id">) => {
+  const handleSave = async (values: UserInput) => {
     try {
       if (editing) {
         await updateUser(editing.id, values);

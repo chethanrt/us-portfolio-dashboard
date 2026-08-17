@@ -13,7 +13,8 @@ export function createRolesRouter(db: Database.Database) {
   return createCrudRouter({
     db,
     table: "roles",
-    module: "Roles",
+    module: "roles",
+    auditLabel: "Roles",
     fromRow,
     toRow,
     generateId: (database, payload) => nextRoleId(database, payload.name),

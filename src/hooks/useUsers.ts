@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { employeeService, roleService, userService } from "@/services";
+import type { UserInput } from "@/services/UserService";
 import type { Employee, Role, User } from "@/types";
 
 export interface UserRow extends User {
@@ -47,12 +48,12 @@ export function useUsers() {
     }));
   }, [users, employees, roles]);
 
-  const addUser = useCallback(async (input: Omit<User, "id">) => {
+  const addUser = useCallback(async (input: UserInput) => {
     const created = await userService.create(input);
     setUsers((current) => [...current, created]);
   }, []);
 
-  const updateUser = useCallback(async (id: string, input: Omit<User, "id">) => {
+  const updateUser = useCallback(async (id: string, input: UserInput) => {
     const updated = await userService.update(id, input);
     setUsers((current) => current.map((u) => (u.id === id ? updated : u)));
   }, []);

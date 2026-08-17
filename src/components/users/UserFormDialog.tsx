@@ -6,6 +6,7 @@ import { z } from "zod";
 import { FormInputField, FormSelectField, Modal } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
+import type { UserInput } from "@/services/UserService";
 import type { Employee, Role, User } from "@/types";
 
 const REQUIRED = "This field is required.";
@@ -52,7 +53,7 @@ interface UserFormDialogProps {
   employees: Employee[];
   /** Assignable roles (roles.json via RoleService). */
   roles: Role[];
-  onSave: (values: Omit<User, "id">) => Promise<void>;
+  onSave: (values: UserInput) => Promise<void>;
 }
 
 export function UserFormDialog({ open, onOpenChange, user, users, employees, roles, onSave }: UserFormDialogProps) {
@@ -101,11 +102,13 @@ export function UserFormDialog({ open, onOpenChange, user, users, employees, rol
     try {
       await onSave({
         username: values.username.trim().toLowerCase(),
-        // Blank password in Edit mode keeps the current one.
-        password: values.password || user?.password || "",
         roleId: values.roleId,
         employeeId: values.employeeId === NO_EMPLOYEE ? "" : values.employeeId,
         status: values.status as User["status"],
+        // Blank password in Edit mode keeps the current one — omitting the
+        // key entirely (not resubmitting the existing bcrypt hash) is what
+        // makes that work; see UserInput's doc comment for why.
+        ...(values.password ? { password: values.password } : {}),
       });
       onOpenChange(false);
     } catch {

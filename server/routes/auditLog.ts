@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type Database from "better-sqlite3";
 import { recordAuditEvent } from "../db/audit.ts";
+import { requirePermission } from "../security/permissions.ts";
 
 function fromRow(row: any) {
   return {
@@ -26,7 +27,7 @@ function fromRow(row: any) {
 export function createAuditLogRouter(db: Database.Database) {
   const router = Router();
 
-  router.get("/", (req, res) => {
+  router.get("/", requirePermission(db, "auditLog", "view"), (req, res) => {
     const limit = Math.min(Number(req.query.limit) || 200, 500);
     const rows = db.prepare("SELECT * FROM audit_log ORDER BY timestamp DESC LIMIT ?").all(limit);
     res.json(rows.map(fromRow));
@@ -35,7 +36,7 @@ export function createAuditLogRouter(db: Database.Database) {
   router.post("/", (req, res) => {
     const { eventType, module, recordId, summary } = req.body ?? {};
     recordAuditEvent(db, {
-      actorUserId: req.header("x-actor-id") ?? "",
+      actorUserId: req.user?.id ?? "",
       eventType: eventType ?? "update",
       module: module ?? "",
       recordId,

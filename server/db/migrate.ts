@@ -17,7 +17,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, "../../src/data");
 
 function readJson(file: string): any {
-  return JSON.parse(fs.readFileSync(path.join(DATA_DIR, file), "utf-8"));
+  // Strip a leading UTF-8 BOM — some Windows editors save JSON with one,
+  // which JSON.parse otherwise rejects outright.
+  const raw = fs.readFileSync(path.join(DATA_DIR, file), "utf-8").replace(/^﻿/, "");
+  return JSON.parse(raw);
 }
 
 function assertCount(label: string, expected: number, actual: number): void {

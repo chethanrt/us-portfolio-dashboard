@@ -26,7 +26,8 @@ export function createPocsRouter(db: Database.Database) {
   return createCrudRouter({
     db,
     table: "pocs",
-    module: "POCs",
+    module: "pocs",
+    auditLabel: "POCs",
     listOrderBy: "rowid DESC", // POCService used to prepend new records (newest-first)
     fromRow,
     toRow,

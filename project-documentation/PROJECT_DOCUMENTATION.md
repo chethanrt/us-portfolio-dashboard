@@ -395,29 +395,46 @@ typing the URL directly (still permission-gated by `RequirePermission`).
 ## 6. Authentication & Permission Framework
 
 ### 6.1 Authentication
-Still demo-grade auth, **not production security** — the migration to a
-real database (§1–§3) moved *where* the credential check runs, but not
-*how* it works: passwords are plaintext, unhashed, in the `users` table.
-Flow:
+Real authentication, implemented 2026-08-14 (see
+`AUTHENTICATION_IMPLEMENTATION_PLAN.md` for the full design and rationale).
+Passwords are bcrypt-hashed (`bcryptjs`), and a session is a random,
+server-issued token in an **HTTP-only cookie** — not a client-readable
+`localStorage` value. Flow:
 
 ```
 Login page → UserService.authenticate(username, password)
-  → POST /api/users/authenticate
-  → server: SELECT * FROM users WHERE username = ? AND password = ? AND status = 'Active'
-      (plaintext comparison, no hashing — see server/routes/users.ts)
-  → on success: localStorage["ai-portfolio-dashboard.session"] = user.id
+  → POST /api/users/authenticate (rate-limited: 10 attempts / 15 min / IP)
+  → server: look up user by username, bcrypt.compareSync(password, storedHash)
+  → on success: INSERT INTO sessions (token, user_id, expires_at) — a
+      crypto.randomBytes(32) token, 7-day expiry — then
+      Set-Cookie: session=<token>; HttpOnly; SameSite=Lax; Secure (in production)
+  → AuthContext.restore() calls GET /api/users/me (cookie sent automatically)
+    to answer "who's logged in?" on every page load — nothing is read from
+    localStorage anymore
   → AuthContext loads the linked Employee (via user.employeeId) as `currentUser`
 ```
 
-This credential check is the **one deliberate exception** to "all business
-logic stays in the frontend" (§3) — doing the match server-side means a
-failed or successful login attempt never ships the full plaintext-password
-user list to the browser's network tab the way a naive `GET /api/users`
-would. Every other read/write on `/api/users` (and every other entity) has
-no such protection: there is no session token or credential required to
-call the API directly (see §3's callout) — the session stored in
-`localStorage` after login is only ever checked by the **frontend**, never
-sent to or verified by the server on subsequent requests.
+**Every other route now requires this session too** — `server/security/requireAuth.ts`
+is applied to every router except `/api/users` (which carries its own
+internal exemption for `/authenticate` — see the router's source). A
+request with no cookie, an unknown token, or an expired one gets `401`
+before the route handler — or the database — is ever reached. Logout
+(`POST /api/users/logout`) deletes the session row server-side and clears
+the cookie, so a reused old cookie also gets `401` afterward — not just a
+client-side flag reset.
+
+**Authorization is now checked server-side too, for module+action.**
+`server/security/permissions.ts`'s `requirePermission(db, module, action)`
+mirrors `src/security/PermissionService.ts`'s `hasPermission()` logic
+against the same `permissions` table data, and is wired into every CRUD
+route (via `_crud.ts` for most entities, or directly in each bespoke route
+file). A Developer's direct API call to delete an employee now gets `403`
+server-side, not just a hidden button in the UI. **Not yet ported**:
+field-level (`canViewField`/`canEditField`) and data-scope
+(`"own"`/`"team"`/`"all"`) enforcement — those still exist only in the
+frontend's `usePermission()` hook, same as before; only the module+action
+layer (view/create/edit/delete) is enforced server-side so far.
+
 `AuthContext` (`src/context/AuthContext.tsx`) exposes: `account` (the `User`),
 `currentUser` (the linked `Employee`, null for accounts like Super Admin with
 no employee), `isAuthenticated`, `isLoading`, `login()`, `logout()`.
@@ -1348,13 +1365,16 @@ each one crosses a service boundary that isn't obvious from any single page.
 ### 21.1 Login → session restore
 ```
 Login page → UserService.authenticate(username, password)
-  → POST /api/users/authenticate → server-side match against the `users`
-    table, require status === "Active" (see §6.1 — the one credential
-    check that runs server-side; everything else below is frontend-only)
-  → success: localStorage["ai-portfolio-dashboard.session"] = user.id
+  → POST /api/users/authenticate → bcrypt-verified match against the
+    `users` table, require status === "Active" (see §6.1) → session row
+    created, HttpOnly cookie set
   → AuthContext: EmployeeService.getAll() → find by user.employeeId → currentUser
   → PermissionProvider: RoleService.getById(user.roleId) + PermissionService.getByRoleId(user.roleId)
     → builds the PermissionService evaluator used by every canView/canEdit/... call app-wide
+
+On every later page load (not just login), AuthContext calls
+GET /api/users/me instead — the cookie is sent automatically, and the
+server, not a localStorage flag, answers who (if anyone) is signed in.
 ```
 
 ### 21.2 Add Employee → auto-create login account
@@ -1479,25 +1499,33 @@ Component renders → usePermission() → canView/canEdit/canViewField/... (§6.
   only ever called service methods — never imported JSON directly. Swapping
   each service's internals from `localStorage` to real HTTP calls
   (`apiRequest()`) required zero changes to any component or page.
-- **Demo-only authentication, unchanged in substance** — plaintext
-  passwords, no hashing, no session tokens verified per request. The
-  migration moved *where* the login credential check runs (server-side now,
-  §6.1) but did not add real security; still explicitly documented in code
-  as not production-grade.
-- **Permission enforcement is still entirely client-side — and the bypass
-  surface got bigger, not smaller.** Before this migration, bypassing a
-  permission check meant editing your own browser's `localStorage` via
-  devtools — limited to your own local data. Now, the Express API accepts
-  any request with **no authentication or authorization check at all**
-  (aside from the one login-matching exception in §6.1): anyone who can
-  reach the API's network port can read or write *any* user's data
-  directly — `curl`, Postman, or a script, no login required — completely
-  bypassing every `canView`/`canEdit`/field-level rule in §6. This was an
-  explicit, scoped-out decision (`DATABASE_MIGRATION_PLAN.md` Phase 2, "Real
-  authentication," deferred rather than skipped by accident) and should be
-  treated as a real, open item — not a theoretical one — before this app is
-  relied on with real, sensitive data on a network reachable by more than a
-  fully trusted audience.
+- **Real authentication and module-level authorization, implemented
+  2026-08-14** — the gaps described in earlier revisions of this document
+  (plaintext passwords, a forgeable `localStorage` "session," zero
+  server-side checks on any endpoint) are closed; see §6.1 for the full
+  flow and `AUTHENTICATION_IMPLEMENTATION_PLAN.md` for the design and
+  verification record. In short: bcrypt-hashed passwords, a real random
+  session token in an HTTP-only cookie verified on every request
+  (`requireAuth`), and server-side module+action permission checks
+  (`requirePermission`) on every entity route — a Developer's direct API
+  call to delete an employee now gets `403` from the server itself, not
+  just a hidden button in the UI.
+- **Still open**: field-level (`canViewField`/`canEditField`) and
+  data-scope (`"own"`/`"team"`/`"all"`) enforcement exist only in the
+  frontend's `usePermission()` hook — not yet ported server-side. This was
+  explicitly called out as a second-pass item in
+  `AUTHENTICATION_IMPLEMENTATION_PLAN.md` Step 5, not an oversight. A
+  direct API call today could still, for example, read a field the UI
+  would normally hide, or edit a row outside a user's "own" scope. Treat
+  this as the next real gap to close, not a theoretical one.
+- **A separate finding from implementing this, now fixed** — the Node
+  24.19 / `better-sqlite3` native-module instability (previously assumed
+  to only affect process shutdown) was found to also crash the server
+  during live request handling and during batch scripts, including
+  causing a real login failure. Fixed by upgrading `better-sqlite3` to
+  `13.0.3`, which ships prebuilt native binaries (no local compilation)
+  and, per stress-testing after the upgrade, no longer crashes — see
+  `AUTHENTICATION_IMPLEMENTATION_PLAN.md`'s verification note for details.
 
 ---
 
@@ -1506,17 +1534,6 @@ Component renders → usePermission() → canView/canEdit/canViewField/... (§6.
 Track feature work here as it lands, newest first — this keeps the document
 honest as a living reference.
 
-- **2026-08-14** — Added Learning import (bulk-create Learning records from
-  an .xlsx/.xls/.csv export, matched to employees by email; new
-  `programCoordinator`/`minutesCompleted` fields), a Skill Summary report
-  type alongside the existing Learning Progress/Project Summary reports, and
-  a new **AI Adoption** segment (`/ai-adoption`): a Settings-managed,
-  extensible category list, a per-project category checkbox field
-  (`Project.aiAdoptionCategories`), a dashboard aggregating category usage
-  across projects, and a computed (not stored) rollup of a person's AI
-  adoption categories on their Profile Drawer, derived from their project
-  memberships. Also added `Employee.leaderId`/`businessUnit`/`techNonTech`
-  profile fields.
 - **2026-08-13** — Rewrote §1–§3, §6.1, §18, and §22 to describe the actual
   current architecture: a real Express + SQLite backend (`server/`) exists,
   replacing the original no-backend/`localStorage` design these sections

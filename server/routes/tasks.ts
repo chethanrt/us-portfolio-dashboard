@@ -3,6 +3,7 @@ import type Database from "better-sqlite3";
 import { recordAuditEvent } from "../db/audit.ts";
 import { buildRowMapper, jsonArrayField, boolField, nullableField } from "./_fields.ts";
 import { nextTaskIds } from "../db/ids.ts";
+import { requirePermission } from "../security/permissions.ts";
 
 const { fromRow: fromRowBase, toRow } = buildRowMapper([
   { js: "title", db: "title" },
@@ -56,18 +57,18 @@ export function createTasksRouter(db: Database.Database) {
 
   const audit = (req: any, eventType: "create" | "update" | "delete", recordId: string, row: any) =>
     recordAuditEvent(db, {
-      actorUserId: req.header("x-actor-id") ?? "",
+      actorUserId: req.user?.id ?? "",
       eventType,
       module: "Tasks",
       recordId,
       summary: row?.title ?? "",
     });
 
-  router.get("/", (_req, res) => {
+  router.get("/", requirePermission(db, "tasks", "view"), (_req, res) => {
     res.json(db.prepare("SELECT * FROM tasks").all().map(fromRow));
   });
 
-  router.get("/:id", (req, res) => {
+  router.get("/:id", requirePermission(db, "tasks", "view"), (req, res) => {
     const row = db.prepare("SELECT * FROM tasks WHERE id = ?").get(req.params.id);
     if (!row) {
       res.status(404).json({ error: "NOT_FOUND" });
@@ -76,7 +77,7 @@ export function createTasksRouter(db: Database.Database) {
     res.json(fromRow(row));
   });
 
-  router.post("/", (req, res) => {
+  router.post("/", requirePermission(db, "tasks", "create"), (req, res) => {
     try {
       const { id, taskNumber } = nextTaskIds(db);
       const now = new Date().toISOString().slice(0, 10); // date-only, matching TaskService's old today()
@@ -99,7 +100,7 @@ export function createTasksRouter(db: Database.Database) {
     }
   });
 
-  router.put("/:id", (req, res) => {
+  router.put("/:id", requirePermission(db, "tasks", "edit"), (req, res) => {
     try {
       const columns = toRow(req.body);
       const keys = Object.keys(columns);
@@ -122,7 +123,7 @@ export function createTasksRouter(db: Database.Database) {
     }
   });
 
-  router.delete("/:id", (req, res) => {
+  router.delete("/:id", requirePermission(db, "tasks", "delete"), (req, res) => {
     const existing = db.prepare("SELECT * FROM tasks WHERE id = ?").get(req.params.id);
     const result = db.prepare("DELETE FROM tasks WHERE id = ?").run(req.params.id);
     if (result.changes === 0) {
