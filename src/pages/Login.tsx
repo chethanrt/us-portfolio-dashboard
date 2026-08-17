@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { Navigate, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { z } from "zod";
-import { FormInputField } from "@/components/common";
+import { FormInputField, FormPasswordField } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
@@ -72,15 +72,12 @@ export default function Login() {
                   control={form.control}
                   name="username"
                   label="Username"
-                  placeholder="firstname.lastname"
                   required
                 />
-                <FormInputField
+                <FormPasswordField
                   control={form.control}
                   name="password"
                   label="Password"
-                  type="password"
-                  placeholder="••••••••"
                   required
                 />
                 <Button type="submit" className="w-full" disabled={isSigningIn}>

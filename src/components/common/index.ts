@@ -17,6 +17,7 @@ export { DataTable } from "./DataTable";
 export {
   FormCheckboxGroupField,
   FormInputField,
+  FormPasswordField,
   FormSelectField,
   FormSliderField,
   FormTextareaField,
