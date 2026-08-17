@@ -26,3 +26,12 @@ npm-debug.log*
 
 # SQLite database (each dev runs `npm run db:migrate` locally)
 server/db/*.sqlite3*
+
+# Testing (kept locally, not part of the tracked project for now)
+tests
+vitest.config.ts
+playwright.config.ts
+coverage
+playwright-report
+test-results
+blob-report
