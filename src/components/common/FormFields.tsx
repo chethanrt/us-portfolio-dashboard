@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import type { Control, FieldPath, FieldValues } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -129,6 +131,56 @@ export function FormInputField<T extends FieldValues>({
               disabled={disabled}
               {...field}
             />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+}
+
+interface FormPasswordFieldProps<T extends FieldValues> extends BaseFieldProps<T> {
+  placeholder?: string;
+}
+
+/** Password input with a show/hide toggle (eye icon) — masked by default. */
+export function FormPasswordField<T extends FieldValues>({
+  control,
+  name,
+  label,
+  placeholder,
+  required,
+  disabled,
+}: FormPasswordFieldProps<T>) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <FieldLabel label={label} required={required} />
+          <FormControl>
+            <div className="relative">
+              <Input
+                type={visible ? "text" : "password"}
+                placeholder={placeholder}
+                disabled={disabled}
+                className="pr-10"
+                {...field}
+              />
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => setVisible((current) => !current)}
+                disabled={disabled}
+                aria-label={visible ? "Hide password" : "Show password"}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground disabled:opacity-50"
+              >
+                {visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
+            </div>
           </FormControl>
           <FormMessage />
         </FormItem>
