@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { usePermission } from "@/security";
 import type { Employee, Project } from "@/types";
+import { getProjectTeam } from "@/utils/employeeAssignments";
 
 interface ProjectCardProps {
   project: Project;
@@ -27,10 +28,8 @@ export function ProjectCard({
   onDelete,
 }: ProjectCardProps) {
   const { canViewField } = usePermission();
-  const memberNames = project.members
-    .map((id) => employeesById.get(id)?.name)
-    .filter((name): name is string => Boolean(name))
-    .sort((a, b) => a.localeCompare(b));
+  // Manager, Tech Lead, Project Manager and Team Members shown as one team.
+  const teamNames = getProjectTeam(project, employeesById).map((e) => e.name);
 
   return (
     <Card className="flex flex-col shadow-sm transition-shadow hover:shadow-md">
@@ -95,9 +94,9 @@ export function ProjectCard({
 
       <CardFooter className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <AvatarGroup names={memberNames} />
+          <AvatarGroup names={teamNames} />
           <span className="text-xs text-muted-foreground">
-            {memberNames.length} member{memberNames.length === 1 ? "" : "s"}
+            {teamNames.length} member{teamNames.length === 1 ? "" : "s"}
           </span>
         </div>
         <div className="ml-auto flex items-center gap-1">
