@@ -1,0 +1,1 @@
+ALTER TABLE employees ADD COLUMN skills_json TEXT NOT NULL DEFAULT '[]';

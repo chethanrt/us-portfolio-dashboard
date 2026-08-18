@@ -18,17 +18,6 @@ import type { Employee, Project } from "@/types";
 const REQUIRED = "This field is required.";
 
 const PROGRAMS = ["US Portfolio – Commerce", "US Portfolio – CMS", "US Portfolio – Marketing"];
-const STAGES = [
-  "Planning",
-  "Discovery",
-  "Requirement Gathering",
-  "Estimation",
-  "Development",
-  "Testing",
-  "Documentation",
-  "Deployment",
-  "Support",
-];
 const STATUSES = ["Active", "On Hold", "Completed"];
 
 function buildProjectSchema(existing: Project[], editingId: string | null) {
@@ -96,6 +85,8 @@ interface ProjectFormDialogProps {
   employees: Employee[];
   /** Settings-managed technology list (Settings > Technical Skills). */
   technicalSkills: string[];
+  /** Settings-managed project stage options (Settings > Project Stages). */
+  stageOptions: string[];
   /** Settings-managed AI adoption category options (Settings > AI Adoption Categories). */
   aiAdoptionCategoryOptions: string[];
   onSave: (values: Omit<Project, "id">) => Promise<void>;
@@ -108,6 +99,7 @@ export function ProjectFormDialog({
   projects,
   employees,
   technicalSkills,
+  stageOptions,
   aiAdoptionCategoryOptions,
   onSave,
 }: ProjectFormDialogProps) {
@@ -248,7 +240,7 @@ export function ProjectFormDialog({
             />
           )}
           {show("stage") && (
-            <FormSelectField control={form.control} name="stage" label="Project Stage" required options={STAGES} disabled={readOnly("stage")} />
+            <FormSelectField control={form.control} name="stage" label="Project Stage" required options={stageOptions} disabled={readOnly("stage")} />
           )}
           {show("status") && (
             <FormSelectField control={form.control} name="status" label="Status" required options={STATUSES} disabled={readOnly("status")} />

@@ -198,6 +198,7 @@ export default function Projects() {
         projects={projects}
         employees={employees}
         technicalSkills={technicalSkills}
+        stageOptions={stageOptions}
         aiAdoptionCategoryOptions={aiAdoptionCategoryOptions}
         onSave={handleSave}
       />
