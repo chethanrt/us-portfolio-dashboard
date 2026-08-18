@@ -46,7 +46,7 @@ function taskInputFor(event: CalendarEvent) {
     dueDate: event.end.slice(0, 10),
     completedDate: "",
     displayOrder: 0,
-    labels: ["Calendar Block"],
+    labels: [event.linkedProjectId ? "Project" : "Calendar Block"],
     aiTool: "",
     linkedActivityId: "",
     linkedPocId: "",

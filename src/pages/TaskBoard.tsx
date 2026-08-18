@@ -343,6 +343,17 @@ export default function TaskBoard() {
         open={Boolean(confirm)}
         onOpenChange={(open) => !open && setConfirm(null)}
         onConfirm={handleConfirm}
+        title={
+          confirm
+            ? confirm.kind === "delete"
+              ? "Delete Confirmation"
+              : confirm.kind === "archive"
+                ? "Archive Confirmation"
+                : "Restore Confirmation"
+            : undefined
+        }
+        confirmLabel={confirm ? (confirm.kind === "delete" ? "Delete" : confirm.kind === "archive" ? "Archive" : "Restore") : undefined}
+        destructive={confirm?.kind === "delete"}
         message={
           confirm
             ? confirm.kind === "delete"

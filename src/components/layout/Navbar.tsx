@@ -1,4 +1,4 @@
-import { Bell, Brain, ChevronDown, LogOut, Menu, Search } from "lucide-react";
+import { Brain, ChevronDown, LogOut, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -12,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermission } from "@/security";
 import { formatNavbarDate, getInitials } from "@/utils/format";
@@ -59,34 +58,11 @@ export function Navbar({ onMenuClick }: NavbarProps) {
         </div>
       </div>
 
-      {/* Global search */}
-      <div className="relative ml-4 hidden max-w-md flex-1 md:block">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Search projects, people, activities…"
-          className="bg-background pl-9"
-          aria-label="Global search"
-        />
-      </div>
-
       <div className="ml-auto flex items-center gap-2">
         {/* Current date */}
         <span className="hidden text-sm text-muted-foreground xl:block">
           {formatNavbarDate()}
         </span>
-
-        {/* Notifications */}
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Notifications"
-          className="relative"
-          onClick={() => toast.info("Notifications will arrive in a later phase.")}
-        >
-          <Bell className="size-5" />
-          <span className="absolute right-2 top-2 size-2 rounded-full bg-destructive" />
-        </Button>
 
         {/* Role badge */}
         {role && (
