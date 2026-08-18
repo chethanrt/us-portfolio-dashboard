@@ -23,6 +23,9 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
   // Menu items are hidden automatically when View permission is missing.
   const navItems = getVisibleNavItems(canView);
   const displayName = currentUser?.name ?? account?.username ?? "Guest";
+  // Exact HR designation when the account has one, falling back to the RBAC
+  // role name for accounts with no linked employee (e.g. Super Admin).
+  const displayRole = currentUser?.designation || role?.name;
 
   const handleLogout = () => {
     logout();
@@ -65,7 +68,7 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
           </Avatar>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">{displayName}</p>
-            <p className="truncate text-xs text-muted-foreground">{role?.name ?? "—"}</p>
+            <p className="truncate text-xs text-muted-foreground">{displayRole ?? "—"}</p>
           </div>
           <Button variant="ghost" size="icon" aria-label="Sign out" onClick={handleLogout}>
             <LogOut className="size-4" />

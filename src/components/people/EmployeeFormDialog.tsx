@@ -46,6 +46,7 @@ function buildEmployeeSchema(takenEmails: Set<string>) {
         message: "This email already exists.",
       }),
     role: z.string().min(1, REQUIRED),
+    designation: z.string(),
     experience: z
       .string()
       .min(1, REQUIRED)
@@ -70,6 +71,7 @@ const EMPTY_VALUES: EmployeeFormValues = {
   name: "",
   email: "",
   role: "",
+  designation: "",
   experience: "",
   team: "",
   skills: [],
@@ -139,6 +141,7 @@ export function EmployeeFormDialog({
               name: employee.name,
               email: employee.email,
               role: employee.role,
+              designation: employee.designation,
               experience: String(employee.experience),
               team: employee.team,
               skills: employee.skills,
@@ -189,6 +192,7 @@ export function EmployeeFormDialog({
           name: values.name.trim(),
           email: values.email.trim().toLowerCase(),
           role: values.role as Employee["role"],
+          designation: values.designation.trim(),
           experience: Number(values.experience),
           team: values.team,
           skills: values.skills,
@@ -241,8 +245,31 @@ export function EmployeeFormDialog({
               disabled={readOnly("email")}
             />
           )}
-          {show("role") && (
-            <FormSelectField control={form.control} name="role" label="Role" options={roles} required disabled={readOnly("role")} />
+          {show("role") &&
+            (isEdit ? (
+              <div className="space-y-1.5">
+                <p className="text-sm font-medium">Role</p>
+                <p className="text-sm">{employee?.role}</p>
+                <p className="text-xs text-muted-foreground">
+                  Read-only — promotions/demotions are made from User Management, on this person's login account.
+                </p>
+              </div>
+            ) : (
+              <FormSelectField control={form.control} name="role" label="Role" options={roles} required disabled={readOnly("role")} />
+            ))}
+          {show("designation") && (
+            <div className="space-y-1.5">
+              <FormInputField
+                control={form.control}
+                name="designation"
+                label="Designation"
+                placeholder="e.g. Senior Software Engineer I"
+                disabled={readOnly("designation")}
+              />
+              <p className="text-xs text-muted-foreground">
+                Exact job title shown on this person's own dashboard — separate from Role, which controls permissions.
+              </p>
+            </div>
           )}
           {show("experience") && (
             <FormInputField

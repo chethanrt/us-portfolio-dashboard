@@ -91,6 +91,7 @@
       { "key": "name", "label": "Name" },
       { "key": "email", "label": "Email" },
       { "key": "role", "label": "Role" },
+      { "key": "designation", "label": "Designation" },
       { "key": "experience", "label": "Experience" },
       { "key": "team", "label": "Team" },
       { "key": "skills", "label": "Skills" },

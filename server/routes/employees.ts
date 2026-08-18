@@ -7,6 +7,7 @@ const { fromRow, toRow } = buildRowMapper([
   { js: "name", db: "name" },
   { js: "email", db: "email" },
   { js: "role", db: "role" },
+  { js: "designation", db: "designation" },
   { js: "experience", db: "experience" },
   { js: "team", db: "team" },
   { js: "skills", db: "skills_json", ...jsonArrayField },

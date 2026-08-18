@@ -78,7 +78,7 @@ function KPIRow({ data }: { data: DashboardData }) {
 
 export default function Dashboard() {
   const { currentUser } = useAuth();
-  const { role, canView } = usePermission();
+  const { canView } = usePermission();
   const { data, isLoading, error } = useDashboardData();
   const { data: taskStats } = useTaskStats();
   const firstName = currentUser?.name.split(" ")[0] ?? "there";
@@ -96,14 +96,11 @@ export default function Dashboard() {
     );
   }
 
-  const scopeLabel =
-    data.scope === "portfolio" ? "Portfolio overview" : data.scope === "team" ? "Team overview" : "Your personal overview";
-
   return (
     <div className="space-y-6">
       <PageHeader
         title="Dashboard"
-        description={`Welcome back, ${firstName} — ${scopeLabel}${role ? ` (${role.name})` : ""}`}
+        description={`Welcome back, ${firstName}`}
         actions={<QuickActions />}
       />
 

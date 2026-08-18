@@ -1,15 +1,4 @@
 {
-  "roles": [
-    "Delivery Manager",
-    "Developer",
-    "Director",
-    "Engineering Manager",
-    "Intern",
-    "Project Manager",
-    "Senior Developer",
-    "Senior Tech Lead",
-    "Tech Lead"
-  ],
   "technicalSkills": [
     "Docker",
     "Git",

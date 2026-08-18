@@ -3,7 +3,6 @@ import { apiRequest } from "./BaseService";
 
 /** Master-data lists that can be managed on the Settings page. */
 export type EditableSettingsKey =
-  | "roles"
   | "technicalSkills"
   | "aiSkills"
   | "skills"
@@ -26,7 +25,6 @@ export type EditableSettingsKey =
  */
 function withDefaults(settings: Partial<AppSettings> | null | undefined): AppSettings {
   return {
-    roles: settings?.roles ?? [],
     technicalSkills: settings?.technicalSkills ?? [],
     aiSkills: settings?.aiSkills ?? [],
     skills: settings?.skills ?? [],

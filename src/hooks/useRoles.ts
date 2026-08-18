@@ -92,13 +92,21 @@ export function useRoles() {
 
   const deleteRole = useCallback(
     async (id: string) => {
-      if (users.some((user) => user.roleId === id)) throw new Error("ROLE_IN_USE");
-      await roleService.delete(id); // throws SYSTEM_ROLE for built-in roles
+      // Checked here too (not just RoleService's own pre-flight) so a system role's
+      // permissions are never wiped before discovering the role itself can't go.
+      if (roles.find((role) => role.id === id)?.isSystem) throw new Error("SYSTEM_ROLE");
+      // Fresh count, not the users snapshot from page load — a role reassigned
+      // to/from since then must not produce a false negative here.
+      if ((await userService.countByRole(id)) > 0) throw new Error("ROLE_IN_USE");
+      // permissions.role_id -> roles.id has no ON DELETE CASCADE (schema.sql), so the
+      // permissions row must go first — deleting the role first trips a foreign key
+      // violation on every role that's ever had its permissions saved (i.e. all of them).
       await permissionService.deleteForRole(id);
+      await roleService.delete(id);
       setRoles((current) => current.filter((role) => role.id !== id));
       setPermissions((current) => current.filter((permission) => permission.roleId !== id));
     },
-    [users]
+    [roles]
   );
 
   return { rows, roles, resources, isLoading, error, getModulesForRole, addRole, updateRole, deleteRole };

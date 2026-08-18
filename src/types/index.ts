@@ -8,17 +8,13 @@
 // Enumerated values
 // ---------------------------------------------------------------------------
 
-/** Employee job title (domain data, not authorization). */
-export type EmployeeRole =
-  | "Director"
-  | "Delivery Manager"
-  | "Engineering Manager"
-  | "Project Manager"
-  | "Senior Tech Lead"
-  | "Tech Lead"
-  | "Senior Developer"
-  | "Developer"
-  | "Intern";
+/**
+ * Employee job title (domain data, not authorization). Sourced from Roles &
+ * Permissions (roles.json) role names — not a fixed list, so a custom role
+ * added there is assignable as a job title too. "Super Admin" is the one
+ * exception: it's a pure RBAC role with no job-title equivalent.
+ */
+export type EmployeeRole = string;
 
 export type ProjectStage =
   | "Planning"
@@ -86,6 +82,8 @@ export interface Employee {
   name: string;
   email: string;
   role: EmployeeRole;
+  /** Exact job title/designation from HR records (e.g. "Senior Software Engineer I") — display-only, distinct from `role`, which drives permissions and is one of the fixed Roles & Permissions entries. */
+  designation: string;
   experience: number;
   team: string;
   /** Selected from the Settings-managed `skills` list; anyone can pick as many as apply on their own profile. */
@@ -185,7 +183,6 @@ export interface POC {
 
 /** settings.json — application master data */
 export interface AppSettings {
-  roles: EmployeeRole[];
   technicalSkills: string[];
   aiSkills: string[];
   /** Options for Employee.skills — distinct from technicalSkills/aiSkills, which back Project.technology. */
