@@ -20,7 +20,7 @@ import { useEmployees } from "@/hooks/useEmployees";
 import type { EmployeeWithStats } from "@/hooks/useEmployees";
 import { useSettings } from "@/hooks/useSettings";
 import { usePermission } from "@/security";
-import { userService } from "@/services";
+import { roleService, userService } from "@/services";
 import type { Employee } from "@/types";
 import { getEmployeeProjectAssignments } from "@/utils/employeeAssignments";
 import { PeopleRoleSummary } from "@/components/people/PeopleRoleSummary";
@@ -29,11 +29,31 @@ export default function People() {
   const { employees, projects, pocs, isLoading, error, addEmployee, updateEmployee, offboardEmployee } =
     useEmployees();
   const { settings } = useSettings();
-  const roles = settings?.roles ?? [];
   const skillOptions = settings?.skills ?? [];
   const { currentUser } = useAuth();
   const { canCreate, canEditRow, canDeleteRow, isOwnDataScope } = usePermission();
   const ownDataOnly = isOwnDataScope("people");
+
+  // Job-title options come from Roles & Permissions, not a separate Settings
+  // list — "Super Admin" is excluded since it's a pure RBAC role with no
+  // job-title equivalent (see useUsers.ts's syncEmployeeFromUser).
+  const [roles, setRoles] = useState<string[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    roleService.getAll().then((allRoles) => {
+      if (!cancelled) {
+        setRoles(
+          allRoles
+            .filter((role) => role.id !== "super-admin")
+            .map((role) => role.name)
+            .sort((a, b) => a.localeCompare(b))
+        );
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Employees without a login account (docs/10: People and User Management must stay in sync).
   // Re-checked whenever the employee list changes so a newly added employee's

@@ -3,7 +3,6 @@ import type Database from "better-sqlite3";
 import { requirePermission } from "../security/permissions.ts";
 
 const EDITABLE_KEYS = [
-  "roles",
   "technicalSkills",
   "aiSkills",
   "skills",

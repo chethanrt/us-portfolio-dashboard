@@ -8,7 +8,6 @@ import { usePermission } from "@/security";
 import type { EditableSettingsKey } from "@/services/SettingsService";
 
 const SECTIONS: { key: EditableSettingsKey; label: string; description: string }[] = [
-  { key: "roles", label: "Roles", description: "Organization roles used across the application." },
   { key: "technicalSkills", label: "Technical Skills", description: "Technology options for Project.technology." },
   { key: "aiSkills", label: "AI Skills", description: "AI tools and skills (not yet wired to a form)." },
   { key: "skills", label: "Skills", description: "Skills employees can select on their own People profile." },
@@ -53,7 +52,7 @@ export default function Settings() {
     <div className="space-y-6">
       <PageHeader
         title="Settings"
-        description="Manage roles, skills, AI tools, stages and platforms"
+        description="Manage skills, AI tools, stages and platforms"
         actions={
           readOnly ? (
             <Badge variant="secondary" title="Your role does not have Edit permission for Settings">

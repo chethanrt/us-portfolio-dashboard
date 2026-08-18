@@ -203,8 +203,8 @@ function main(): void {
   // ---- Insert everything in one transaction ----
   const run = db.transaction(() => {
     const insertEmployee = db.prepare(`
-      INSERT INTO employees (id, name, email, role, experience, team, skills_json, projects_json, profile_image, status, manager_id, leader_id, business_unit, tech_non_tech)
-      VALUES (@id, @name, @email, @role, @experience, @team, @skillsJson, @projectsJson, @profileImage, @status, @managerId, @leaderId, @businessUnit, @techNonTech)
+      INSERT INTO employees (id, name, email, role, designation, experience, team, skills_json, projects_json, profile_image, status, manager_id, leader_id, business_unit, tech_non_tech)
+      VALUES (@id, @name, @email, @role, @designation, @experience, @team, @skillsJson, @projectsJson, @profileImage, @status, @managerId, @leaderId, @businessUnit, @techNonTech)
     `);
     for (const e of employees) {
       insertEmployee.run({
@@ -212,6 +212,7 @@ function main(): void {
         name: e.name,
         email: e.email,
         role: e.role,
+        designation: e.designation ?? "",
         experience: e.experience,
         team: e.team,
         skillsJson: JSON.stringify(e.skills ?? []),

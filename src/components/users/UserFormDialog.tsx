@@ -147,20 +147,30 @@ export function UserFormDialog({ open, onOpenChange, user, users, employees, rol
             placeholder={isEdit ? "Leave blank to keep current" : "Minimum 6 characters"}
             required={!isEdit}
           />
-          <FormSelectField
-            control={form.control}
-            name="roleId"
-            label="Role"
-            required
-            options={roles.map((role) => ({ value: role.id, label: role.name }))}
-          />
-          <FormSelectField
-            control={form.control}
-            name="status"
-            label="Status"
-            required
-            options={["Active", "Inactive"]}
-          />
+          <div className="space-y-1.5">
+            <FormSelectField
+              control={form.control}
+              name="roleId"
+              label="Role"
+              required
+              options={roles.map((role) => ({ value: role.id, label: role.name }))}
+            />
+            <p className="text-xs text-muted-foreground">
+              If this account is linked to an employee, changing Role also updates their job title on People.
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            <FormSelectField
+              control={form.control}
+              name="status"
+              label="Status"
+              required
+              options={["Active", "Inactive"]}
+            />
+            <p className="text-xs text-muted-foreground">
+              If linked to an employee, Inactive here also sets their People status to Inactive (unless they're already marked Ex-Employee).
+            </p>
+          </div>
           <FormSelectField
             control={form.control}
             name="employeeId"
