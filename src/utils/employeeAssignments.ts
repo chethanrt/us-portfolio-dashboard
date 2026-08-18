@@ -35,6 +35,26 @@ export function getEmployeeProjectAssignments(employee: Employee, projects: Proj
   return assignments;
 }
 
+/**
+ * The full assigned team for a project — Engineering Manager, Tech Lead,
+ * Project Manager and Team Members combined into one deduplicated,
+ * name-sorted list (a lead who is also a team member only appears once).
+ * Leads are matched by name (that's how Project stores them), members by id.
+ */
+export function getProjectTeam(project: Project, employeesById: Map<string, Employee>): Employee[] {
+  const team = new Map<string, Employee>();
+  for (const id of project.members) {
+    const employee = employeesById.get(id);
+    if (employee) team.set(employee.id, employee);
+  }
+  const allEmployees = [...employeesById.values()];
+  for (const name of [project.manager, project.techLead, project.projectManager]) {
+    const employee = allEmployees.find((e) => e.name === name);
+    if (employee) team.set(employee.id, employee);
+  }
+  return [...team.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
 /** Every POC this employee owns or is on the team for, computed live from POC records. */
 export function getEmployeePocAssignments(employee: Employee, pocs: POC[]): EmployeePocAssignment[] {
   return pocs

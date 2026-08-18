@@ -7,8 +7,8 @@ import {
   FormCheckboxGroupField,
   FormInputField,
   FormSelectField,
-  FormSliderField,
   Modal,
+  ProgressBar,
 } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
@@ -151,12 +151,46 @@ export function ProjectFormDialog({
     }
   }, [open, project, form]);
 
+  // AI Adoption % is derived from how many of the available categories are
+  // selected, rather than set manually — keeps the number honest and in sync
+  // with the categories the team actually reports.
+  const selectedCategories = form.watch("aiAdoptionCategories") ?? [];
+  const totalCategoryOptions = aiAdoptionCategoryOptions.length;
+  const computedAiAdoption =
+    totalCategoryOptions > 0 ? Math.round((selectedCategories.length / totalCategoryOptions) * 100) : 0;
+
+  useEffect(() => {
+    form.setValue("aiAdoption", computedAiAdoption, { shouldDirty: true });
+  }, [computedAiAdoption, form]);
+
   // docs/08 business rules: EM, Tech Lead and PM come from matching roles.
   const managerOptions = employees.filter((e) => e.role === "Engineering Manager").map((e) => e.name);
   const techLeadOptions = employees
     .filter((e) => e.role === "Tech Lead" || e.role === "Senior Tech Lead")
     .map((e) => e.name);
   const projectManagerOptions = employees.filter((e) => e.role === "Project Manager").map((e) => e.name);
+
+  // Whoever is picked as Engineering Manager / Tech Lead / Project Manager is
+  // already on the team — don't let them be picked again as a Team Member.
+  const managerName = form.watch("manager");
+  const techLeadName = form.watch("techLead");
+  const projectManagerName = form.watch("projectManager");
+  const leadIds = new Set(
+    [managerName, techLeadName, projectManagerName]
+      .map((name) => employees.find((e) => e.name === name)?.id)
+      .filter((id): id is string => Boolean(id))
+  );
+  const memberOptions = employees
+    .filter((e) => !leadIds.has(e.id))
+    .map((e) => ({ value: e.id, label: `${e.name} (${e.role})` }));
+
+  useEffect(() => {
+    const current: string[] = form.getValues("members") ?? [];
+    const withoutLeads = current.filter((id) => !leadIds.has(id));
+    if (withoutLeads.length !== current.length) {
+      form.setValue("members", withoutLeads, { shouldDirty: true, shouldValidate: true });
+    }
+  }, [managerName, techLeadName, projectManagerName]);
 
   const handleSubmit = form.handleSubmit(async (values) => {
     setIsSaving(true);
@@ -246,11 +280,6 @@ export function ProjectFormDialog({
           {show("endDate") && (
             <FormInputField control={form.control} name="endDate" label="End Date" type="date" disabled={readOnly("endDate")} />
           )}
-          {show("aiAdoption") && (
-            <div className="sm:col-span-2">
-              <FormSliderField control={form.control} name="aiAdoption" label="AI Adoption" disabled={readOnly("aiAdoption")} />
-            </div>
-          )}
           {show("aiAdoptionCategories") && (
             <FormCheckboxGroupField
               control={form.control}
@@ -260,13 +289,21 @@ export function ProjectFormDialog({
               disabled={readOnly("aiAdoptionCategories")}
             />
           )}
+          {show("aiAdoption") && (
+            <div className="space-y-1 sm:col-span-2">
+              <ProgressBar label="AI Adoption" value={computedAiAdoption} />
+              <p className="text-xs text-muted-foreground">
+                Auto-calculated from {selectedCategories.length} of {totalCategoryOptions} AI Adoption Categories selected.
+              </p>
+            </div>
+          )}
           {show("members") && (
             <FormCheckboxGroupField
               control={form.control}
               name="members"
               label="Team Members"
               required
-              options={employees.map((e) => ({ value: e.id, label: `${e.name} (${e.role})` }))}
+              options={memberOptions}
               disabled={readOnly("members")}
             />
           )}

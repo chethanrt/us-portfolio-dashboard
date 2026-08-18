@@ -11,6 +11,7 @@ import { useProjectDetails } from "@/hooks/useProjectDetails";
 import { useScopedTasks } from "@/hooks/useScopedTasks";
 import { usePermission } from "@/security";
 import type { Employee, Project } from "@/types";
+import { getProjectTeam } from "@/utils/employeeAssignments";
 import { formatDate, getInitials } from "@/utils/format";
 
 function Section({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
@@ -56,10 +57,8 @@ export function ProjectDetailsDrawer({ project, employeesById, onClose }: Projec
 
   if (!project) return null;
 
-  const team = project.members
-    .map((id) => employeesById.get(id))
-    .filter((e): e is Employee => Boolean(e))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  // Manager, Tech Lead, Project Manager and Team Members shown as one team.
+  const team = getProjectTeam(project, employeesById);
   const totalHoursSaved = details?.activities.reduce((sum, a) => sum + a.hoursSaved, 0) ?? 0;
 
   return (
