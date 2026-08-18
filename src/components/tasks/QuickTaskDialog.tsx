@@ -14,6 +14,7 @@ const NO_PROJECT = "none";
 const quickTaskSchema = z.object({
   title: z.string().trim().min(1, REQUIRED).max(120, "Maximum 120 characters."),
   assigneeId: z.string().min(1, REQUIRED),
+  reporterId: z.string().min(1, REQUIRED),
   projectId: z.string(),
   category: z.string().min(1, REQUIRED),
   priority: z.string().min(1, REQUIRED),
@@ -25,6 +26,7 @@ type QuickTaskValues = z.infer<typeof quickTaskSchema>;
 const EMPTY_VALUES: QuickTaskValues = {
   title: "",
   assigneeId: "",
+  reporterId: "",
   projectId: NO_PROJECT,
   category: "",
   priority: "Medium",
@@ -40,7 +42,7 @@ interface QuickTaskDialogProps {
   categories: TaskCategory[];
   /** Status new tasks enter, e.g. "To Do" (workflow config). */
   defaultStatus: string;
-  /** The current user's employee id — becomes reporter and creator. */
+  /** The current user's employee id — default Reporter selection (editable), and always the actual createdBy/lastModifiedBy. */
   reporterId: string;
   onSave: (values: Omit<Task, "id" | "taskNumber" | "createdDate" | "updatedDate">) => Promise<void>;
 }
@@ -64,8 +66,8 @@ export function QuickTaskDialog({
   });
 
   useEffect(() => {
-    if (open) form.reset(EMPTY_VALUES);
-  }, [open, form]);
+    if (open) form.reset({ ...EMPTY_VALUES, reporterId });
+  }, [open, reporterId, form]);
 
   const handleSubmit = form.handleSubmit(async (values) => {
     setIsSaving(true);
@@ -78,7 +80,7 @@ export function QuickTaskDialog({
         category: values.category,
         projectId,
         assigneeId: values.assigneeId,
-        reporterId,
+        reporterId: values.reporterId,
         createdBy: reporterId,
         lastModifiedBy: reporterId,
         priority: values.priority as TaskPriority,
@@ -122,6 +124,13 @@ export function QuickTaskDialog({
             control={form.control}
             name="assigneeId"
             label="Assignee"
+            required
+            options={employees.map((e) => ({ value: e.id, label: e.name }))}
+          />
+          <FormSelectField
+            control={form.control}
+            name="reporterId"
+            label="Reporter"
             required
             options={employees.map((e) => ({ value: e.id, label: e.name }))}
           />

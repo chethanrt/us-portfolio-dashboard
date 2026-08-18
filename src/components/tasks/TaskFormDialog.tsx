@@ -21,6 +21,7 @@ const taskSchema = z
     category: z.string().min(1, REQUIRED),
     projectId: z.string(),
     assigneeId: z.string().min(1, REQUIRED),
+    reporterId: z.string().min(1, REQUIRED),
     priority: z.string().min(1, REQUIRED),
     status: z.string().min(1, REQUIRED),
     estimateHours: z.string().refine((v) => v === "" || (!Number.isNaN(Number(v)) && Number(v) >= 0), {
@@ -55,6 +56,7 @@ const EMPTY_VALUES: TaskFormValues = {
   category: "",
   projectId: NONE,
   assigneeId: "",
+  reporterId: "",
   priority: "Medium",
   status: "To Do",
   estimateHours: "",
@@ -84,6 +86,7 @@ interface TaskFormDialogProps {
   defaultProjectId?: string | null;
   /** Pre-selects a status (column Add Task button). */
   defaultStatus?: string;
+  /** The current user's employee id — default Reporter selection on a new task (editable), and always the actual createdBy/lastModifiedBy. */
   reporterId: string;
   onSave: (values: Omit<Task, "id" | "taskNumber" | "createdDate" | "updatedDate">) => Promise<void>;
 }
@@ -126,6 +129,7 @@ export function TaskFormDialog({
             category: task.category,
             projectId: task.projectId ?? NONE,
             assigneeId: task.assigneeId,
+            reporterId: task.reporterId,
             priority: task.priority,
             status: task.status,
             estimateHours: task.estimateHours ? String(task.estimateHours) : "",
@@ -142,9 +146,10 @@ export function TaskFormDialog({
             type: defaultProjectId ? "Project" : EMPTY_VALUES.type,
             projectId: defaultProjectId ?? NONE,
             status: defaultStatus ?? EMPTY_VALUES.status,
+            reporterId,
           }
     );
-  }, [open, task, defaultProjectId, defaultStatus, form]);
+  }, [open, task, defaultProjectId, defaultStatus, reporterId, form]);
 
   const handleSubmit = form.handleSubmit(async (values) => {
     setIsSaving(true);
@@ -158,7 +163,7 @@ export function TaskFormDialog({
         category: values.category,
         projectId,
         assigneeId: values.assigneeId,
-        reporterId: task?.reporterId ?? reporterId,
+        reporterId: values.reporterId,
         createdBy: task?.createdBy ?? reporterId,
         lastModifiedBy: reporterId,
         priority: values.priority as TaskPriority,
@@ -228,6 +233,16 @@ export function TaskFormDialog({
               required
               options={employees.map((e) => ({ value: e.id, label: e.name }))}
               disabled={readOnly("assigneeId")}
+            />
+          )}
+          {show("reporterId") && (
+            <FormSelectField
+              control={form.control}
+              name="reporterId"
+              label="Reporter"
+              required
+              options={employees.map((e) => ({ value: e.id, label: e.name }))}
+              disabled={readOnly("reporterId")}
             />
           )}
           {show("priority") && (
