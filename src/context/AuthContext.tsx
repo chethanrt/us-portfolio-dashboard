@@ -10,7 +10,7 @@ export interface AuthContextValue {
   currentUser: Employee | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  /** Returns true on success; false shows "invalid credentials". */
+  /** Returns true on success, false on bad credentials; rethrows anything else (rate limit, network/server error). */
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
@@ -51,8 +51,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (username: string, password: string) => {
-    const user = await userService.authenticate(username, password);
-    if (!user) return false;
+    // Only a genuine bad-credentials response resolves to false (shows
+    // "invalid username or password"); anything else (rate limit, network
+    // hiccup, backend not reachable yet) rethrows so Login.tsx can tell the
+    // user what actually happened instead of blaming their password.
+    let user: User;
+    try {
+      user = await userService.authenticate(username, password);
+    } catch (err) {
+      if (err instanceof Error && err.message === "INVALID_CREDENTIALS") return false;
+      throw err;
+    }
     setAccount(user);
     setEmployees(await employeeService.getAll());
     return true;
