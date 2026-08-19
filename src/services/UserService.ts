@@ -27,16 +27,17 @@ class UserService {
     return all.find((user) => user.id === id);
   }
 
-  /** Returns the user on success, null on bad credentials or inactive account. */
-  async authenticate(username: string, password: string): Promise<User | null> {
-    try {
-      return await apiRequest<User>("/api/users/authenticate", {
-        method: "POST",
-        body: JSON.stringify({ username: username.trim(), password }),
-      });
-    } catch {
-      return null;
-    }
+  /**
+   * Throws on failure rather than swallowing it — the caller needs to tell
+   * genuinely bad credentials (`INVALID_CREDENTIALS`) apart from a rate
+   * limit (`TOO_MANY_ATTEMPTS`) or a transient network/server error, so it
+   * can show an accurate message instead of "wrong password" for all three.
+   */
+  authenticate(username: string, password: string): Promise<User> {
+    return apiRequest<User>("/api/users/authenticate", {
+      method: "POST",
+      body: JSON.stringify({ username: username.trim(), password }),
+    });
   }
 
   /** Who's currently signed in, per the session cookie — null if not signed in. */

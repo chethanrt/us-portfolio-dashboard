@@ -42,6 +42,15 @@ export default function Login() {
       } else {
         form.setError("password", { message: "Invalid username or password." });
       }
+    } catch (err) {
+      // Not bad credentials (AuthContext.login already handles that case) —
+      // a rate limit or the backend being briefly unreachable. Said plainly,
+      // instead of the misleading "Invalid username or password.".
+      const message =
+        err instanceof Error && err.message === "TOO_MANY_ATTEMPTS"
+          ? "Too many attempts. Please wait a few minutes and try again."
+          : "Unable to reach the server. Please try again.";
+      form.setError("password", { message });
     } finally {
       setIsSigningIn(false);
     }
