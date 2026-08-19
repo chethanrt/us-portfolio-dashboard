@@ -1,0 +1,19 @@
+# Normalize line endings for all text files to LF, regardless of the
+# checkout platform. Windows' core.autocrlf alone isn't reliable once
+# files already exist with mixed endings — an editor or tool re-saving a
+# file can then make Git see a spurious "modified" diff (or, worse, a
+# commit that's mostly line-ending churn instead of a real change).
+* text=auto eol=lf
+
+# Binary files: never touch line endings, diff as binary, no normalization.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.sqlite3 binary
