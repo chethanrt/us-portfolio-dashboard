@@ -1,0 +1,30 @@
+name: Build & Deploy (alpha)
+
+on:
+  push:
+    branches: [alpha]
+  workflow_dispatch: {}
+
+jobs:
+  build-and-deploy:
+    runs-on: [self-hosted, alpha]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Type-check and build
+        run: npm run build
+
+      - name: Deploy to the live alpha app
+        shell: powershell
+        run: |
+          $liveDir = "c:\US-PORTFOLIO-DASHBOARD\Alpha\us-portfolio-dashboard"
+          Set-Location $liveDir
+          git fetch origin
+          git reset --hard origin/alpha
+          npm install
+          pm2 restart alpha-server alpha-client
