@@ -17,6 +17,7 @@ import { usePermission } from "@/security";
 import { calendarService } from "@/services";
 import type { CalendarEvent, Employee } from "@/types";
 import { getPersonColor } from "@/utils/calendarColors";
+import { generateGroupId } from "@/utils/id";
 import { canCreateCalendarEvent, canDeleteCalendarEvent, canEditCalendarEvent, canViewCalendar } from "@/utils/permissions";
 import { Badge } from "@/components/ui/badge";
 import { CalendarEventFormDialog } from "./CalendarEventFormDialog";
@@ -128,7 +129,7 @@ export function TeamCalendar({ employees }: TeamCalendarProps) {
     try {
       let groupId = selectedEvent.blockGroupId ?? null;
       if (!groupId) {
-        groupId = crypto.randomUUID();
+        groupId = generateGroupId();
         const withGroup = { ...selectedEvent, blockGroupId: groupId };
         await updateEvent(selectedEvent.id, withGroup);
         setSelectedEvent(withGroup);
