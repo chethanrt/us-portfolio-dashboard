@@ -67,6 +67,34 @@ export function MyTasksWidget({ data }: { data: TaskDashboardData }) {
   );
 }
 
+/**
+ * Status labels can be two words ("In Progress", "Code Review") — wrapping
+ * them onto a second line keeps each bar's label readable instead of
+ * overlapping the next one when every column is forced to render.
+ */
+function StatusAxisTick({
+  x,
+  y,
+  payload,
+}: {
+  x: number | string;
+  y: number | string;
+  payload: { value: string };
+}) {
+  const words = String(payload.value).split(" ");
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text textAnchor="middle" fontSize={11} fill="#64748b">
+        {words.map((word, i) => (
+          <tspan key={word} x={0} dy={i === 0 ? 12 : 12}>
+            {word}
+          </tspan>
+        ))}
+      </text>
+    </g>
+  );
+}
+
 /** "Tasks by Status" bar chart with a priority breakdown row (docs/11). */
 export function TasksByStatusChart({ data }: { data: TaskDashboardData }) {
   return (
@@ -76,8 +104,15 @@ export function TasksByStatusChart({ data }: { data: TaskDashboardData }) {
     >
       <div className="h-56">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data.overview.byStatus} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
-            <XAxis dataKey="status" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} interval={0} />
+          <BarChart data={data.overview.byStatus} margin={{ top: 4, right: 8, bottom: 4, left: -20 }}>
+            <XAxis
+              dataKey="status"
+              tick={StatusAxisTick}
+              height={34}
+              tickLine={false}
+              axisLine={false}
+              interval={0}
+            />
             <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} />
             <Tooltip
               contentStyle={TOOLTIP_STYLE}
