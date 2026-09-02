@@ -8,6 +8,7 @@ import { FormCheckboxGroupField, FormInputField, FormSelectField, FormTextareaFi
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import type { CalendarEvent, CalendarEventType, Employee } from "@/types";
+import { generateGroupId } from "@/utils/id";
 
 const REQUIRED = "This field is required.";
 
@@ -150,7 +151,7 @@ export function CalendarEventFormDialog({
       const targets = isEdit && event ? [event.employeeId] : values.memberIds;
       // Multiple people blocked together share one group id, so they can be found and
       // grown later (the team calendar's "add person to this block" flow).
-      const blockGroupId = isEdit ? (event?.blockGroupId ?? null) : targets.length > 1 ? crypto.randomUUID() : null;
+      const blockGroupId = isEdit ? (event?.blockGroupId ?? null) : targets.length > 1 ? generateGroupId() : null;
       const payloads = days.flatMap((day) => {
         const dayStr = format(day, "yyyy-MM-dd");
         return targets.map((employeeId) => ({

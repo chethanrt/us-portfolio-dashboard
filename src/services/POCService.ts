@@ -4,6 +4,7 @@ import { apiRequest } from "./BaseService";
 import { calendarService } from "./CalendarService";
 import { employeeService } from "./EmployeeService";
 import { taskService } from "./TaskService";
+import { generateGroupId } from "@/utils/id";
 
 const POC_EVENT_TYPE = "POC";
 
@@ -231,7 +232,7 @@ class POCService {
   async create(input: Omit<POC, "id">): Promise<POC> {
     const created = await apiRequest<POC>("/api/pocs", {
       method: "POST",
-      body: JSON.stringify({ ...input, blockGroupId: crypto.randomUUID() }),
+      body: JSON.stringify({ ...input, blockGroupId: generateGroupId() }),
     });
 
     const employees = await employeeService.getAll();
@@ -247,7 +248,7 @@ class POCService {
     const previous = await this.getById(id);
     if (!previous) throw new Error(`POC ${id} not found`);
     // Legacy POCs saved before this feature existed may have no group yet.
-    const blockGroupId = previous.blockGroupId ?? crypto.randomUUID();
+    const blockGroupId = previous.blockGroupId ?? generateGroupId();
 
     const updated = await apiRequest<POC>(`/api/pocs/${id}`, {
       method: "PUT",
