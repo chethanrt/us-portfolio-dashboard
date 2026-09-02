@@ -20,7 +20,7 @@ import { createSettingsRouter } from "./routes/settings.ts";
 import { createAuditLogRouter } from "./routes/auditLog.ts";
 import { requireAuth } from "./security/requireAuth.ts";
 
-const PORT = 4000;
+const PORT = Number(process.env.PORT) || 4000;
 
 const db = getDb();
 const app = express();

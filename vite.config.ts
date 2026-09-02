@@ -13,8 +13,12 @@ export default defineConfig({
   },
   server: {
     host: true,
+    port: Number(process.env.VITE_PORT) || 5173,
+    allowedHosts: process.env.VITE_ALLOWED_HOSTS
+      ? process.env.VITE_ALLOWED_HOSTS.split(",")
+      : undefined,
     proxy: {
-      "/api": "http://localhost:4000",
+      "/api": `http://localhost:${process.env.API_PORT || 4000}`,
     },
   },
 });
