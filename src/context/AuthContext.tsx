@@ -1,6 +1,7 @@
 import { createContext, useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { employeeService, userService } from "@/services";
+import { setUnauthenticatedHandler } from "@/services/BaseService";
 import type { Employee, User } from "@/types";
 
 export interface AuthContextValue {
@@ -48,6 +49,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  // If the session expires (or is revoked) while the app is open, any
+  // subsequent API call comes back 401 — sign the user out immediately
+  // instead of leaving them on a page that just keeps failing.
+  useEffect(() => {
+    setUnauthenticatedHandler(() => {
+      setAccount(null);
+      setEmployees([]);
+    });
+    return () => setUnauthenticatedHandler(null);
   }, []);
 
   const login = useCallback(async (username: string, password: string) => {
