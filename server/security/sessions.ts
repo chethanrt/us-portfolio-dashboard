@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import type Database from "better-sqlite3";
 
 export const SESSION_COOKIE = "session";
-const SESSION_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const SESSION_LIFETIME_MS = 2 * 24 * 60 * 60 * 1000; // 2 days
 
 export interface SessionUser {
   id: string;
